@@ -14,7 +14,7 @@ export default async function handler(request, response) {
         return response.status(405).json({ message: 'Method Not Allowed' });
     }
     
-    console.log('--- [PG] Starting ACCUMULATIVE Stock Update ---');
+    console.log('--- [PG] Starting SMART ACCUMULATIVE Stock Update ---');
 
     try {
         const tickersToProcess = await getTickersToUpdate(pool);
@@ -30,18 +30,17 @@ export default async function handler(request, response) {
             await upsertBatchData(pool, fetchedStockData);
         }
 
-        console.log(`--- [PG] Accumulative Update finished. Processed ${fetchedStockData.length} stocks. ---`);
+        console.log(`--- [PG] Smart Accumulative Update finished. Processed ${fetchedStockData.length} stocks. ---`);
         response.status(200).json({ success: true, updated: fetchedStockData.length, tickers: fetchedStockData.map(s => s.ticker) });
 
     } catch (error) {
-        console.error('[PG] Accumulative Update Handler Error:', error.message, error.stack);
+        console.error('[PG] Smart Accumulative Update Handler Error:', error.message, error.stack);
         response.status(500).json({ success: false, error: error.message });
     }
 }
 
 
 async function getTickersToUpdate(pool) {
-    // 首先，从你的'stock_list'表获取完整的股票名单
     const { rows: allStockInfo } = await pool.query('SELECT ticker, name_zh, sector_zh FROM stock_list');
     if (!allStockInfo || allStockInfo.length === 0) {
         throw new Error('Failed to load stock list from "stock_list" table.');
@@ -49,7 +48,7 @@ async function getTickersToUpdate(pool) {
     console.log(`Loaded ${allStockInfo.length} stocks from the master list.`);
 
     // ===================================================================
-    // ================== 这是我们最核心的逻辑修改 ==================
+    // ================== 这是我们最核心的智能调度逻辑 ==================
     // ===================================================================
     // 优先找出在 stock_list 中存在，但在 stocks 表中还不存在的股票
     const { rows: newStocks } = await pool.query(`
@@ -63,7 +62,6 @@ async function getTickersToUpdate(pool) {
     if (newStocks && newStocks.length > 0) {
         const tickers = newStocks.map(s => s.ticker);
         console.log(`Found ${tickers.length} NEW stocks to insert: ${tickers.join(', ')}`);
-        // 返回包含完整信息的对象数组
         return tickers.map(ticker => allStockInfo.find(info => info.ticker === ticker)).filter(Boolean);
     }
     
@@ -80,7 +78,7 @@ async function getTickersToUpdate(pool) {
     return tickers.map(ticker => allStockInfo.find(info => info.ticker === ticker)).filter(Boolean);
 }
 
-// fetchBatchData 和 fetchApiDataForTicker, upsertBatchData 函数保持不变
+// fetchBatchData, fetchApiDataForTicker, 和 upsertBatchData 函数保持不变，无需修改
 async function fetchBatchData(stockInfos) {
     const promises = stockInfos.map(info => fetchApiDataForTicker(info));
     const results = await Promise.allSettled(promises);
