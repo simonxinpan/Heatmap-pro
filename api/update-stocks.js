@@ -14,14 +14,14 @@ export default async function handler(request, response) {
         return response.status(405).json({ message: 'Method Not Allowed' });
     }
     
-    console.log('--- [PG] Starting FLAWLESS ACCUMULATIVE Stock Update ---');
+    console.log('--- [PG] Starting FINAL Flawless Stock Update ---');
 
     try {
         const tickersToProcess = await getTickersToUpdate(pool);
         
         if (tickersToProcess.length === 0) {
-            console.log('All stocks seem to be up-to-date. No new stocks to fetch.');
-            return response.status(200).json({ success: true, updated: 0, message: 'All stocks are populated and up-to-date.' });
+            console.log('All stocks seem to be up-to-date.');
+            return response.status(200).json({ success: true, updated: 0, message: 'All stocks are populated.' });
         }
 
         const fetchedStockData = await fetchBatchData(tickersToProcess);
@@ -30,11 +30,11 @@ export default async function handler(request, response) {
             await upsertBatchData(pool, fetchedStockData);
         }
 
-        console.log(`--- [PG] Flawless Update finished. Processed ${fetchedStockData.length} stocks. ---`);
+        console.log(`--- [PG] FINAL Update finished. Processed ${fetchedStockData.length} stocks. ---`);
         response.status(200).json({ success: true, updated: fetchedStockData.length, tickers: fetchedStockData.map(s => s.ticker) });
 
     } catch (error) {
-        console.error('[PG] Flawless Update Handler Error:', error.message, error.stack);
+        console.error('[PG] FINAL Update Handler Error:', error.message, error.stack);
         response.status(500).json({ success: false, error: error.message });
     }
 }
@@ -110,7 +110,7 @@ async function fetchApiDataForTicker(stockInfo) {
             market_cap: profile.marketCapitalization || 0, 
             change_percent: quote.dp || 0,
             logo: profile.logo || '',
-            last_updated: new Date().toISOString(),
+            last_updated: new Date().toISOString(), // 确保这个字段总是存在
         };
     } catch (error) {
         console.error(`[PG] Error fetching data for ${ticker}:`, error.message);
@@ -127,29 +127,31 @@ async function upsertBatchData(pool, stockData) {
         await client.query('BEGIN');
 
         for (const stock of stockData) {
-            // 在这里，我们修改了 ON CONFLICT 的部分
+            // 在这里，我们确保INSERT和VALUES都包含全部7个字段
             const query = `
                 INSERT INTO stocks (ticker, name_zh, sector_zh, market_cap, change_percent, logo, last_updated)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (ticker) DO UPDATE SET
-                    name_zh = EXCLUDED.name_zh,         -- 确保更新时也更新中文名
-                    sector_zh = EXCLUDED.sector_zh,   -- 确保更新时也更新行业
+                    name_zh = EXCLUDED.name_zh,
+                    sector_zh = EXCLUDED.sector_zh,
                     market_cap = EXCLUDED.market_cap,
                     change_percent = EXCLUDED.change_percent,
                     logo = EXCLUDED.logo,
                     last_updated = EXCLUDED.last_updated;
             `;
-            await client.query(query, [
+            // 在这里，我们确保传入了全部7个值
+            const values = [
                 stock.ticker, stock.name_zh, stock.sector_zh, stock.market_cap, 
                 stock.change_percent, stock.logo, stock.last_updated
-            ]);
+            ];
+            await client.query(query, values);
         }
         
         await client.query('COMMIT');
-        console.log(`Successfully upserted ${stockData.length} stocks into Neon DB with FLAWLESS logic.`);
+        console.log(`Successfully upserted ${stockData.length} stocks into Neon DB with FINAL FLAWLESS logic.`);
     } catch (e) {
         await client.query('ROLLBACK');
-        console.error('[PG] Database upsert transaction failed. Rolling back.', e.message);
+        console.error('[PG] Database upsert transaction failed. Rolling back.', e.message, e.stack); // 加上 e.stack 打印更详细的错误
         throw e;
     } finally {
         client.release();
