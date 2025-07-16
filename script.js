@@ -1,17 +1,20 @@
-// script.js (Graduation Masterpiece - Polished & Stable V9 Layout)
+// script.js (Graduation Masterpiece - Final Polished V10 - Server-Side Sorting)
 
 const appContainer = document.getElementById('app-container');
 const tooltip = document.getElementById('tooltip');
-let fullMarketData = null;
+let fullMarketData = null; // 用于缓存从API获取的完整数据
 
 document.addEventListener('DOMContentLoaded', router);
 window.addEventListener('popstate', router);
+
+// 使用防抖技术优化resize事件，避免频繁重绘
+let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(rerenderCurrentView, 250);
 });
-let resizeTimeout;
 
+// 主路由函数，根据URL参数决定渲染哪个页面
 async function router() {
     showLoading();
     const params = new URLSearchParams(window.location.search);
@@ -22,44 +25,54 @@ async function router() {
     if (page === 'stock' && symbol) {
         await renderStockDetailPage(symbol);
     } else if (sector) {
+        // 如果有sector参数，则渲染行业详情页
         await renderHomePage(decodeURIComponent(sector));
     } else {
+        // 默认渲染全景热力图
         document.title = '股票热力图 - 全景';
         await renderHomePage();
     }
 }
 
+// 显示加载动画
 function showLoading() {
     appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>数据加载中...</p></div>`;
 }
 
+// 渲染主页（全景或行业详情）
 async function renderHomePage(sectorName = null) {
     try {
-        // 从API获取数据，不再使用全局缓存，以确保每次视图切换都可能获取新数据
+        // 每次渲染都从API获取最新数据
         const res = await fetch('/api/stocks');
         if (!res.ok) {
             let errorMsg = '获取市场数据失败';
-            try { const errorData = await res.json(); errorMsg = errorData.error || errorMsg; } catch(e) {}
+            try { 
+                const errorData = await res.json(); 
+                errorMsg = errorData.error || errorMsg; 
+            } catch(e) {}
             throw new Error(errorMsg);
         }
-        fullMarketData = await res.json(); // 更新全局数据
+        fullMarketData = await res.json(); // 更新全局数据缓存
 
         let dataToRender = fullMarketData;
         let headerHtml;
 
         if (sectorName) {
+            // 过滤出特定行业的数据
             dataToRender = fullMarketData.filter(stock => stock.sector_zh === sectorName);
             document.title = `${sectorName} - 行业热力图`;
             headerHtml = `<header class="header"><h1>${sectorName}</h1><a href="/" class="back-link" onclick="navigate(event, '/')">← 返回全景图</a></header>`;
         } else {
+            // 全景图的标题
             headerHtml = `<header class="header"><h1>股票热力图</h1><div class="data-source">美股市场 (BETA)</div></header>`;
         }
         
-        if (dataToRender.length === 0) {
+        if (!dataToRender || dataToRender.length === 0) {
             appContainer.innerHTML = `<div class="loading-indicator">没有找到数据，后台可能正在更新，请稍后刷新...</div>`;
             return;
         }
 
+        // 渲染页面骨架
         appContainer.innerHTML = `
             ${headerHtml}
             <main id="heatmap-container-final" class="heatmap-container-final"></main>
@@ -76,10 +89,12 @@ async function renderHomePage(sectorName = null) {
             </footer>
         `;
         
+        // 行业视图下不显示图例
         if (sectorName) {
             appContainer.querySelector('.legend').style.display = 'none';
         }
 
+        // 使用 requestAnimationFrame 确保在DOM渲染后执行treemap计算
         requestAnimationFrame(() => {
             const container = document.getElementById('heatmap-container-final');
             if (container) {
@@ -92,6 +107,7 @@ async function renderHomePage(sectorName = null) {
     }
 }
 
+// 生成Treemap布局的核心函数
 function generateTreemap(data, container, groupIntoSectors = true) {
     container.innerHTML = '';
     const { clientWidth: totalWidth, clientHeight: totalHeight } = container;
@@ -100,17 +116,20 @@ function generateTreemap(data, container, groupIntoSectors = true) {
     let itemsToLayout;
     if (groupIntoSectors) {
         const stocksBySector = groupDataBySector(data);
+        // 【优化】: itemsToLayout不再需要排序，因为后端返回的数据已经是按市值排序的
         itemsToLayout = Object.entries(stocksBySector).map(([sectorName, sectorData]) => ({
             name: sectorName, 
             isSector: true, 
             value: sectorData.total_market_cap,
+            // 【优化】: sectorData.stocks也不再需要排序
             items: sectorData.stocks.map(s => ({ ...s, value: s.market_cap, isSector: false }))
-        })).sort((a, b) => (b.value || 0) - (a.value || 0));
+        }));
     } else {
-        itemsToLayout = data.map(s => ({ ...s, value: s.market_cap, isSector: false }))
-                           .sort((a, b) => (b.market_cap || 0) - (a.market_cap || 0));
+        // 【优化】: data本身也不再需要排序
+        itemsToLayout = data.map(s => ({ ...s, value: s.market_cap, isSector: false }));
     }
 
+    // 递归布局函数
     function layout(items, x, y, width, height, parentEl) {
         if (items.length === 0 || width <= 1 || height <= 1) return;
         
@@ -122,14 +141,14 @@ function generateTreemap(data, container, groupIntoSectors = true) {
             return;
         }
 
-        // 智能二分法，尽可能让分割后的两部分市值接近
         let bestSplitIndex = 0;
         let minDiff = Infinity;
         const targetValue = totalValue / 2;
+        let cumulativeValue = 0;
 
         for (let i = 0; i < items.length - 1; i++) {
-            const group1Value = items.slice(0, i + 1).reduce((sum, item) => sum + (item.value || 0), 0);
-            const diff = Math.abs(group1Value - targetValue);
+            cumulativeValue += items[i].value || 0;
+            const diff = Math.abs(cumulativeValue - targetValue);
             if (diff < minDiff) {
                 minDiff = diff;
                 bestSplitIndex = i;
@@ -154,6 +173,7 @@ function generateTreemap(data, container, groupIntoSectors = true) {
         }
     }
 
+    // 渲染单个节点（行业或股票）
     function renderNode(node, x, y, width, height, parentEl) {
         if (node.isSector) {
             const sectorEl = createSectorElement(node, x, y, width, height);
@@ -169,10 +189,12 @@ function generateTreemap(data, container, groupIntoSectors = true) {
             parentEl.appendChild(stockEl);
         }
     }
-
+    
+    // 开始布局
     layout(itemsToLayout, 0, 0, totalWidth, totalHeight, container);
 }
 
+// 创建行业板块的DOM元素
 function createSectorElement(sector, x, y, width, height) {
     const sectorEl = document.createElement('div');
     sectorEl.className = 'treemap-sector';
@@ -193,6 +215,7 @@ function createSectorElement(sector, x, y, width, height) {
     return sectorEl;
 }
 
+// 创建单个股票的DOM元素
 function createStockElement(stock, width, height) {
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
@@ -237,57 +260,110 @@ function createStockElement(stock, width, height) {
     return stockLink;
 }
 
+// 按行业分组数据
 function groupDataBySector(data) {
     if (!data) return {};
-    const grouped = data.reduce((acc, stock) => {
+    return data.reduce((acc, stock) => {
         const sector = stock.sector_zh || '其他';
         if (!acc[sector]) { acc[sector] = { stocks: [], total_market_cap: 0 }; }
         acc[sector].stocks.push(stock);
         acc[sector].total_market_cap += (stock.market_cap || 0);
         return acc;
     }, {});
-    for (const sector in grouped) {
-        grouped[sector].stocks.sort((a, b) => (b.market_cap || 0) - (a.market_cap || 0));
-    }
-    return grouped;
 }
 
+// 根据涨跌幅获取颜色类
 function getColorClass(change) {
-    if (isNaN(change) || (change > -0.01 && change < 0.01)) return 'flat';
+    if (isNaN(change) || Math.abs(change) < 0.01) return 'flat';
     if (change >= 3) return 'gain-5'; if (change >= 2) return 'gain-4'; if (change >= 1) return 'gain-3';
     if (change >= 0.25) return 'gain-2'; if (change > 0) return 'gain-1';
     if (change <= -3) return 'loss-5'; if (change <= -2) return 'loss-4'; if (change <= -1) return 'loss-3';
     if (change <= -0.25) return 'loss-2'; return 'loss-1';
 }
 
+// SPA导航函数
 function navigate(event, path) {
     event.preventDefault();
     window.history.pushState({}, '', path);
     router();
 }
 
+// 渲染股票详情页
 async function renderStockDetailPage(symbol) {
     try {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
         const res = await fetch(`/api/stocks?ticker=${symbol}`);
         if (!res.ok) throw new Error('获取股票详情失败');
         const { profile, quote } = await res.json();
-        const nameZh = profile.name_zh || ''; const sectorZh = profile.sector_zh || profile.finnhubIndustry || 'N/A';
+        
+        const nameZh = profile.name_zh || ''; 
+        const sectorZh = profile.sector_zh || profile.finnhubIndustry || 'N/A';
         const description = profile.description || '暂无公司简介。';
-        const change = quote.dp || 0; const changeAmount = quote.d || 0; const changeClass = change >= 0 ? 'gain' : 'loss';
+        const change = quote.dp || 0; 
+        const changeAmount = quote.d || 0; 
+        const changeClass = change >= 0 ? 'gain' : 'loss';
         const marketCapBillion = profile.marketCapitalization ? (profile.marketCapitalization / 1000).toFixed(2) : 'N/A';
-        const shareBillion = profile.shareOutstanding ? (profile.shareOutstanding).toFixed(2) : 'N/A';
-        const high = quote.h || 0; const low = quote.l || 0; const currentPrice = quote.c || 0; const openPrice = quote.o || 0;
+        const shareBillion = profile.shareOutstanding ? (profile.shareOutstanding / 1000).toFixed(2) : 'N/A';
+        const high = quote.h || 0; 
+        const low = quote.l || 0; 
+        const currentPrice = quote.c || 0; 
+        const openPrice = quote.o || 0;
+
         document.title = `${nameZh} (${profile.ticker}) - 股票详情`;
-        appContainer.innerHTML = `<header class="header"><h1>${nameZh} ${profile.name} (${profile.ticker})</h1><a href="javascript:history.back()" class="back-link" onclick="navigate(event, document.referrer || '/')">← 返回上一页</a></header><div class="stock-detail-page"><main class="main-content"><div class="card"><div class="stock-header"><div class="stock-identity"><img src="${profile.logo}" alt="${profile.name} Logo" class="stock-logo" onerror="this.style.display='none'"><div class="stock-name"><h1>${profile.name}</h1><p>${profile.exchange}: ${profile.ticker}</p></div></div><div class="stock-price-info"><div class="current-price">${currentPrice.toFixed(2)} <span class="price-change ${changeClass}">${change >= 0 ? '+' : ''}${changeAmount.toFixed(2)} (${change.toFixed(2)}%)</span></div><div class="market-status">数据来源: Finnhub</div></div></div></div><section class="chart-section"><div class="chart-placeholder">K线图功能正在开发中...</div></section></main><aside class="right-sidebar"><div class="card"><h2 class="card-title">关于 ${nameZh}</h2><p class="company-info-text">${description}</p><div class="summary-item"><span class="label">市值</span><span class="value">${marketCapBillion}B USD</span></div><div class="summary-item"><span class="label">总股本</span><span class="value">${shareBillion}B</span></div><div class="summary-item"><span class="label">行业</span><span class="value">${sectorZh}</span></div><div class="summary-item"><span class="label">官网</span><span class="value"><a href="${profile.weburl}" target="_blank" rel="noopener noreferrer">${profile.weburl ? profile.weburl.replace(/^(https?:\/\/)?(www\.)?/, '') : 'N/A'}</a></span></div></div><div class="card"><h2 class="card-title">关键数据</h2><div class="summary-item"><span class="label">开盘价</span><span class="value">${openPrice.toFixed(2)}</span></div><div class="summary-item"><span class="label">最高价</span><span class="value">${high.toFixed(2)}</span></div><div class="summary-item"><span class="label">最低价</span><span class="value">${low.toFixed(2)}</span></div></div></aside></div>`;
+        
+        appContainer.innerHTML = `
+            <header class="header">
+                <h1>${nameZh} ${profile.name} (${profile.ticker})</h1>
+                <a href="javascript:history.back()" class="back-link" onclick="navigate(event, document.referrer || '/')">← 返回上一页</a>
+            </header>
+            <div class="stock-detail-page">
+                <main class="main-content">
+                    <div class="card">
+                        <div class="stock-header">
+                            <div class="stock-identity">
+                                <img src="${profile.logo}" alt="${profile.name} Logo" class="stock-logo" onerror="this.style.display='none'">
+                                <div class="stock-name">
+                                    <h1>${profile.name}</h1>
+                                    <p>${profile.exchange}: ${profile.ticker}</p>
+                                </div>
+                            </div>
+                            <div class="stock-price-info">
+                                <div class="current-price">${currentPrice.toFixed(2)} <span class="price-change ${changeClass}">${change >= 0 ? '+' : ''}${changeAmount.toFixed(2)} (${change.toFixed(2)}%)</span></div>
+                                <div class="market-status">数据来源: Finnhub</div>
+                            </div>
+                        </div>
+                    </div>
+                    <section class="chart-section">
+                        <div class="chart-placeholder">K线图功能正在开发中...</div>
+                    </section>
+                </main>
+                <aside class="right-sidebar">
+                    <div class="card">
+                        <h2 class="card-title">关于 ${nameZh}</h2>
+                        <p class="company-info-text">${description}</p>
+                        <div class="summary-item"><span class="label">市值</span><span class="value">${marketCapBillion}B USD</span></div>
+                        <div class="summary-item"><span class="label">总股本</span><span class="value">${shareBillion}B</span></div>
+                        <div class="summary-item"><span class="label">行业</span><span class="value">${sectorZh}</span></div>
+                        <div class="summary-item"><span class="label">官网</span><span class="value"><a href="${profile.weburl}" target="_blank" rel="noopener noreferrer">${profile.weburl ? profile.weburl.replace(/^(https?:\/\/)?(www\.)?/, '') : 'N/A'}</a></span></div>
+                    </div>
+                    <div class="card">
+                        <h2 class="card-title">关键数据</h2>
+                        <div class="summary-item"><span class="label">开盘价</span><span class="value">${openPrice.toFixed(2)}</span></div>
+                        <div class="summary-item"><span class="label">最高价</span><span class="value">${high.toFixed(2)}</span></div>
+                        <div class="summary-item"><span class="label">最低价</span><span class="value">${low.toFixed(2)}</span></div>
+                    </div>
+                </aside>
+            </div>
+        `;
     } catch (error) {
         console.error('Error rendering stock detail page:', error);
         appContainer.innerHTML = `<div class="loading-indicator">${error.message}</div>`;
     }
 }
 
+// 当窗口大小改变时，重新渲染当前的视图
 function rerenderCurrentView() {
-    if (!fullMarketData) return;
+    if (!fullMarketData) return; // 如果没有数据，则不执行任何操作
     const container = document.getElementById('heatmap-container-final');
     if (container) {
         const params = new URLSearchParams(window.location.search);
