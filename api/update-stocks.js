@@ -14,7 +14,7 @@ export default async function handler(request, response) {
         return response.status(405).json({ message: 'Method Not Allowed' });
     }
     
-    console.log('--- [PG] Starting SMART ACCUMULATIVE Stock Update ---');
+    console.log('--- [PG] Starting FLAWLESS ACCUMULATIVE Stock Update ---');
 
     try {
         const tickersToProcess = await getTickersToUpdate(pool);
@@ -30,11 +30,11 @@ export default async function handler(request, response) {
             await upsertBatchData(pool, fetchedStockData);
         }
 
-        console.log(`--- [PG] Smart Accumulative Update finished. Processed ${fetchedStockData.length} stocks. ---`);
+        console.log(`--- [PG] Flawless Update finished. Processed ${fetchedStockData.length} stocks. ---`);
         response.status(200).json({ success: true, updated: fetchedStockData.length, tickers: fetchedStockData.map(s => s.ticker) });
 
     } catch (error) {
-        console.error('[PG] Smart Accumulative Update Handler Error:', error.message, error.stack);
+        console.error('[PG] Flawless Update Handler Error:', error.message, error.stack);
         response.status(500).json({ success: false, error: error.message });
     }
 }
@@ -46,11 +46,7 @@ async function getTickersToUpdate(pool) {
         throw new Error('Failed to load stock list from "stock_list" table.');
     }
     console.log(`Loaded ${allStockInfo.length} stocks from the master list.`);
-
-    // ===================================================================
-    // ================== 这是我们最核心的智能调度逻辑 ==================
-    // ===================================================================
-    // 优先找出在 stock_list 中存在，但在 stocks 表中还不存在的股票
+    
     const { rows: newStocks } = await pool.query(`
         SELECT t1.ticker 
         FROM stock_list AS t1
@@ -61,11 +57,10 @@ async function getTickersToUpdate(pool) {
 
     if (newStocks && newStocks.length > 0) {
         const tickers = newStocks.map(s => s.ticker);
-        console.log(`Found ${tickers.length} NEW stocks to insert: ${tickers.join(', ')}`);
+        console.log(`Found ${tickers.length} NEW stocks to insert.`);
         return tickers.map(ticker => allStockInfo.find(info => info.ticker === ticker)).filter(Boolean);
     }
     
-    // 如果所有股票都已存在，再回到我们原来的逻辑：更新最旧的股票
     console.log(`All stocks are populated. Switching to update oldest entries.`);
     const { rows: stocksToUpdate } = await pool.query(`
         SELECT ticker FROM stocks
@@ -78,7 +73,6 @@ async function getTickersToUpdate(pool) {
     return tickers.map(ticker => allStockInfo.find(info => info.ticker === ticker)).filter(Boolean);
 }
 
-// fetchBatchData, fetchApiDataForTicker, 和 upsertBatchData 函数保持不变，无需修改
 async function fetchBatchData(stockInfos) {
     const promises = stockInfos.map(info => fetchApiDataForTicker(info));
     const results = await Promise.allSettled(promises);
@@ -123,26 +117,36 @@ async function fetchApiDataForTicker(stockInfo) {
         return null;
     }
 }
+
+// ===================================================================
+// ================== 这是我们最核心的逻辑修改 ==================
+// ===================================================================
 async function upsertBatchData(pool, stockData) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+
         for (const stock of stockData) {
+            // 在这里，我们修改了 ON CONFLICT 的部分
             const query = `
                 INSERT INTO stocks (ticker, name_zh, sector_zh, market_cap, change_percent, logo, last_updated)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (ticker) DO UPDATE SET
-                    name_zh = EXCLUDED.name_zh,
-                    sector_zh = EXCLUDED.sector_zh,
+                    name_zh = EXCLUDED.name_zh,         -- 确保更新时也更新中文名
+                    sector_zh = EXCLUDED.sector_zh,   -- 确保更新时也更新行业
                     market_cap = EXCLUDED.market_cap,
                     change_percent = EXCLUDED.change_percent,
                     logo = EXCLUDED.logo,
                     last_updated = EXCLUDED.last_updated;
             `;
-            await client.query(query, [stock.ticker, stock.name_zh, stock.sector_zh, stock.market_cap, stock.change_percent, stock.logo, stock.last_updated]);
+            await client.query(query, [
+                stock.ticker, stock.name_zh, stock.sector_zh, stock.market_cap, 
+                stock.change_percent, stock.logo, stock.last_updated
+            ]);
         }
+        
         await client.query('COMMIT');
-        console.log(`Successfully upserted ${stockData.length} stocks into Neon DB.`);
+        console.log(`Successfully upserted ${stockData.length} stocks into Neon DB with FLAWLESS logic.`);
     } catch (e) {
         await client.query('ROLLBACK');
         console.error('[PG] Database upsert transaction failed. Rolling back.', e.message);
