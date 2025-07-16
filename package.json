@@ -8,6 +8,6 @@
   },
   "private": true,
   "dependencies": {
-    "serverless-postgres": "latest"
+    "pg": "^8.16.3"
   }
 }
