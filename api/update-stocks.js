@@ -2,11 +2,10 @@ import { Pool } from 'pg';
 
 const UPDATE_BATCH_SIZE = 50; 
 
-// 使用pg库的连接池
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
-        rejectUnauthorized: false // 对于Neon，通常需要这个配置
+        rejectUnauthorized: false
     }
 });
 
@@ -15,70 +14,88 @@ export default async function handler(request, response) {
         return response.status(405).json({ message: 'Method Not Allowed' });
     }
     
-    console.log('--- [PG] Starting Scheduled Stock Update ---');
+    console.log('--- [PG] Starting ACCUMULATIVE Stock Update ---');
 
     try {
         const tickersToProcess = await getTickersToUpdate(pool);
+        
+        if (tickersToProcess.length === 0) {
+            console.log('All stocks seem to be up-to-date. No new stocks to fetch.');
+            return response.status(200).json({ success: true, updated: 0, message: 'All stocks are populated and up-to-date.' });
+        }
+
         const fetchedStockData = await fetchBatchData(tickersToProcess);
         
         if (fetchedStockData.length > 0) {
             await upsertBatchData(pool, fetchedStockData);
         }
 
-        console.log(`--- [PG] Update finished. Processed ${fetchedStockData.length} stocks. ---`);
+        console.log(`--- [PG] Accumulative Update finished. Processed ${fetchedStockData.length} stocks. ---`);
         response.status(200).json({ success: true, updated: fetchedStockData.length, tickers: fetchedStockData.map(s => s.ticker) });
 
     } catch (error) {
-        console.error('[PG] Update Handler Error:', error.message, error.stack);
+        console.error('[PG] Accumulative Update Handler Error:', error.message, error.stack);
         response.status(500).json({ success: false, error: error.message });
     }
 }
 
 
 async function getTickersToUpdate(pool) {
+    // 首先，从你的'stock_list'表获取完整的股票名单
     const { rows: allStockInfo } = await pool.query('SELECT ticker, name_zh, sector_zh FROM stock_list');
     if (!allStockInfo || allStockInfo.length === 0) {
-        throw new Error('Failed to load stock list from "stock_list" table or list is empty.');
+        throw new Error('Failed to load stock list from "stock_list" table.');
     }
     console.log(`Loaded ${allStockInfo.length} stocks from the master list.`);
 
-    const { rows: stocksToUpdate } = await pool.query(`
-        SELECT ticker FROM stocks
-        ORDER BY last_updated ASC NULLS FIRST
+    // ===================================================================
+    // ================== 这是我们最核心的逻辑修改 ==================
+    // ===================================================================
+    // 优先找出在 stock_list 中存在，但在 stocks 表中还不存在的股票
+    const { rows: newStocks } = await pool.query(`
+        SELECT t1.ticker 
+        FROM stock_list AS t1
+        LEFT JOIN stocks AS t2 ON t1.ticker = t2.ticker
+        WHERE t2.ticker IS NULL
         LIMIT ${UPDATE_BATCH_SIZE}
     `);
 
-    if (stocksToUpdate && stocksToUpdate.length > 0) {
-        const tickers = stocksToUpdate.map(s => s.ticker);
-        console.log(`Found ${tickers.length} oldest stocks to update.`);
+    if (newStocks && newStocks.length > 0) {
+        const tickers = newStocks.map(s => s.ticker);
+        console.log(`Found ${tickers.length} NEW stocks to insert: ${tickers.join(', ')}`);
+        // 返回包含完整信息的对象数组
         return tickers.map(ticker => allStockInfo.find(info => info.ticker === ticker)).filter(Boolean);
     }
     
-    console.log(`"stocks" table is empty. Selecting ${UPDATE_BATCH_SIZE} random stocks to initialize.`);
-    return allStockInfo.sort(() => 0.5 - Math.random()).slice(0, UPDATE_BATCH_SIZE);
+    // 如果所有股票都已存在，再回到我们原来的逻辑：更新最旧的股票
+    console.log(`All stocks are populated. Switching to update oldest entries.`);
+    const { rows: stocksToUpdate } = await pool.query(`
+        SELECT ticker FROM stocks
+        ORDER BY last_updated ASC
+        LIMIT ${UPDATE_BATCH_SIZE}
+    `);
+    
+    const tickers = stocksToUpdate.map(s => s.ticker);
+    console.log(`Found ${tickers.length} oldest stocks to update.`);
+    return tickers.map(ticker => allStockInfo.find(info => info.ticker === ticker)).filter(Boolean);
 }
 
+// fetchBatchData 和 fetchApiDataForTicker, upsertBatchData 函数保持不变
 async function fetchBatchData(stockInfos) {
     const promises = stockInfos.map(info => fetchApiDataForTicker(info));
     const results = await Promise.allSettled(promises);
-    
     const successfulData = results
         .filter(result => result.status === 'fulfilled' && result.value)
         .map(result => result.value);
-
     console.log(`Successfully fetched data for ${successfulData.length} of ${stockInfos.length} stocks.`);
     return successfulData;
 }
-
-
 async function fetchApiDataForTicker(stockInfo) {
     if (!stockInfo || !stockInfo.ticker) return null;
     const { ticker, name_zh, sector_zh } = stockInfo;
-
     try {
         const apiKey = process.env.FINNHUB_API_KEY;
         if (!apiKey) throw new Error('FINNHUB_API_KEY is not configured.');
-
         const fetchFromFinnhub = async (endpoint) => {
             const url = `https://finnhub.io/api/v1${endpoint}&token=${apiKey}`;
             const res = await fetch(url);
@@ -88,22 +105,17 @@ async function fetchApiDataForTicker(stockInfo) {
             }
             return res.json();
         };
-
         const [profile, quote] = await Promise.all([
             fetchFromFinnhub(`/stock/profile2?symbol=${ticker}`),
             fetchFromFinnhub(`/quote?symbol=${ticker}`)
         ]);
-        
         if (!quote || typeof quote.c === 'undefined' || !profile) {
             console.warn(`[WARN] Invalid API data for ${ticker}, skipping.`);
             return null;
         }
-
         return {
-            ticker: ticker,
-            name_zh: name_zh,
-            sector_zh: sector_zh,
-            market_cap: profile.marketCapitalization || 0,
+            ticker, name_zh, sector_zh, 
+            market_cap: profile.marketCapitalization || 0, 
             change_percent: quote.dp || 0,
             logo: profile.logo || '',
             last_updated: new Date().toISOString(),
@@ -113,13 +125,10 @@ async function fetchApiDataForTicker(stockInfo) {
         return null;
     }
 }
-
-
 async function upsertBatchData(pool, stockData) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
         for (const stock of stockData) {
             const query = `
                 INSERT INTO stocks (ticker, name_zh, sector_zh, market_cap, change_percent, logo, last_updated)
@@ -132,13 +141,8 @@ async function upsertBatchData(pool, stockData) {
                     logo = EXCLUDED.logo,
                     last_updated = EXCLUDED.last_updated;
             `;
-            const values = [
-                stock.ticker, stock.name_zh, stock.sector_zh, stock.market_cap,
-                stock.change_percent, stock.logo, stock.last_updated
-            ];
-            await client.query(query, values);
+            await client.query(query, [stock.ticker, stock.name_zh, stock.sector_zh, stock.market_cap, stock.change_percent, stock.logo, stock.last_updated]);
         }
-
         await client.query('COMMIT');
         console.log(`Successfully upserted ${stockData.length} stocks into Neon DB.`);
     } catch (e) {
