@@ -1,8 +1,9 @@
 {
-  "crons": [
-    {
-      "path": "/api/update-stocks",
-      "schedule": "*/5 * * * *"
-    }
+  "version": 2,
+  "routes": [
+    { "src": "/style.css", "dest": "/style.css" },
+    { "src": "/script.js", "dest": "/script.js" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/", "dest": "/index.html" }
   ]
 }
