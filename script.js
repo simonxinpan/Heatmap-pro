@@ -1,4 +1,4 @@
-// script.js (Graduation Masterpiece - Final Polished V10 - Server-Side Sorting)
+// public/script.js (完整最终版 - TradingView 颜色方案)
 
 const appContainer = document.getElementById('app-container');
 const tooltip = document.getElementById('tooltip');
@@ -42,7 +42,6 @@ function showLoading() {
 // 渲染主页（全景或行业详情）
 async function renderHomePage(sectorName = null) {
     try {
-        // 每次渲染都从API获取最新数据
         const res = await fetch('/api/stocks');
         if (!res.ok) {
             let errorMsg = '获取市场数据失败';
@@ -52,18 +51,16 @@ async function renderHomePage(sectorName = null) {
             } catch(e) {}
             throw new Error(errorMsg);
         }
-        fullMarketData = await res.json(); // 更新全局数据缓存
+        fullMarketData = await res.json(); 
 
         let dataToRender = fullMarketData;
         let headerHtml;
 
         if (sectorName) {
-            // 过滤出特定行业的数据
             dataToRender = fullMarketData.filter(stock => stock.sector_zh === sectorName);
             document.title = `${sectorName} - 行业热力图`;
             headerHtml = `<header class="header"><h1>${sectorName}</h1><a href="/" class="back-link" onclick="navigate(event, '/')">← 返回全景图</a></header>`;
         } else {
-            // 全景图的标题
             headerHtml = `<header class="header"><h1>股票热力图</h1><div class="data-source">美股市场 (BETA)</div></header>`;
         }
         
@@ -72,29 +69,26 @@ async function renderHomePage(sectorName = null) {
             return;
         }
 
-        // 渲染页面骨架
         appContainer.innerHTML = `
             ${headerHtml}
             <main id="heatmap-container-final" class="heatmap-container-final"></main>
             <footer class="legend">
                 <span>-3%</span>
-                <div class="legend-item"><div class="legend-color-box loss-5"></div></div>
-                <div class="legend-item"><div class="legend-color-box loss-3"></div></div>
-                <div class="legend-item"><div class="legend-color-box loss-1"></div></div>
-                <div class="legend-item"><div class="legend-color-box flat"></div></div>
-                <div class="legend-item"><div class="legend-color-box gain-1"></div></div>
-                <div class="legend-item"><div class="legend-color-box gain-3"></div></div>
-                <div class="legend-item"><div class="legend-color-box gain-5"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #F23645;"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #A9323A;"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #6F2E31;"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #363A45;"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #266953;"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #1A9A64;"></div></div>
+                <div class="legend-item"><div class="legend-color-box" style="background-color: #00B16A;"></div></div>
                 <span>+3%</span>
             </footer>
         `;
         
-        // 行业视图下不显示图例
         if (sectorName) {
             appContainer.querySelector('.legend').style.display = 'none';
         }
 
-        // 使用 requestAnimationFrame 确保在DOM渲染后执行treemap计算
         requestAnimationFrame(() => {
             const container = document.getElementById('heatmap-container-final');
             if (container) {
@@ -116,23 +110,18 @@ function generateTreemap(data, container, groupIntoSectors = true) {
     let itemsToLayout;
     if (groupIntoSectors) {
         const stocksBySector = groupDataBySector(data);
-        // 【优化】: itemsToLayout不再需要排序，因为后端返回的数据已经是按市值排序的
         itemsToLayout = Object.entries(stocksBySector).map(([sectorName, sectorData]) => ({
             name: sectorName, 
             isSector: true, 
             value: sectorData.total_market_cap,
-            // 【优化】: sectorData.stocks也不再需要排序
             items: sectorData.stocks.map(s => ({ ...s, value: s.market_cap, isSector: false }))
         }));
     } else {
-        // 【优化】: data本身也不再需要排序
         itemsToLayout = data.map(s => ({ ...s, value: s.market_cap, isSector: false }));
     }
 
-    // 递归布局函数
     function layout(items, x, y, width, height, parentEl) {
         if (items.length === 0 || width <= 1 || height <= 1) return;
-        
         const totalValue = items.reduce((sum, item) => sum + (item.value || 0), 0);
         if (totalValue <= 0) return;
 
@@ -173,7 +162,6 @@ function generateTreemap(data, container, groupIntoSectors = true) {
         }
     }
 
-    // 渲染单个节点（行业或股票）
     function renderNode(node, x, y, width, height, parentEl) {
         if (node.isSector) {
             const sectorEl = createSectorElement(node, x, y, width, height);
@@ -190,11 +178,9 @@ function generateTreemap(data, container, groupIntoSectors = true) {
         }
     }
     
-    // 开始布局
     layout(itemsToLayout, 0, 0, totalWidth, totalHeight, container);
 }
 
-// 创建行业板块的DOM元素
 function createSectorElement(sector, x, y, width, height) {
     const sectorEl = document.createElement('div');
     sectorEl.className = 'treemap-sector';
@@ -215,17 +201,36 @@ function createSectorElement(sector, x, y, width, height) {
     return sectorEl;
 }
 
-// 创建单个股票的DOM元素
+// ===================================================================
+// ======================  核心颜色修改在这里  =======================
+// ===================================================================
 function createStockElement(stock, width, height) {
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
     stockLink.href = `/?page=stock&symbol=${stock.ticker}`;
     stockLink.onclick = (e) => navigate(e, stockLink.href);
-    stockLink.style.width = `${width}px`; stockLink.style.height = `${height}px`;
+    stockLink.style.width = `${width}px`;
+    stockLink.style.height = `${height}px`;
 
     const stockDiv = document.createElement('div');
     const change = parseFloat(stock.change_percent || 0);
-    stockDiv.className = `stock ${getColorClass(change)}`;
+    
+    // --- 新的颜色计算逻辑 ---
+    // 使用 D3 线性插值函数来计算颜色
+    const maxChange = 3; // 定义颜色饱和度的边界，例如 3%
+    // 将涨跌幅限制在 -maxChange 到 +maxChange 之间，避免颜色过度饱和
+    const clampedChange = Math.max(-maxChange, Math.min(maxChange, change));
+    
+    // 创建一个从 -maxChange 到 +maxChange 的插值器
+    const colorInterpolator = d3.scaleLinear()
+        .domain([-maxChange, 0, maxChange])
+        .range(["#F23645", "#363A45", "#00B16A"]);
+    
+    // 计算并应用颜色
+    stockDiv.style.backgroundColor = colorInterpolator(clampedChange);
+    // --- 颜色逻辑结束 ---
+
+    stockDiv.className = `stock`; // 移除了旧的颜色类
     
     const area = width * height;
     if (area > 10000) stockDiv.classList.add('detail-xl');
@@ -272,13 +277,11 @@ function groupDataBySector(data) {
     }, {});
 }
 
-// 根据涨跌幅获取颜色类
+// 这个函数不再需要，但暂时保留以防万一。新的颜色逻辑在 createStockElement 中。
 function getColorClass(change) {
-    if (isNaN(change) || Math.abs(change) < 0.01) return 'flat';
-    if (change >= 3) return 'gain-5'; if (change >= 2) return 'gain-4'; if (change >= 1) return 'gain-3';
-    if (change >= 0.25) return 'gain-2'; if (change > 0) return 'gain-1';
-    if (change <= -3) return 'loss-5'; if (change <= -2) return 'loss-4'; if (change <= -1) return 'loss-3';
-    if (change <= -0.25) return 'loss-2'; return 'loss-1';
+    // Legacy function, no longer used for block colors.
+    if (change >= 0) return 'gain';
+    return 'loss';
 }
 
 // SPA导航函数
@@ -292,7 +295,8 @@ function navigate(event, path) {
 async function renderStockDetailPage(symbol) {
     try {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
-        const res = await fetch(`/api/stocks?ticker=${symbol}`);
+        // 注意：这里的API调用方式可能需要根据你后端的实际情况调整
+        const res = await fetch(`/api/stocks-detail?ticker=${symbol}`); // 假设有一个专门的详情API
         if (!res.ok) throw new Error('获取股票详情失败');
         const { profile, quote } = await res.json();
         
@@ -357,13 +361,13 @@ async function renderStockDetailPage(symbol) {
         `;
     } catch (error) {
         console.error('Error rendering stock detail page:', error);
-        appContainer.innerHTML = `<div class="loading-indicator">${error.message}</div>`;
+        // 为了避免和主页的API冲突，假设详情页有自己的API，如果失败了，回退到主页
+        appContainer.innerHTML = `<div class="loading-indicator">无法加载股票详情: ${error.message} <br> <a href="/" onclick="navigate(event, '/')">返回主页</a></div>`;
     }
 }
 
-// 当窗口大小改变时，重新渲染当前的视图
 function rerenderCurrentView() {
-    if (!fullMarketData) return; // 如果没有数据，则不执行任何操作
+    if (!fullMarketData) return;
     const container = document.getElementById('heatmap-container-final');
     if (container) {
         const params = new URLSearchParams(window.location.search);
