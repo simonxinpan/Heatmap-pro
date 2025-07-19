@@ -1,4 +1,4 @@
-// script.js (Graduation Masterpiece - Final Polished V10 - Server-Side Sorting)
+// script.js (V5.4 - Modified for Chinese Name Priority)
 
 const appContainer = document.getElementById('app-container');
 const tooltip = document.getElementById('tooltip');
@@ -234,7 +234,10 @@ function createStockElement(stock, width, height) {
     else if (area > 600) stockDiv.classList.add('detail-sm');
     else stockDiv.classList.add('detail-xs');
     
-    stockDiv.innerHTML = `<span class="stock-ticker">${stock.ticker}</span><span class="stock-name-zh">${stock.name_zh}</span><span class="stock-change">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
+    // ==================【关键改动】==================
+    // 将中文名（stock-name-zh）放在最前面
+    stockDiv.innerHTML = `<span class="stock-name-zh">${stock.name_zh}</span><span class="stock-ticker">${stock.ticker}</span><span class="stock-change">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
+    // ==============================================
     
     stockLink.appendChild(stockDiv);
     
