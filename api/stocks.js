@@ -1,27 +1,40 @@
-// Final version with market cap sorting - Triggering new deployment
-const { db } = require('@vercel/postgres');
+// api/stocks.js (最终统一版本)
 
-module.exports = async (req, res) => {
-  let client;
-  try {
-    // 连接到数据库
-    client = await db.connect();
-    
-    // 从 "stocks" 表中查询所有数据，并按市值（market_cap）降序（DESC）排列
-    const { rows } = await client.sql`SELECT * FROM stocks ORDER BY market_cap DESC;`;
-    
-    // 设置响应头，允许跨域请求
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    // 以 JSON 格式返回查询到的数据
-    res.status(200).json(rows);
-    
-  } catch (error) {
-    // 如果发生错误，返回 500 状态码和错误信息
-    res.status(500).json({ error: error.message });
-  } finally {
-    // 无论成功或失败，最后都释放数据库连接
-    if (client) {
-      await client.release();
-    }
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL, 
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
-};
+
+  try {
+    const query = `
+      SELECT 
+        ticker, 
+        name_zh AS company, 
+        sector_zh AS sector, 
+        market_cap, 
+        change_percent AS change_percentage 
+      FROM stocks
+    `;
+    const { rows } = await pool.query(query);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('API /api/stocks experienced an error:', error);
+    res.status(500).json({ 
+        error: 'Internal Server Error', 
+        details: 'Failed to fetch data from the database.',
+        errorMessage: error.message
+    });
+  }
+}
