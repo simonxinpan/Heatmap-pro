@@ -1,4 +1,4 @@
-/* style.css (V5.4 - Modified for Chinese Name Priority) */
+/* style.css (V5.5 - Enhanced Vivid Colors) */
 :root {
     --background-color: #ffffff;
     --container-bg-color: #f0f2f5;
@@ -8,19 +8,25 @@
     --text-secondary: #5f6368;
     --text-white: #ffffff;
     --primary-blue: #2962ff;
-    --gain-1: #e0f2f1;
-    --gain-2: #80cbc4;
-    --gain-3: #26a69a;
-    --gain-4: #00897b;
-    --gain-5: #00695c;
-    --loss-1: #ffcdd2;
-    --loss-2: #e57373;
-    --loss-3: #ef5350;
-    --loss-4: #e53935;
-    --loss-5: #c62828;
+    --tooltip-bg: rgba(20, 20, 20, 0.9);
+
+    /* --- 新的、更鲜艳的色彩系统 --- */
+    /* 绿色系: 从柔和的薄荷绿过渡到鲜明的翠绿 */
+    --gain-1: #e8f5e9; /* 非常淡的绿，接近白色 */
+    --gain-2: #a5d6a7; /* 柔和的浅绿 */
+    --gain-3: #66bb6a; /* 明亮的标准绿 */
+    --gain-4: #43a047; /* 更深、更饱和的绿 */
+    --gain-5: #2e7d32; /* 最浓郁、最鲜明的深绿 */
+
+    /* 红色系: 从几乎看不出的淡粉过渡到醒目的正红 */
+    --loss-1: #ffebee; /* 非常淡的粉，接近白色 */
+    --loss-2: #ef9a9a; /* 柔和的浅红 */
+    --loss-3: #ef5350; /* 明亮、醒目的标准红 */
+    --loss-4: #e53935; /* 更深、更饱和的红 */
+    --loss-5: #c62828; /* 最浓郁、最鲜明的深红 */
+    
     --flat-bg: #eceff1;
     --flat-text: #37474f;
-    --tooltip-bg: rgba(20, 20, 20, 0.9);
 }
 
 body { 
@@ -112,17 +118,15 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
 .loss-1 { background-color: var(--loss-1); } .loss-2 { background-color: var(--loss-2); } .loss-3 { background-color: var(--loss-3); } .loss-4 { background-color: var(--loss-4); } .loss-5 { background-color: var(--loss-5); }
 .flat { background-color: var(--flat-bg); }
 
-/* ==================【关键改动】================== */
-/* 调整基础样式，让中文名成为视觉主角 */
 .stock-name-zh {
-    font-weight: 600; /* 加粗中文名 */
+    font-weight: 600;
     line-height: 1.3;
 }
 .stock-ticker {
-    font-weight: 400; /* 减弱代码的视觉重量 */
+    font-weight: 400;
     line-height: 1.2;
     font-size: 12px;
-    opacity: 0.7; /* 设为半透明，作为次要信息 */
+    opacity: 0.7;
     margin-top: 2px;
 }
 .stock-change {
@@ -130,26 +134,23 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     margin-top: 4px;
 }
 
-/* 调整不同尺寸下的显示优先级 */
 .detail-xl .stock-name-zh { font-size: 18px; } 
 .detail-xl .stock-ticker { display: block; } 
 .detail-xl .stock-change { font-size: 14px; display: block; }
 
 .detail-lg .stock-name-zh { font-size: 14px; } 
 .detail-lg .stock-ticker { display: block; } 
-.detail-lg .stock-change { display: none; } /* 中大尺寸，隐藏涨跌幅，保留核心信息 */
+.detail-lg .stock-change { display: none; }
 
-/* 中等尺寸，只显示最重要的中文名 */
 .detail-md .stock-name-zh { 
     font-size: 13px; 
-    text-align: center; /* 居中显示，更美观 */
+    text-align: center;
     width: 100%;
 } 
 .detail-md .stock-ticker, .detail-md .stock-change { 
     display: none; 
 }
 
-/* 小尺寸，只显示中文名（如果还能放下） */
 .detail-sm .stock-name-zh { 
     font-size: 12px; 
     text-align: center;
@@ -159,18 +160,14 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     display: none; 
 }
 
-/* 极小尺寸，隐藏所有信息，保持整洁 */
 .detail-xs .stock-name-zh, .detail-xs .stock-ticker, .detail-xs .stock-change { 
     display: none; 
 }
-/* ============================================== */
 
-/* Legend Colors (保持不变) */
 .legend .loss-5 { background-color: var(--loss-5); } .legend .loss-3 { background-color: var(--loss-3); } .legend .loss-1 { background-color: var(--loss-1); }
 .legend .flat { background-color: var(--flat-bg); }
 .legend .gain-1 { background-color: var(--gain-1); } .legend .gain-3 { background-color: var(--gain-3); } .legend .gain-5 { background-color: var(--gain-5); }
 
-/* 其余样式保持不变 */
 #tooltip { position: fixed; display: none; padding: 10px 14px; background-color: var(--tooltip-bg); color: white; border-radius: 6px; font-size: 14px; z-index: 1000; pointer-events: none; white-space: nowrap; transition: opacity 0.1s ease; border: 1px solid var(--border-color); }
 .tooltip-header { font-weight: bold; font-size: 16px; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 6px; }
 .tooltip-row { display: flex; justify-content: space-between; min-width: 220px; line-height: 1.7; }
