@@ -14,7 +14,9 @@ const pool = new Pool({
 
 export default async function handler(request, response) {
      if (request.method !== 'GET') {
-        return response.status(405).json({ message: 'Method Not Allowed' });
+        response.writeHead(405, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ message: 'Method Not Allowed' }));
+        return;
     }
     
     // 股票详情页逻辑保持不变
@@ -23,10 +25,14 @@ export default async function handler(request, response) {
     if (ticker) {
         try {
             const data = await fetchSingleStockData(pool, ticker);
-            return response.status(200).json(data);
+            response.writeHead(200, { 'Content-Type': 'application/json' });
+            response.end(JSON.stringify(data));
+            return;
         } catch(error) {
             console.error(`[PG] Error fetching single stock data for ${ticker}:`, error.message);
-            return response.status(500).json({ error: 'Failed to fetch stock detail.' });
+            response.writeHead(500, { 'Content-Type': 'application/json' });
+            response.end(JSON.stringify({ error: 'Failed to fetch stock detail.' }));
+            return;
         }
     }
 
@@ -45,11 +51,15 @@ export default async function handler(request, response) {
         `);
         
         console.log(`[PG] Successfully returned ${rows ? rows.length : 0} stocks for heatmap, sorted by market cap.`);
-        response.status(200).json(rows || []);
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(rows || []));
+        return;
 
     } catch (error) {
         console.error('[PG] Stocks API Error:', error.message, error.stack);
-        response.status(500).json({ error: 'Failed to fetch stock data from database.' });
+        response.writeHead(500, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ error: 'Failed to fetch stock data from database.' }));
+        return;
     }
 }
 
