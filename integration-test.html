@@ -107,18 +107,19 @@
 </head>
 <body>
     <div class="container">
-        <h1>🍎 苹果股票集成测试</h1>
+        <h1>📈 股票详情页集成测试</h1>
         
         <div class="test-section">
             <h2>📊 热力图集成测试</h2>
-            <p>测试从热力图点击苹果股票是否正确跳转到外部详情页</p>
+            <p>测试从热力图点击任意股票是否正确跳转到对应的外部详情页</p>
             <a href="http://localhost:8000" class="test-button">访问热力图主页</a>
             <div class="status info">
                 <strong>测试步骤：</strong>
                 <ol>
                     <li>点击上方按钮访问热力图</li>
-                    <li>找到并点击苹果股票(AAPL)方块</li>
-                    <li>验证是否跳转到外部详情页</li>
+                    <li>找到并点击任意股票方块（如AAPL、MSFT、GOOGL等）</li>
+                    <li>验证是否跳转到对应股票的外部详情页</li>
+                    <li>确认URL参数正确传递股票代码</li>
                 </ol>
             </div>
         </div>
@@ -127,14 +128,14 @@
             <h2>🔗 直接链接测试</h2>
             <p>测试各种股票详情页的跳转功能（所有股票都将跳转到外部详情页）：</p>
             <div class="link-grid">
-                <a href="?page=stock&symbol=AAPL" class="test-link apple">苹果股票 (AAPL)</a>
-                <a href="?page=stock&symbol=MSFT" class="test-link">微软股票 (MSFT)</a>
-                <a href="?page=stock&symbol=GOOGL" class="test-link">谷歌股票 (GOOGL)</a>
-                <a href="?page=stock&symbol=AMZN" class="test-link">亚马逊股票 (AMZN)</a>
-                <a href="?page=stock&symbol=TSLA" class="test-link">特斯拉股票 (TSLA)</a>
-                <a href="?page=stock&symbol=NVDA" class="test-link">英伟达股票 (NVDA)</a>
-                <a href="?page=stock&symbol=META" class="test-link">Meta股票 (META)</a>
-                <a href="?page=stock&symbol=JPM" class="test-link">摩根大通 (JPM)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=AAPL" class="test-link apple" target="_blank">苹果股票 (AAPL)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=MSFT" class="test-link" target="_blank">微软股票 (MSFT)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=GOOGL" class="test-link" target="_blank">谷歌股票 (GOOGL)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=AMZN" class="test-link" target="_blank">亚马逊股票 (AMZN)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=TSLA" class="test-link" target="_blank">特斯拉股票 (TSLA)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=NVDA" class="test-link" target="_blank">英伟达股票 (NVDA)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=META" class="test-link" target="_blank">Meta股票 (META)</a>
+                <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=JPM" class="test-link" target="_blank">摩根大通 (JPM)</a>
             </div>
             <div class="status success">
                 <strong>目标链接：</strong>
@@ -148,10 +149,10 @@
             <div class="status info">
                 <strong>配置详情：</strong>
                 <ul>
-                    <li>✅ 苹果股票(AAPL)特殊处理已启用</li>
-                    <li>✅ 外部链接跳转已配置</li>
-                    <li>✅ 其他股票仍使用本地详情页</li>
-                    <li>✅ 升级提示功能保持不变</li>
+                    <li>✅ 所有股票统一跳转到外部详情页</li>
+                    <li>✅ 动态参数传递已配置</li>
+                    <li>✅ 新标签页打开外部链接</li>
+                    <li>✅ Neon数据库集成支持</li>
                 </ul>
             </div>
         </div>
@@ -162,10 +163,10 @@
             <div class="status success">
                 <strong>验证清单：</strong>
                 <ul>
-                    <li>□ 热力图正常显示苹果股票</li>
-                    <li>□ 点击苹果股票跳转到外部链接</li>
-                    <li>□ 外部详情页正常加载</li>
-                    <li>□ 其他股票功能不受影响</li>
+                    <li>□ 热力图正常显示所有股票</li>
+                    <li>□ 点击任意股票跳转到对应外部详情页</li>
+                    <li>□ 股票代码参数正确传递</li>
+                    <li>□ 外部详情页正常加载对应股票数据</li>
                 </ul>
             </div>
         </div>
@@ -176,11 +177,9 @@
             <div class="status info">
                 <strong>实现方式：</strong>
                 <div class="code">
-// 在 script.js 的 renderStockDetailPage 函数中<br>
-if (symbol === 'AAPL') {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;window.location.href = 'https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/';<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return;<br>
-}
+// 在 script.js 的 createStockElement 函数中<br>
+stockLink.href = `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;<br>
+stockLink.target = '_blank';
                 </div>
             </div>
         </div>

@@ -278,8 +278,10 @@ function createSectorElement(sector, x, y, width, height) {
 function createStockElement(stock, width, height) {
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
-    stockLink.href = `/?page=stock&symbol=${stock.ticker}`;
-    stockLink.onclick = (e) => navigate(e, stockLink.href);
+    // 直接跳转到外部详情页，传递股票代码参数
+    stockLink.href = `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
+    stockLink.target = '_blank'; // 在新标签页打开
+    // 移除内部路由导航，直接使用外部链接
     stockLink.style.width = `${width}px`; stockLink.style.height = `${height}px`;
 
     const stockDiv = document.createElement('div');
