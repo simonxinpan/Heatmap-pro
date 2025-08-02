@@ -52,6 +52,38 @@
         .external-button {
             background: linear-gradient(45deg, #4ecdc4, #44a08d);
         }
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .test-link {
+            display: block;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .test-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ff6b6b;
+            transform: translateY(-2px);
+        }
+        .test-link.apple {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            border-color: #ff6b6b;
+            color: #333;
+        }
+        .test-link.apple:hover {
+            background: linear-gradient(45deg, #ffeaa7, #fab1a0);
+            border-color: #e17055;
+            color: #2d3436;
+        }
         .status {
             margin: 20px 0;
             padding: 15px;
@@ -93,8 +125,17 @@
 
         <div class="test-section">
             <h2>🔗 直接链接测试</h2>
-            <p>直接测试外部苹果股票详情页链接</p>
-            <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/" class="test-button external-button" target="_blank">访问外部详情页</a>
+            <p>测试各种股票详情页的跳转功能（所有股票都将跳转到外部详情页）：</p>
+            <div class="link-grid">
+                <a href="?page=stock&symbol=AAPL" class="test-link apple">苹果股票 (AAPL)</a>
+                <a href="?page=stock&symbol=MSFT" class="test-link">微软股票 (MSFT)</a>
+                <a href="?page=stock&symbol=GOOGL" class="test-link">谷歌股票 (GOOGL)</a>
+                <a href="?page=stock&symbol=AMZN" class="test-link">亚马逊股票 (AMZN)</a>
+                <a href="?page=stock&symbol=TSLA" class="test-link">特斯拉股票 (TSLA)</a>
+                <a href="?page=stock&symbol=NVDA" class="test-link">英伟达股票 (NVDA)</a>
+                <a href="?page=stock&symbol=META" class="test-link">Meta股票 (META)</a>
+                <a href="?page=stock&symbol=JPM" class="test-link">摩根大通 (JPM)</a>
+            </div>
             <div class="status success">
                 <strong>目标链接：</strong>
                 <div class="code">https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/</div>

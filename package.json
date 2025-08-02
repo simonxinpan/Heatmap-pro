@@ -1,13 +1,18 @@
 {
   "name": "stock-heatmap-pro",
   "version": "1.0.0",
-  "description": "A professional stock heatmap application.",
-  "main": "index.html",
+  "description": "A professional stock heatmap application with Neon database integration.",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "private": true,
   "dependencies": {
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
   }
 }

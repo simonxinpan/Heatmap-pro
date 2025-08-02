@@ -32,43 +32,71 @@
 - ✅ 返回导航功能
 - ✅ 移动端适配
 
+## 🚀 快速开始
+
+### 基础启动（使用模拟数据）
+```bash
+# 1. 安装依赖
+npm install
+
+# 2. 启动开发服务器
+npm start
+
+# 3. 打开浏览器访问
+http://localhost:8000
+```
+
+### 完整配置（连接Neon数据库）
+1. **配置数据库连接**：参考 [`DATABASE_SETUP.md`](./DATABASE_SETUP.md) 配置Neon数据库
+2. **测试连接**：运行 `node test-db-connection.js` 验证数据库连接
+3. **启动项目**：运行 `npm start` 启动服务器
+4. **验证功能**：访问 `http://localhost:8000/integration-test.html` 测试所有功能
+
 ## 🎯 演示步骤
 
-### 步骤1：访问热力图主页
-1. 打开 `http://localhost:8000`
-2. 查看全景热力图，苹果股票显示为最大的方块（市值最高）
-3. 鼠标悬停查看股票信息
+### 基础演示
+1. **访问主页**: 打开 `http://localhost:8000`
+2. **浏览热力图**: 查看包含40+标普500股票的市场全景
+3. **行业筛选**: 点击任意行业区块，查看该行业详情
+4. **股票详情**: 点击任意股票方块，自动跳转到外部详情页
 
-### 步骤2：点击苹果股票 🔗
-1. 点击苹果股票(AAPL)方块
-2. 自动跳转到外部增强版个股详情页
-3. 体验完整的股票分析功能（外部链接）
-4. 验证无缝对接效果
+### 外部详情页统一跳转演示
+1. **选择任意股票**: 在热力图中点击任何股票方块
+2. **自动跳转**: 系统将自动跳转到外部增强版详情页
+3. **参数传递**: 确认股票代码正确传递到外部页面
+4. **数据一致性**: 验证热力图数据与详情页数据的一致性
 
-### 步骤3：体验其他股票
-1. 返回主页，点击其他股票（如微软、谷歌）
-2. 查看基础详情页
-3. 点击升级提示链接，体验增强版功能
+### 标普500数据验证
+1. **数据丰富性**: 查看40+主要标普500股票的完整展示
+2. **行业分布**: 验证科技、金融、医疗、能源等多个行业的股票
+3. **实时数据**: 确认市值、涨跌幅等数据的准确性
 
-### 步骤4：集成测试 🧪
-1. 访问 `http://localhost:8000/integration-test.html`
-2. 使用集成测试页面验证所有功能
-3. 确认外部链接对接成功
+### 集成测试
+1. **访问测试页面**: 打开 `http://localhost:8000/integration-test.html`
+2. **功能验证**: 测试所有功能和外部链接的对接情况
+3. **批量测试**: 验证多只股票详情页的跳转功能
 
 ## 📁 文件结构
 
 ```
 Heatmap-pro/
 ├── index.html              # 主页面
-├── script.js               # 主要逻辑（已更新苹果股票外部链接）
-├── style.css               # 主要样式
-├── integration-test.html   # 集成测试页面 🆕
-├── details/                # 个股详情页模块
-│   ├── stock-detail.html   # 本地增强版详情页
-│   ├── stock-detail.css    # 详情页样式
-│   └── stock-detail.js     # 详情页逻辑
-├── server.js               # 开发服务器
-└── DEMO_README.md          # 演示说明（已更新）
+├── script.js              # 核心JavaScript逻辑（已更新为统一外部跳转）
+├── styles.css             # 样式文件
+├── server.js              # Node.js服务器（支持Neon数据库）
+├── package.json           # 项目配置（已添加数据库依赖）
+├── .env                   # 环境变量配置（数据库连接）
+├── integration-test.html  # 集成测试页面
+├── DEMO_README.md         # 演示文档
+├── DATABASE_SETUP.md      # 数据库配置指南（新增）
+├── database-setup.sql     # 数据库初始化脚本（新增）
+├── test-db-connection.js  # 数据库连接测试（新增）
+├── api/
+│   └── stocks.js          # 股票数据API（支持Neon数据库）
+└── details/
+    ├── stock-detail.html  # 股票详情页
+    ├── stock-detail.js    # 详情页逻辑
+    └── stock-detail.css   # 详情页样式
 ```
 
 ## 🔧 技术实现
@@ -133,33 +161,43 @@ Heatmap-pro/
 ## 🎉 演示亮点
 
 1. **无缝集成** - 热力图与外部详情页完美融合
-2. **外部链接对接** - 苹果股票直接跳转到外部增强版页面
-3. **渐进增强** - 基础功能到增强功能的平滑过渡
-4. **用户引导** - 智能提示引导用户体验新功能
-5. **技术前瞻** - 为后续功能扩展预留接口
+2. **统一跳转** - 所有股票都跳转到外部增强版详情页
+3. **参数传递** - 自动传递股票代码到外部页面
+4. **标普500数据** - 集成40+主要标普500股票数据
+5. **数据库驱动** - 基于Neon PostgreSQL数据库的实时数据
 
 ## 🔗 外部链接集成
 
-### 目标链接
-- **外部详情页**: `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/`
-- **GitHub仓库**: `https://github.com/simonxinpan/Stock-name-pages/tree/Stock-details-V17.3`
+### 标普500数据库集成
+- **数据源**: Neon PostgreSQL数据库
+- **股票数量**: 40+主要标普500股票
+- **数据结构**: 包含中文名称、行业分类、市值、涨跌幅等完整信息
 
-### 集成方式
-- ✅ 修改 `script.js` 中的苹果股票处理逻辑
-- ✅ 保持其他股票的本地详情页功能
-- ✅ 创建集成测试页面验证功能
+### 外部详情页统一跳转
+- **目标链接**: `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol={TICKER}`
+- **覆盖范围**: 所有股票都跳转到外部增强版详情页
+- **参数传递**: 自动传递股票代码(symbol)参数
 
 ### 技术实现
 ```javascript
-// 苹果股票特殊处理
-if (symbol === 'AAPL') {
-    window.location.href = 'https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/';
-    return;
-}
+// 所有股票都跳转到外部增强版详情页，传递股票代码参数
+const externalDetailUrl = `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=${symbol}`;
+window.location.href = externalDetailUrl;
 ```
+
+## 📊 项目状态
+
+- ✅ **标普500数据库集成完成** - 连接Neon PostgreSQL数据库
+- ✅ **外部详情页统一跳转** - 所有股票都跳转到外部增强版详情页
+- ✅ **40+标普500股票数据** - 覆盖主要行业和公司
+- ✅ **参数传递机制** - 自动传递股票代码到外部页面
+- ✅ **热力图功能完整** - 支持全景视图和行业筛选
+- ✅ **响应式设计** - 适配各种屏幕尺寸
+- ✅ **集成测试页面** - 提供完整的功能验证
+- 🔄 **数据库优化中** - 性能和数据完整性持续改进
 
 ---
 
-**🎯 当前状态：外部链接集成完成 ✅**
+**🎯 当前状态：标普500数据库集成完成 ✅**
 
-点击苹果股票，体验从热力图到外部详情页的无缝对接！
+点击任意股票，体验从热力图到外部详情页的无缝对接！

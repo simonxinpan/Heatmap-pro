@@ -1,9 +1,14 @@
 import { Pool } from 'pg';
+import dotenv from 'dotenv';
 
+// 加载环境变量
+dotenv.config();
+
+// 数据库连接配置
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
-        rejectUnauthorized: false 
+        rejectUnauthorized: false
     }
 });
 

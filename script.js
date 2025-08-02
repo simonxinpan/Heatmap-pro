@@ -52,56 +52,63 @@ async function renderHomePage(sectorName = null) {
             marketData = await res.json();
         } catch (apiError) {
             console.log('API不可用，使用模拟数据进行演示');
-            // 使用模拟数据，重点展示苹果股票
+            // 使用标普500主要股票的模拟数据
             marketData = [
-                {
-                    ticker: 'AAPL',
-                    name_zh: '苹果公司',
-                    sector_zh: '科技',
-                    market_cap: 2450000,
-                    change_percent: 1.69,
-                    logo: 'https://logo.clearbit.com/apple.com'
-                },
-                {
-                    ticker: 'MSFT',
-                    name_zh: '微软',
-                    sector_zh: '科技',
-                    market_cap: 2200000,
-                    change_percent: 0.85,
-                    logo: 'https://logo.clearbit.com/microsoft.com'
-                },
-                {
-                    ticker: 'GOOGL',
-                    name_zh: '谷歌',
-                    sector_zh: '科技',
-                    market_cap: 1500000,
-                    change_percent: -0.42,
-                    logo: 'https://logo.clearbit.com/google.com'
-                },
-                {
-                    ticker: 'AMZN',
-                    name_zh: '亚马逊',
-                    sector_zh: '消费',
-                    market_cap: 1200000,
-                    change_percent: 2.15,
-                    logo: 'https://logo.clearbit.com/amazon.com'
-                },
-                {
-                    ticker: 'TSLA',
-                    name_zh: '特斯拉',
-                    sector_zh: '汽车',
-                    market_cap: 800000,
-                    change_percent: -1.23,
-                    logo: 'https://logo.clearbit.com/tesla.com'
-                },
-                {
-                    ticker: 'NVDA',
-                    name_zh: '英伟达',
-                    sector_zh: '科技',
-                    market_cap: 900000,
-                    change_percent: 3.45,
-                    logo: 'https://logo.clearbit.com/nvidia.com'
-                }
+                // 科技股
+                { ticker: 'AAPL', name_zh: '苹果公司', sector_zh: '科技', market_cap: 2450000, change_percent: 1.69, logo: 'https://logo.clearbit.com/apple.com' },
+                { ticker: 'MSFT', name_zh: '微软', sector_zh: '科技', market_cap: 2200000, change_percent: 0.85, logo: 'https://logo.clearbit.com/microsoft.com' },
+                { ticker: 'GOOGL', name_zh: '谷歌', sector_zh: '科技', market_cap: 1500000, change_percent: -0.42, logo: 'https://logo.clearbit.com/google.com' },
+                { ticker: 'NVDA', name_zh: '英伟达', sector_zh: '科技', market_cap: 900000, change_percent: 3.45, logo: 'https://logo.clearbit.com/nvidia.com' },
+                { ticker: 'META', name_zh: 'Meta平台', sector_zh: '科技', market_cap: 750000, change_percent: 1.87, logo: 'https://logo.clearbit.com/meta.com' },
+                { ticker: 'NFLX', name_zh: '奈飞', sector_zh: '科技', market_cap: 180000, change_percent: 2.34, logo: 'https://logo.clearbit.com/netflix.com' },
+                { ticker: 'ADBE', name_zh: '奥多比', sector_zh: '科技', market_cap: 220000, change_percent: 1.12, logo: 'https://logo.clearbit.com/adobe.com' },
+                { ticker: 'CRM', name_zh: '赛富时', sector_zh: '科技', market_cap: 190000, change_percent: 0.78, logo: 'https://logo.clearbit.com/salesforce.com' },
+                
+                // 消费股
+                { ticker: 'AMZN', name_zh: '亚马逊', sector_zh: '消费', market_cap: 1200000, change_percent: 2.15, logo: 'https://logo.clearbit.com/amazon.com' },
+                { ticker: 'TSLA', name_zh: '特斯拉', sector_zh: '消费', market_cap: 800000, change_percent: -1.23, logo: 'https://logo.clearbit.com/tesla.com' },
+                { ticker: 'HD', name_zh: '家得宝', sector_zh: '消费', market_cap: 320000, change_percent: 1.45, logo: 'https://logo.clearbit.com/homedepot.com' },
+                { ticker: 'MCD', name_zh: '麦当劳', sector_zh: '消费', market_cap: 210000, change_percent: 0.67, logo: 'https://logo.clearbit.com/mcdonalds.com' },
+                { ticker: 'NKE', name_zh: '耐克', sector_zh: '消费', market_cap: 160000, change_percent: -0.89, logo: 'https://logo.clearbit.com/nike.com' },
+                { ticker: 'SBUX', name_zh: '星巴克', sector_zh: '消费', market_cap: 110000, change_percent: 1.23, logo: 'https://logo.clearbit.com/starbucks.com' },
+                
+                // 金融股
+                { ticker: 'BRK.B', name_zh: '伯克希尔', sector_zh: '金融', market_cap: 700000, change_percent: 0.45, logo: 'https://logo.clearbit.com/berkshirehathaway.com' },
+                { ticker: 'JPM', name_zh: '摩根大通', sector_zh: '金融', market_cap: 450000, change_percent: 1.34, logo: 'https://logo.clearbit.com/jpmorganchase.com' },
+                { ticker: 'BAC', name_zh: '美国银行', sector_zh: '金融', market_cap: 280000, change_percent: 0.89, logo: 'https://logo.clearbit.com/bankofamerica.com' },
+                { ticker: 'WFC', name_zh: '富国银行', sector_zh: '金融', market_cap: 180000, change_percent: 1.12, logo: 'https://logo.clearbit.com/wellsfargo.com' },
+                { ticker: 'GS', name_zh: '高盛', sector_zh: '金融', market_cap: 120000, change_percent: 0.56, logo: 'https://logo.clearbit.com/goldmansachs.com' },
+                
+                // 医疗股
+                { ticker: 'UNH', name_zh: '联合健康', sector_zh: '医疗', market_cap: 450000, change_percent: 1.23, logo: 'https://logo.clearbit.com/unitedhealthgroup.com' },
+                { ticker: 'JNJ', name_zh: '强生', sector_zh: '医疗', market_cap: 420000, change_percent: 0.67, logo: 'https://logo.clearbit.com/jnj.com' },
+                { ticker: 'PFE', name_zh: '辉瑞', sector_zh: '医疗', market_cap: 180000, change_percent: -0.45, logo: 'https://logo.clearbit.com/pfizer.com' },
+                { ticker: 'ABBV', name_zh: '艾伯维', sector_zh: '医疗', market_cap: 280000, change_percent: 1.78, logo: 'https://logo.clearbit.com/abbvie.com' },
+                { ticker: 'TMO', name_zh: '赛默飞', sector_zh: '医疗', market_cap: 200000, change_percent: 0.89, logo: 'https://logo.clearbit.com/thermofisher.com' },
+                
+                // 工业股
+                { ticker: 'BA', name_zh: '波音', sector_zh: '工业', market_cap: 130000, change_percent: -2.34, logo: 'https://logo.clearbit.com/boeing.com' },
+                { ticker: 'CAT', name_zh: '卡特彼勒', sector_zh: '工业', market_cap: 140000, change_percent: 1.45, logo: 'https://logo.clearbit.com/caterpillar.com' },
+                { ticker: 'GE', name_zh: '通用电气', sector_zh: '工业', market_cap: 120000, change_percent: 2.12, logo: 'https://logo.clearbit.com/ge.com' },
+                { ticker: 'MMM', name_zh: '3M公司', sector_zh: '工业', market_cap: 90000, change_percent: 0.34, logo: 'https://logo.clearbit.com/3m.com' },
+                
+                // 能源股
+                { ticker: 'XOM', name_zh: '埃克森美孚', sector_zh: '能源', market_cap: 420000, change_percent: 2.67, logo: 'https://logo.clearbit.com/exxonmobil.com' },
+                { ticker: 'CVX', name_zh: '雪佛龙', sector_zh: '能源', market_cap: 280000, change_percent: 1.89, logo: 'https://logo.clearbit.com/chevron.com' },
+                { ticker: 'COP', name_zh: '康菲石油', sector_zh: '能源', market_cap: 140000, change_percent: 3.12, logo: 'https://logo.clearbit.com/conocophillips.com' },
+                
+                // 通信股
+                { ticker: 'VZ', name_zh: '威瑞森', sector_zh: '通信', market_cap: 170000, change_percent: 0.45, logo: 'https://logo.clearbit.com/verizon.com' },
+                { ticker: 'T', name_zh: 'AT&T', sector_zh: '通信', market_cap: 130000, change_percent: -0.23, logo: 'https://logo.clearbit.com/att.com' },
+                { ticker: 'CMCSA', name_zh: '康卡斯特', sector_zh: '通信', market_cap: 160000, change_percent: 1.12, logo: 'https://logo.clearbit.com/comcast.com' },
+                
+                // 公用事业
+                { ticker: 'NEE', name_zh: '新纪元能源', sector_zh: '公用事业', market_cap: 150000, change_percent: 0.78, logo: 'https://logo.clearbit.com/nexteraenergy.com' },
+                { ticker: 'DUK', name_zh: '杜克能源', sector_zh: '公用事业', market_cap: 80000, change_percent: 0.34, logo: 'https://logo.clearbit.com/duke-energy.com' },
+                
+                // 房地产
+                { ticker: 'AMT', name_zh: '美国电塔', sector_zh: '房地产', market_cap: 90000, change_percent: 1.23, logo: 'https://logo.clearbit.com/americantower.com' },
+                { ticker: 'PLD', name_zh: '普洛斯', sector_zh: '房地产', market_cap: 110000, change_percent: 0.89, logo: 'https://logo.clearbit.com/prologis.com' }
             ];
         }
         fullMarketData = marketData; // 更新全局数据缓存
@@ -348,11 +355,10 @@ async function renderStockDetailPage(symbol) {
     try {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
         
-        // 特殊处理：如果是苹果股票，直接跳转到外部增强版详情页
-        if (symbol === 'AAPL') {
-            window.location.href = 'https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/';
-            return;
-        }
+        // 所有股票都跳转到外部增强版详情页，传递股票代码参数
+        const externalDetailUrl = `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=${symbol}`;
+        window.location.href = externalDetailUrl;
+        return;
         
         const res = await fetch(`/api/stocks?ticker=${symbol}`);
         if (!res.ok) throw new Error('获取股票详情失败');
