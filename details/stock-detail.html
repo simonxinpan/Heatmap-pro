@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票详情页</title>
+    <link rel="stylesheet" href="stock-detail.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 加载指示器 -->
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>正在加载股票数据...</p>
+        </div>
+
+        <!-- 股票头部信息 -->
+        <header class="stock-header">
+            <div class="header-left">
+                <img id="stock-logo" class="stock-logo" src="" alt="公司Logo">
+                <div class="stock-info">
+                    <h1 id="stock-name">苹果公司</h1>
+                    <p id="stock-ticker">NASDAQ: AAPL</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="price-info">
+                    <span id="current-price" class="current-price">$150.00</span>
+                    <span id="price-change" class="price-change gain">+2.50 (+1.69%)</span>
+                </div>
+                <div class="market-status">
+                    <span id="market-status">市场开放</span>
+                    <span id="last-updated">最后更新: 16:00 EST</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 价格走势图 -->
+            <section class="chart-section">
+                <div class="chart-header">
+                    <h2>价格走势</h2>
+                    <div class="time-range-selector">
+                        <button class="time-btn active" data-range="1D">1日</button>
+                        <button class="time-btn" data-range="5D">5日</button>
+                        <button class="time-btn" data-range="1M">1月</button>
+                        <button class="time-btn" data-range="3M">3月</button>
+                        <button class="time-btn" data-range="1Y">1年</button>
+                        <button class="time-btn" data-range="5Y">5年</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="price-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- 关键指标 -->
+            <section class="key-metrics">
+                <h2>关键指标</h2>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">开盘价</span>
+                        <span id="open-price" class="metric-value">$148.50</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">最高价</span>
+                        <span id="high-price" class="metric-value">$152.00</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">最低价</span>
+                        <span id="low-price" class="metric-value">$147.80</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">成交量</span>
+                        <span id="volume" class="metric-value">45.2M</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">市值</span>
+                        <span id="market-cap" class="metric-value">$2.45T</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">市盈率</span>
+                        <span id="pe-ratio" class="metric-value">28.5</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">52周最高</span>
+                        <span id="week-52-high" class="metric-value">$182.94</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">52周最低</span>
+                        <span id="week-52-low" class="metric-value">$124.17</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 公司概况 -->
+            <section class="company-overview">
+                <h2>公司概况</h2>
+                <div class="overview-content">
+                    <div class="company-description">
+                        <p id="company-description">
+                            苹果公司是一家美国跨国科技公司，总部位于加利福尼亚州库比蒂诺。
+                            公司设计、开发和销售消费电子产品、计算机软件和在线服务。
+                        </p>
+                    </div>
+                    <div class="company-details">
+                        <div class="detail-item">
+                            <span class="detail-label">行业</span>
+                            <span id="industry" class="detail-value">消费电子</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">员工数</span>
+                            <span id="employees" class="detail-value">164,000</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">成立时间</span>
+                            <span id="founded" class="detail-value">1976年</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">总部</span>
+                            <span id="headquarters" class="detail-value">库比蒂诺, 加利福尼亚</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">官网</span>
+                            <a id="website" href="https://www.apple.com" target="_blank" class="detail-value link">www.apple.com</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 财务数据 -->
+            <section class="financial-data">
+                <h2>财务数据</h2>
+                <div class="financial-grid">
+                    <div class="financial-item">
+                        <span class="financial-label">营收 (TTM)</span>
+                        <span id="revenue" class="financial-value">$394.3B</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-label">净利润 (TTM)</span>
+                        <span id="net-income" class="financial-value">$99.8B</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-label">毛利率</span>
+                        <span id="gross-margin" class="financial-value">43.3%</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-label">净利润率</span>
+                        <span id="profit-margin" class="financial-value">25.3%</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-label">总资产</span>
+                        <span id="total-assets" class="financial-value">$352.8B</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-label">总负债</span>
+                        <span id="total-debt" class="financial-value">$123.9B</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 相关链接 -->
+            <section class="related-links">
+                <h2>相关链接</h2>
+                <div class="links-grid">
+                    <a href="#" class="link-item">
+                        <span class="link-title">投资者关系</span>
+                        <span class="link-description">查看财报和投资者信息</span>
+                    </a>
+                    <a href="#" class="link-item">
+                        <span class="link-title">新闻中心</span>
+                        <span class="link-description">最新公司新闻和公告</span>
+                    </a>
+                    <a href="#" class="link-item">
+                        <span class="link-title">SEC文件</span>
+                        <span class="link-description">监管文件和报告</span>
+                    </a>
+                    <a href="#" class="link-item">
+                        <span class="link-title">分析师报告</span>
+                        <span class="link-description">专业分析和评级</span>
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <!-- 返回按钮 -->
+        <div class="back-button">
+            <button onclick="window.history.back()" class="btn-back">
+                ← 返回热力图
+            </button>
+        </div>
+    </div>
+
+    <script src="stock-detail.js"></script>
+</body>
+</html>

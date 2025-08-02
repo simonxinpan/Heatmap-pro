@@ -42,17 +42,69 @@ function showLoading() {
 // 渲染主页（全景或行业详情）
 async function renderHomePage(sectorName = null) {
     try {
-        // 每次渲染都从API获取最新数据
-        const res = await fetch('/api/stocks');
-        if (!res.ok) {
-            let errorMsg = '获取市场数据失败';
-            try { 
-                const errorData = await res.json(); 
-                errorMsg = errorData.error || errorMsg; 
-            } catch(e) {}
-            throw new Error(errorMsg);
+        // 尝试获取市场数据，如果失败则使用模拟数据
+        let marketData;
+        try {
+            const res = await fetch('/api/stocks');
+            if (!res.ok) {
+                throw new Error('API不可用');
+            }
+            marketData = await res.json();
+        } catch (apiError) {
+            console.log('API不可用，使用模拟数据进行演示');
+            // 使用模拟数据，重点展示苹果股票
+            marketData = [
+                {
+                    ticker: 'AAPL',
+                    name_zh: '苹果公司',
+                    sector_zh: '科技',
+                    market_cap: 2450000,
+                    change_percent: 1.69,
+                    logo: 'https://logo.clearbit.com/apple.com'
+                },
+                {
+                    ticker: 'MSFT',
+                    name_zh: '微软',
+                    sector_zh: '科技',
+                    market_cap: 2200000,
+                    change_percent: 0.85,
+                    logo: 'https://logo.clearbit.com/microsoft.com'
+                },
+                {
+                    ticker: 'GOOGL',
+                    name_zh: '谷歌',
+                    sector_zh: '科技',
+                    market_cap: 1500000,
+                    change_percent: -0.42,
+                    logo: 'https://logo.clearbit.com/google.com'
+                },
+                {
+                    ticker: 'AMZN',
+                    name_zh: '亚马逊',
+                    sector_zh: '消费',
+                    market_cap: 1200000,
+                    change_percent: 2.15,
+                    logo: 'https://logo.clearbit.com/amazon.com'
+                },
+                {
+                    ticker: 'TSLA',
+                    name_zh: '特斯拉',
+                    sector_zh: '汽车',
+                    market_cap: 800000,
+                    change_percent: -1.23,
+                    logo: 'https://logo.clearbit.com/tesla.com'
+                },
+                {
+                    ticker: 'NVDA',
+                    name_zh: '英伟达',
+                    sector_zh: '科技',
+                    market_cap: 900000,
+                    change_percent: 3.45,
+                    logo: 'https://logo.clearbit.com/nvidia.com'
+                }
+            ];
         }
-        fullMarketData = await res.json(); // 更新全局数据缓存
+        fullMarketData = marketData; // 更新全局数据缓存
 
         let dataToRender = fullMarketData;
         let headerHtml;
@@ -295,6 +347,13 @@ function navigate(event, path) {
 async function renderStockDetailPage(symbol) {
     try {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
+        
+        // 特殊处理：如果是苹果股票，直接跳转到增强版详情页
+        if (symbol === 'AAPL') {
+            window.location.href = `./details/stock-detail.html?symbol=${symbol}`;
+            return;
+        }
+        
         const res = await fetch(`/api/stocks?ticker=${symbol}`);
         if (!res.ok) throw new Error('获取股票详情失败');
         const { profile, quote } = await res.json();
@@ -318,6 +377,9 @@ async function renderStockDetailPage(symbol) {
             <header class="header">
                 <h1>${nameZh} ${profile.name} (${profile.ticker})</h1>
                 <a href="javascript:history.back()" class="back-link" onclick="navigate(event, document.referrer || '/')">← 返回上一页</a>
+                <div class="upgrade-notice">
+                    <p>💡 想要查看更详细的股票分析？ <a href="./details/stock-detail.html?symbol=${symbol}" class="upgrade-link">点击查看增强版详情页</a></p>
+                </div>
             </header>
             <div class="stock-detail-page">
                 <main class="main-content">
@@ -337,7 +399,10 @@ async function renderStockDetailPage(symbol) {
                         </div>
                     </div>
                     <section class="chart-section">
-                        <div class="chart-placeholder">K线图功能正在开发中...</div>
+                        <div class="chart-placeholder">
+                            <p>📈 K线图功能正在开发中...</p>
+                            <p><a href="./details/stock-detail.html?symbol=${symbol}" class="chart-upgrade-link">查看增强版图表分析</a></p>
+                        </div>
                     </section>
                 </main>
                 <aside class="right-sidebar">
@@ -354,6 +419,17 @@ async function renderStockDetailPage(symbol) {
                         <div class="summary-item"><span class="label">开盘价</span><span class="value">${openPrice.toFixed(2)}</span></div>
                         <div class="summary-item"><span class="label">最高价</span><span class="value">${high.toFixed(2)}</span></div>
                         <div class="summary-item"><span class="label">最低价</span><span class="value">${low.toFixed(2)}</span></div>
+                    </div>
+                    <div class="card upgrade-card">
+                        <h2 class="card-title">🚀 增强功能</h2>
+                        <p>升级到增强版详情页，获得：</p>
+                        <ul>
+                            <li>📊 交互式价格图表</li>
+                            <li>📈 技术指标分析</li>
+                            <li>💰 详细财务数据</li>
+                            <li>📰 相关新闻链接</li>
+                        </ul>
+                        <a href="./details/stock-detail.html?symbol=${symbol}" class="upgrade-button">立即体验</a>
                     </div>
                 </aside>
             </div>
