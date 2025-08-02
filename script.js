@@ -348,9 +348,9 @@ async function renderStockDetailPage(symbol) {
     try {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
         
-        // 特殊处理：如果是苹果股票，直接跳转到增强版详情页
+        // 特殊处理：如果是苹果股票，直接跳转到外部增强版详情页
         if (symbol === 'AAPL') {
-            window.location.href = `./details/stock-detail.html?symbol=${symbol}`;
+            window.location.href = 'https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/';
             return;
         }
         

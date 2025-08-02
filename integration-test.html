@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>苹果股票集成测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .test-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .external-button {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .success {
+            border-left: 4px solid #2ecc71;
+        }
+        .info {
+            border-left: 4px solid #3498db;
+        }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍎 苹果股票集成测试</h1>
+        
+        <div class="test-section">
+            <h2>📊 热力图集成测试</h2>
+            <p>测试从热力图点击苹果股票是否正确跳转到外部详情页</p>
+            <a href="http://localhost:8000" class="test-button">访问热力图主页</a>
+            <div class="status info">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>点击上方按钮访问热力图</li>
+                    <li>找到并点击苹果股票(AAPL)方块</li>
+                    <li>验证是否跳转到外部详情页</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔗 直接链接测试</h2>
+            <p>直接测试外部苹果股票详情页链接</p>
+            <a href="https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/" class="test-button external-button" target="_blank">访问外部详情页</a>
+            <div class="status success">
+                <strong>目标链接：</strong>
+                <div class="code">https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>⚙️ 集成配置</h2>
+            <p>当前集成配置信息</p>
+            <div class="status info">
+                <strong>配置详情：</strong>
+                <ul>
+                    <li>✅ 苹果股票(AAPL)特殊处理已启用</li>
+                    <li>✅ 外部链接跳转已配置</li>
+                    <li>✅ 其他股票仍使用本地详情页</li>
+                    <li>✅ 升级提示功能保持不变</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 功能验证</h2>
+            <p>验证集成是否成功</p>
+            <div class="status success">
+                <strong>验证清单：</strong>
+                <ul>
+                    <li>□ 热力图正常显示苹果股票</li>
+                    <li>□ 点击苹果股票跳转到外部链接</li>
+                    <li>□ 外部详情页正常加载</li>
+                    <li>□ 其他股票功能不受影响</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 技术说明</h2>
+            <p>集成实现的技术细节</p>
+            <div class="status info">
+                <strong>实现方式：</strong>
+                <div class="code">
+// 在 script.js 的 renderStockDetailPage 函数中<br>
+if (symbol === 'AAPL') {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;window.location.href = 'https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return;<br>
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 自动检测功能
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🍎 苹果股票集成测试页面已加载');
+            console.log('📊 热力图地址: http://localhost:8000');
+            console.log('🔗 外部详情页: https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/');
+        });
+    </script>
+</body>
+</html>
