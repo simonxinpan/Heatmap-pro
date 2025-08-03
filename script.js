@@ -3,9 +3,52 @@
 const appContainer = document.getElementById('app-container');
 const tooltip = document.getElementById('tooltip');
 let fullMarketData = null; // 用于缓存从API获取的完整数据
+let dataRefreshInterval = null; // 数据刷新定时器
 
 document.addEventListener('DOMContentLoaded', router);
 window.addEventListener('popstate', router);
+
+// 启动数据自动刷新机制（每5分钟）
+function startDataRefresh() {
+    // 清除现有定时器
+    if (dataRefreshInterval) {
+        clearInterval(dataRefreshInterval);
+    }
+    
+    // 设置每5分钟刷新一次数据
+    dataRefreshInterval = setInterval(async () => {
+        console.log('🔄 自动刷新股票数据...');
+        try {
+            const res = await fetch('/api/stocks');
+            if (res.ok) {
+                const newData = await res.json();
+                fullMarketData = newData;
+                
+                // 如果当前在主页，重新渲染
+                const currentPath = window.location.pathname;
+                if (currentPath === '/' || currentPath.startsWith('/sector/')) {
+                    const sectorName = currentPath.startsWith('/sector/') ? 
+                        decodeURIComponent(currentPath.split('/sector/')[1]) : null;
+                    await renderHomePage(sectorName);
+                    console.log('✅ 数据刷新完成');
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ 数据刷新失败:', error.message);
+        }
+    }, 5 * 60 * 1000); // 5分钟 = 5 * 60 * 1000毫秒
+    
+    console.log('🚀 数据自动刷新已启动（每5分钟）');
+}
+
+// 停止数据刷新
+function stopDataRefresh() {
+    if (dataRefreshInterval) {
+        clearInterval(dataRefreshInterval);
+        dataRefreshInterval = null;
+        console.log('⏹️ 数据自动刷新已停止');
+    }
+}
 
 // 使用防抖技术优化resize事件，避免频繁重绘
 let resizeTimeout;
@@ -41,6 +84,10 @@ function showLoading() {
 
 // 渲染主页（全景或行业详情）
 async function renderHomePage(sectorName = null) {
+    // 启动数据自动刷新（仅在主页时）
+    if (!sectorName) {
+        startDataRefresh();
+    }
     try {
         // 尝试获取市场数据，如果失败则使用模拟数据
         let marketData;
