@@ -10,13 +10,15 @@
   - 在 Neon 控制台的 "Connection Details" 中获取
 
 ### 2. API 密钥
-- **FINNHUB_API_KEY**: Finnhub API 密钥
+- **POLYGON_API_KEY** (推荐): Polygon API 密钥
+  - 在 [Polygon.io](https://polygon.io) 注册并获取 API 密钥
+  - 免费版本每分钟限制 5 次请求，数据质量更高
+  - 系统将优先使用 Polygon API 获取实时股价数据
+
+- **FINNHUB_API_KEY** (备用): Finnhub API 密钥
   - 在 [Finnhub.io](https://finnhub.io) 注册并获取免费 API 密钥
   - 免费版本每分钟限制 60 次请求
-
-- **POLYGON_API_KEY** (可选): Polygon API 密钥
-  - 在 [Polygon.io](https://polygon.io) 注册并获取 API 密钥
-  - 如果配置了此密钥，系统将优先使用 Polygon API
+  - 当 Polygon API 不可用时作为备用数据源
 
 ### 3. 安全认证
 - **CRON_SECRET**: GitHub Actions 认证密钥
@@ -32,6 +34,7 @@
 
 ```
 NEON_DATABASE_URL=postgresql://username:password@host/database?sslmode=require
+POLYGON_API_KEY=your_polygon_api_key
 FINNHUB_API_KEY=your_finnhub_api_key
 CRON_SECRET=your-super-secret-cron-key-12345
 ```
@@ -89,8 +92,9 @@ CRON_SECRET=your-super-secret-cron-key-12345
 
 ## API 使用限制
 
-- **Finnhub 免费版**: 每分钟 60 次请求
-- **Polygon 免费版**: 每分钟 5 次请求
-- 系统已内置请求限制和重试机制
+- **Polygon 免费版**: 每分钟 5 次请求（推荐，数据质量更高）
+- **Finnhub 免费版**: 每分钟 60 次请求（备用数据源）
+- 系统已内置智能API选择、请求限制和重试机制
+- 优先使用Polygon API，失败时自动切换到Finnhub API
 
 配置完成后，您的热力图将自动获取最新的股票数据并实时更新颜色变化！

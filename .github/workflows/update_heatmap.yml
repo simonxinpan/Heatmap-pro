@@ -24,7 +24,7 @@ jobs:
           -X POST \
           -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
           -H "Content-Type: application/json" \
-          "https://heatmap-pro.vercel.app/api/update-stocks")
+          "https://heatmap-mq9xnw5rw-simon-pans-projects.vercel.app/api/update-stocks")
         
         # 分离响应体和状态码
         http_code=$(echo "$response" | tail -n1)
