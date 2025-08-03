@@ -1,0 +1,62 @@
+name: Update Heatmap Data
+
+on:
+  schedule:
+    # 每5分钟运行一次 (CRON语法: 分 时 日 月 周)
+    - cron: '*/5 * * * *'
+  # 允许手动触发，方便测试
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Call data refresh API
+        run: |
+          echo "🔄 触发热力图数据刷新..."
+          response=$(curl -X GET "https://heatmap-pro.vercel.app/api/refresh-data" \
+            -H "User-Agent: GitHub-Actions-Heatmap-Updater" \
+            -H "Accept: application/json" \
+            --silent --show-error --write-out "HTTPSTATUS:%{http_code}")
+          
+          http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+          body=$(echo $response | sed -e 's/HTTPSTATUS:.*//g')
+          
+          echo "📊 API响应状态: $http_code"
+          echo "📋 响应内容: $body"
+          
+          if [ $http_code -eq 200 ]; then
+            echo "✅ 数据刷新成功"
+          else
+            echo "❌ 数据刷新失败，状态码: $http_code"
+            exit 1
+          fi
+          
+      - name: Refresh cache
+        run: |
+          echo "🔄 刷新股票API缓存..."
+          curl -X GET "https://heatmap-pro.vercel.app/api/stocks?refresh=true" \
+            -H "User-Agent: GitHub-Actions" \
+            -H "Accept: application/json" \
+            --silent --show-error
+          echo "💾 缓存刷新完成"
+          
+      - name: Notify completion
+        run: |
+          echo "✅ 热力图数据更新任务完成"
+          echo "📊 股票数据已更新"
+          echo "🔄 Vercel缓存已刷新"
+          echo "⏰ 下次更新时间: $(date -d '+5 minutes' '+%Y-%m-%d %H:%M:%S')"

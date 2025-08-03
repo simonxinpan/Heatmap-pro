@@ -12,8 +12,24 @@ const pool = new Pool({
     }
 });
 
+// 缓存控制
+let cachedData = null;
+let lastCacheTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+
 export default async function handler(request, response) {
-     if (request.method !== 'GET') {
+    // 设置CORS头
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (request.method === 'OPTIONS') {
+        response.writeHead(200);
+        response.end();
+        return;
+    }
+    
+    if (request.method !== 'GET') {
         response.writeHead(405, { 'Content-Type': 'application/json' });
         response.end(JSON.stringify({ message: 'Method Not Allowed' }));
         return;
@@ -22,6 +38,9 @@ export default async function handler(request, response) {
     // 股票详情页逻辑保持不变
     const { searchParams } = new URL(request.url, `https://${request.headers.host}`);
     const ticker = searchParams.get('ticker');
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    const currentTime = Date.now();
+    
     if (ticker) {
         try {
             const data = await fetchSingleStockData(pool, ticker);
@@ -34,6 +53,20 @@ export default async function handler(request, response) {
             response.end(JSON.stringify({ error: 'Failed to fetch stock detail.' }));
             return;
         }
+    }
+    
+    // 检查是否强制刷新缓存
+    if (forceRefresh || (currentTime - lastCacheTime > CACHE_DURATION)) {
+        cachedData = null;
+        console.log('🔄 缓存已清除，将获取最新数据');
+    }
+    
+    // 如果有缓存且未过期，直接返回缓存数据
+    if (cachedData && !forceRefresh && (currentTime - lastCacheTime <= CACHE_DURATION)) {
+        console.log('📦 返回缓存数据');
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(cachedData));
+        return;
     }
 
     // ===================================================================
@@ -51,6 +84,12 @@ export default async function handler(request, response) {
         `);
         
         console.log(`[PG] Successfully returned ${rows ? rows.length : 0} stocks for heatmap, sorted by market cap.`);
+        
+        // 更新缓存
+        cachedData = rows || [];
+        lastCacheTime = currentTime;
+        console.log('💾 数据已缓存');
+        
         response.writeHead(200, { 'Content-Type': 'application/json' });
         response.end(JSON.stringify(rows || []));
         return;
