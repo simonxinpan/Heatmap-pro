@@ -14,7 +14,7 @@
 
 ### 2. 苹果股票外部链接集成 🔗
 - ✅ 点击苹果股票(AAPL)自动跳转到外部增强版详情页
-- ✅ 无缝对接到 `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/`
+- ✅ 无缝对接到 `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/`
 - ✅ 其他股票显示基础详情页，并提供升级提示
 
 ### 3. 增强版个股详情页
@@ -174,14 +174,14 @@ Heatmap-pro/
 - **数据结构**: 包含中文名称、行业分类、市值、涨跌幅等完整信息
 
 ### 外部详情页统一跳转
-- **目标链接**: `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol={TICKER}`
+- **目标链接**: `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol={TICKER}`
 - **覆盖范围**: 所有股票都跳转到外部增强版详情页
 - **参数传递**: 自动传递股票代码(symbol)参数
 
 ### 技术实现
 ```javascript
 // 所有股票都跳转到外部增强版详情页，传递股票代码参数
-const externalDetailUrl = `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=${symbol}`;
+const externalDetailUrl = `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol=${symbol}`;
 window.location.href = externalDetailUrl;
 ```
 

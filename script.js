@@ -326,7 +326,7 @@ function createStockElement(stock, width, height) {
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
     // 直接跳转到外部详情页，传递股票代码参数
-    stockLink.href = `https://stock-details-final-e88goq2r8-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
+    stockLink.href = `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
     stockLink.target = '_blank'; // 在新标签页打开
     // 移除内部路由导航，直接使用外部链接
     stockLink.style.width = `${width}px`; stockLink.style.height = `${height}px`;
@@ -405,7 +405,7 @@ async function renderStockDetailPage(symbol) {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
         
         // 所有股票都跳转到外部增强版详情页，传递股票代码参数
-        const externalDetailUrl = `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol=${symbol}`;
+        const externalDetailUrl = `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol=${symbol}`;
         window.location.href = externalDetailUrl;
         return;
         
