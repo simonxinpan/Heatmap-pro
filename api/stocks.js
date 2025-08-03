@@ -76,7 +76,7 @@ export default async function handler(request, response) {
     try {
         console.log("📊 Fetching heatmap data from Neon database...");
         
-        // 从数据库读取包含最新价格的股票数据
+        // 从数据库读取股票数据（只查询现有字段）
         const { rows } = await pool.query(`
             SELECT 
                 ticker,
@@ -84,10 +84,7 @@ export default async function handler(request, response) {
                 sector_zh,
                 market_cap,
                 COALESCE(change_percent, 0) as change_percent,
-                logo,
-                last_price,
-                change_amount,
-                last_updated
+                logo
             FROM stocks
             ORDER BY market_cap DESC
         `);
