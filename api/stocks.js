@@ -70,34 +70,48 @@ export default async function handler(request, response) {
     }
 
     // ===================================================================
-    // ================== 这是我们最核心的逻辑修改 ==================
+    // ================== 优化后的数据读取器逻辑 ==================
     // ===================================================================
-    // 热力图主页逻辑
+    // 热力图主页逻辑 - 直接从Neon数据库读取已更新的数据
     try {
-        console.log("[PG] Fetching all heatmap data from 'stocks' table, ORDERED BY MARKET CAP...");
+        console.log("📊 Fetching heatmap data from Neon database...");
         
-        // 在SQL查询中直接加入 ORDER BY market_cap DESC
+        // 从数据库读取包含最新价格的股票数据
         const { rows } = await pool.query(`
-            SELECT ticker, name_zh, sector_zh, market_cap, change_percent, logo 
+            SELECT 
+                ticker,
+                name_zh,
+                sector_zh,
+                market_cap,
+                COALESCE(change_percent, 0) as change_percent,
+                logo,
+                last_price,
+                change_amount,
+                last_updated
             FROM stocks
             ORDER BY market_cap DESC
         `);
         
-        console.log(`[PG] Successfully returned ${rows ? rows.length : 0} stocks for heatmap, sorted by market cap.`);
+        console.log(`✅ Successfully returned ${rows ? rows.length : 0} stocks for heatmap`);
         
         // 更新缓存
         cachedData = rows || [];
         lastCacheTime = currentTime;
-        console.log('💾 数据已缓存');
+        console.log('💾 数据已缓存，缓存时长: 5分钟');
         
+        // 设置缓存头，允许浏览器缓存1分钟
+        response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
         response.writeHead(200, { 'Content-Type': 'application/json' });
         response.end(JSON.stringify(rows || []));
         return;
 
     } catch (error) {
-        console.error('[PG] Stocks API Error:', error.message, error.stack);
+        console.error('❌ Stocks API Error:', error.message, error.stack);
         response.writeHead(500, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify({ error: 'Failed to fetch stock data from database.' }));
+        response.end(JSON.stringify({ 
+            error: 'Failed to fetch stock data from database.',
+            timestamp: new Date().toISOString()
+        }));
         return;
     }
 }
