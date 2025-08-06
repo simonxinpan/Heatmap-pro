@@ -326,7 +326,7 @@ function createStockElement(stock, width, height) {
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
     // 直接跳转到外部详情页，传递股票代码参数
-    stockLink.href = `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
+    stockLink.href = `https://stock-details-final-17toinf1z-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
     stockLink.target = '_blank'; // 在新标签页打开
     // 移除内部路由导航，直接使用外部链接
     stockLink.style.width = `${width}px`; stockLink.style.height = `${height}px`;
