@@ -39,7 +39,7 @@ export default async function handler(request, response) {
         
         // *** 核心修复：只查询数据库中确定存在的列！ ***
         const { rows: companies } = await pool.query(
-            'SELECT ticker, name_zh, sector_zh FROM stocks ORDER BY ticker;'
+            'SELECT ticker, name_zh, sector_zh, market_cap FROM stocks ORDER BY ticker;'
         );
         
         if (companies.length === 0) {
@@ -56,6 +56,7 @@ export default async function handler(request, response) {
             ticker: company.ticker,
             name_zh: company.name_zh,
             sector_zh: company.sector_zh,
+            market_cap: company.market_cap || 0,
             // 从实时获取的 quotes 对象中提取涨跌幅
             change_percent: quotes[company.ticker]?.dp || 0,
         }));
