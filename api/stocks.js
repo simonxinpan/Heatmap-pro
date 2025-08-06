@@ -1,4 +1,4 @@
-// /api/stocks.js (最终修复版)
+// /api/stocks.js (最终修复版 - 解决数据库连接问题)
 import { Pool } from 'pg';
 
 const pool = new Pool({
