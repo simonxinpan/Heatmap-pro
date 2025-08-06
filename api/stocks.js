@@ -52,14 +52,23 @@ export default async function handler(request, response) {
         const quotes = await getQuotes(symbols, FINNHUB_API_KEY);
 
         // 3. 优雅地整合数据
-        const heatmapData = companies.map(company => ({
-            ticker: company.ticker,
-            name_zh: company.name_zh,
-            sector_zh: company.sector_zh,
-            market_cap: company.market_cap || 0,
-            // 从实时获取的 quotes 对象中提取涨跌幅
-            change_percent: quotes[company.ticker]?.dp || 0,
-        }));
+        const heatmapData = companies.map(company => {
+            const quote = quotes[company.ticker];
+            const changePercent = quote?.dp || 0;
+            
+            // 调试日志：检查前几个股票的数据
+            if (companies.indexOf(company) < 5) {
+                console.log(`Debug ${company.ticker}: quote=${JSON.stringify(quote)}, dp=${quote?.dp}`);
+            }
+            
+            return {
+                ticker: company.ticker,
+                name_zh: company.name_zh,
+                sector_zh: company.sector_zh,
+                market_cap: company.market_cap || 0,
+                change_percent: changePercent,
+            };
+        });
 
         console.log(`Returning ${heatmapData.length} stocks to the frontend.`);
         
