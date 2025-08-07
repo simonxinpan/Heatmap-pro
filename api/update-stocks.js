@@ -3,7 +3,7 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.NEON_DATABASE_URL,
     ssl: { rejectUnauthorized: false },
 });
 
@@ -39,9 +39,9 @@ async function getQuotes(symbols, apiKey) {
 export default async function handler(req, res) {
     // 安全校验，确保只有GitHub Action可以触发
     const authHeader = req.headers['authorization'];
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+    const expectedAuth = `Bearer ${process.env.UPDATE_API_SECRET}`;
     
-    if (!process.env.CRON_SECRET || authHeader !== expectedAuth) {
+    if (!process.env.UPDATE_API_SECRET || authHeader !== expectedAuth) {
         console.warn('Unauthorized update attempt:', authHeader);
         return res.status(401).json({ error: 'Unauthorized' });
     }
