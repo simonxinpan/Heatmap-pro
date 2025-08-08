@@ -104,20 +104,28 @@ async function renderHomePage(sectorName = null) {
                 throw new Error('API不可用');
             }
             const result = await res.json();
-            marketData = result.data || result; // 兼容新旧格式
             
-            // 显示缓存状态信息
-            if (result.meta) {
-                const { total, cached, updated, marketStatus, cacheMinutes, processingTime } = result.meta;
-                console.log(`📊 股票数据获取完成:`);
-                console.log(`   总数: ${total} | 缓存命中: ${cached} | API更新: ${updated}`);
-                console.log(`   市场状态: ${marketStatus} | 缓存策略: ${cacheMinutes}分钟`);
-                console.log(`   处理时间: ${processingTime}ms`);
-                
-                // 在页面上显示缓存状态
-                updateCacheStatus(result.meta);
-            } else {
+            // 新的 API 直接返回股票数组
+            if (Array.isArray(result)) {
+                marketData = result;
                 console.log(`✅ 获取到 ${marketData.length} 只股票数据`);
+            } else {
+                // 兼容旧格式
+                marketData = result.data || result;
+                
+                // 显示缓存状态信息
+                if (result.meta) {
+                    const { total, cached, updated, marketStatus, cacheMinutes, processingTime } = result.meta;
+                    console.log(`📊 股票数据获取完成:`);
+                    console.log(`   总数: ${total} | 缓存命中: ${cached} | API更新: ${updated}`);
+                    console.log(`   市场状态: ${marketStatus} | 缓存策略: ${cacheMinutes}分钟`);
+                    console.log(`   处理时间: ${processingTime}ms`);
+                    
+                    // 在页面上显示缓存状态
+                    updateCacheStatus(result.meta);
+                } else {
+                    console.log(`✅ 获取到 ${marketData.length} 只股票数据`);
+                }
             }
         } catch (apiError) {
             console.log('API不可用，使用模拟数据进行演示');
