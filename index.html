@@ -3,16 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票热力图-Pro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <title>S&P 500 Heatmap - Live</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
+    <style> [x-cloak] { display: none !important; } </style>
 </head>
-<body>
-    <div id="app-container"></div>
-    <div id="tooltip" class="tooltip"></div>
-    <script src="script.js"></script>
+<body class="bg-gray-900 text-white" x-data="heatmapApp()" x-init="init()">
+
+    <header class="p-4 text-center sticky top-0 bg-gray-900 bg-opacity-80 backdrop-blur-sm z-10">
+        <h1 class="text-3xl font-bold">S&P 500 市场热力图</h1>
+        <p class="text-sm text-gray-400" x-text="lastUpdated"></p>
+    </header>
+
+    <main class="container mx-auto p-4">
+        <div x-show="loading" class="text-center text-2xl animate-pulse">正在加载市场数据...</div>
+        <div x-show="error" class="bg-red-500 text-white p-4 rounded-lg" x-text="error"></div>
+        
+        <div x-show="!loading && !error" class="w-full h-[80vh]" x-cloak>
+            <canvas id="heatmapChart"></canvas>
+        </div>
+    </main>
+
+    <script>
+        function heatmapApp() {
+            return {
+                stocks: [],
+                loading: true,
+                error: null,
+                lastUpdated: '最后更新: 载入中...',
+                chart: null,
+
+                async init() {
+                    await this.loadHeatmapData();
+                    setInterval(() => this.loadHeatmapData(false), 300000);
+                },
+
+                async loadHeatmapData(isInitialLoad = true) {
+                    if (isInitialLoad) this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch('/api/stocks');
+                        if (!response.ok) throw new Error(`API responded with status ${response.status}`);
+                        this.stocks = await response.json();
+                        this.lastUpdated = `最后更新: ${new Date().toLocaleTimeString()}`;
+                        this.renderTreemap();
+                    } catch (error) {
+                        this.error = `错误: ${error.message}`;
+                    } finally {
+                        if (isInitialLoad) this.loading = false;
+                    }
+                },
+                
+                renderTreemap() {
+                    if (this.chart) this.chart.destroy();
+                    const ctx = document.getElementById('heatmapChart');
+                    if (!ctx || this.stocks.length === 0) return;
+
+                    const data = this.stocks.map(stock => ({
+                        v: Math.abs(stock.change_percent || 0.01),
+                        c: stock.change_percent || 0,
+                        s: stock.sector_zh,
+                        data: stock // 把原始股票数据挂载上去
+                    }));
+
+                    this.chart = new Chart(ctx, {
+                        type: 'treemap',
+                        data: {
+                            datasets: [{
+                                tree: data,
+                                key: 'v',
+                                groups: ['s'],
+                                backgroundColor: (c) => {
+                                    const value = c.raw?.c || 0;
+                                    if (value > 0) return `rgba(16, 185, 129, ${0.4 + (Math.min(value, 3) / 3) * 0.6})`;
+                                    if (value < 0) return `rgba(239, 68, 68, ${0.4 + (Math.abs(Math.max(value, -3)) / 3) * 0.6})`;
+                                    return '#4B5563';
+                                },
+                                borderColor: 'rgba(255, 255, 255, 0.2)',
+                                borderWidth: 1,
+                                labels: {
+                                    display: true,
+                                    color: 'white',
+                                    font: { size: 12, weight: 'bold' },
+                                    formatter: (c) => c.raw?.data?.ticker
+                                }
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (c) => c[0]?.raw?.data?.name_zh,
+                                        label: (c) => {
+                                            const val = c.raw?.c || 0;
+                                            return `${(val > 0 ? '+' : '')}${val.toFixed(2)}%`;
+                                        }
+                                    }
+                                }
+                            },
+                            onClick: (e, elements) => {
+                                if (elements.length > 0) {
+                                    const stockData = elements[0].element.$context.raw.data;
+                                    window.open(`https://stock-details-final.vercel.app/?symbol=${stockData.ticker}`, '_blank');
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    </script>
 </body>
 </html>
