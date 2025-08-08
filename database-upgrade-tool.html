@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库升级工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .error-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .error-title {
+            color: #856404;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .solution-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .solution-title {
+            color: #0c5460;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .step {
+            margin: 25px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 数据库升级工具</h1>
+            <p>解决 "column last_price does not exist" 错误</p>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+        
+        <div class="error-box">
+            <div class="error-title">🚨 检测到的问题</div>
+            <p><strong>错误信息：</strong><code>column "last_price" does not exist</code></p>
+            <p><strong>根本原因：</strong>Neon数据库中的stocks表缺少缓存字段（last_price, change_amount, change_percent, last_updated）</p>
+            <p><strong>影响：</strong>API无法查询股票报价数据，前端只能显示静态模拟数据</p>
+        </div>
+        
+        <div class="solution-box">
+            <div class="solution-title">✅ 解决方案</div>
+            <p>执行ALTER TABLE命令，为stocks表添加缺失的字段。这是一个<strong>安全操作</strong>，不会影响现有数据。</p>
+        </div>
+        
+        <div class="step">
+            <div class="step-title">步骤1: 检查当前表结构</div>
+            <p>首先检查stocks表的当前结构，确认缺失的字段</p>
+            <button class="btn" onclick="checkTableStructure()">检查表结构</button>
+            <div class="result" id="checkResult" style="display:none"></div>
+        </div>
+        
+        <div class="step">
+            <div class="step-title">步骤2: 执行数据库升级</div>
+            <p>添加缺失的字段到stocks表</p>
+            <div class="code-block">
+ALTER TABLE stocks 
+ADD COLUMN IF NOT EXISTS last_price NUMERIC(10, 2),
+ADD COLUMN IF NOT EXISTS change_amount NUMERIC(10, 2),
+ADD COLUMN IF NOT EXISTS change_percent NUMERIC(8, 4),
+ADD COLUMN IF NOT EXISTS last_updated TIMESTAMPTZ;
+            </div>
+            <button class="btn btn-success" onclick="upgradeDatabase()" id="upgradeBtn" disabled>执行升级</button>
+            <div class="result" id="upgradeResult" style="display:none"></div>
+        </div>
+        
+        <div class="step">
+            <div class="step-title">步骤3: 初始化缓存数据</div>
+            <p>从Finnhub API获取最新报价并填充到新字段</p>
+            <button class="btn btn-success" onclick="initializeCache()" id="initBtn" disabled>初始化缓存</button>
+            <div class="result" id="initResult" style="display:none"></div>
+        </div>
+        
+        <div class="step">
+            <div class="step-title">步骤4: 验证修复结果</div>
+            <p>测试API是否能正常返回完整的股票数据</p>
+            <button class="btn" onclick="testAPI()" id="testBtn" disabled>测试API</button>
+            <div class="result" id="testResult" style="display:none"></div>
+        </div>
+        
+        <div class="step">
+            <div class="step-title">步骤5: 查看热力图</div>
+            <p>打开热力图页面，确认显示全部502只股票</p>
+            <button class="btn btn-success" onclick="openHeatmap()" id="openBtn" disabled>打开热力图</button>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 0;
+        
+        function updateProgress(step) {
+            currentStep = step;
+            const progress = (step / 5) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        function showResult(elementId, content, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.textContent = content;
+        }
+        
+        function enableButton(buttonId) {
+            document.getElementById(buttonId).disabled = false;
+        }
+        
+        async function checkTableStructure() {
+            showResult('checkResult', '正在检查表结构...', true);
+            
+            try {
+                const response = await fetch('/api/check-db-structure');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const missing = data.cacheFieldsStatus.missing;
+                    const existing = data.cacheFieldsStatus.existing;
+                    
+                    let message = `表结构检查完成\n`;
+                    message += `现有字段: ${existing.join(', ')}\n`;
+                    
+                    if (missing.length > 0) {
+                        message += `缺失字段: ${missing.join(', ')}\n`;
+                        message += `需要执行数据库升级`;
+                        enableButton('upgradeBtn');
+                    } else {
+                        message += `所有缓存字段都已存在，无需升级`;
+                        enableButton('initBtn');
+                        updateProgress(2);
+                    }
+                    
+                    showResult('checkResult', message, true);
+                    updateProgress(1);
+                } else {
+                    showResult('checkResult', `检查失败: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResult('checkResult', `网络错误: ${error.message}`, false);
+            }
+        }
+        
+        async function upgradeDatabase() {
+            showResult('upgradeResult', '正在执行数据库升级...', true);
+            
+            try {
+                const response = await fetch('/api/upgrade-database', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer upgrade-secret',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    let message = `数据库升级成功！\n`;
+                    message += `添加的字段: ${data.addedFields.map(f => f.column_name).join(', ')}\n`;
+                    message += `现在可以初始化缓存数据`;
+                    
+                    showResult('upgradeResult', message, true);
+                    enableButton('initBtn');
+                    updateProgress(2);
+                } else {
+                    showResult('upgradeResult', `升级失败: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResult('upgradeResult', `网络错误: ${error.message}`, false);
+            }
+        }
+        
+        async function initializeCache() {
+            showResult('initResult', '正在从Finnhub获取数据并初始化缓存...', true);
+            
+            try {
+                const response = await fetch('/api/update-stocks', {
+                    headers: {
+                        'Authorization': 'Bearer upgrade-secret'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let message = `缓存初始化成功！\n`;
+                    message += `更新股票数量: ${data.updated || data.updatedCount || 'N/A'}\n`;
+                    message += `总股票数量: ${data.total || 'N/A'}\n`;
+                    message += `现在可以测试API`;
+                    
+                    showResult('initResult', message, true);
+                    enableButton('testBtn');
+                    updateProgress(3);
+                } else {
+                    showResult('initResult', `初始化失败: ${data.message || data.error}`, false);
+                }
+            } catch (error) {
+                showResult('initResult', `网络错误: ${error.message}`, false);
+            }
+        }
+        
+        async function testAPI() {
+            showResult('testResult', '正在测试stocks API...', true);
+            
+            try {
+                const response = await fetch('/api/stocks');
+                const data = await response.json();
+                
+                if (response.ok && Array.isArray(data)) {
+                    const stocksWithPrice = data.filter(stock => stock.last_price > 0);
+                    const stocksWithChange = data.filter(stock => stock.change_percent !== 0);
+                    
+                    let message = `API测试成功！\n`;
+                    message += `总股票数量: ${data.length}\n`;
+                    message += `有价格数据: ${stocksWithPrice.length}\n`;
+                    message += `有涨跌幅数据: ${stocksWithChange.length}\n`;
+                    
+                    if (data.length >= 500 && stocksWithChange.length > 400) {
+                        message += `数据质量良好，可以查看热力图`;
+                        enableButton('openBtn');
+                        updateProgress(4);
+                    } else {
+                        message += `数据质量需要改善，建议重新初始化缓存`;
+                    }
+                    
+                    showResult('testResult', message, true);
+                } else {
+                    showResult('testResult', `API返回异常: ${JSON.stringify(data)}`, false);
+                }
+            } catch (error) {
+                showResult('testResult', `网络错误: ${error.message}`, false);
+            }
+        }
+        
+        function openHeatmap() {
+            updateProgress(5);
+            window.open('/', '_blank');
+            alert('🎉 数据库升级完成！\n\n热力图现在应该显示全部502只标普500股票，并且每个股票都有正确的涨跌幅颜色。\n\n如果还有问题，请检查GitHub Actions是否正常运行。');
+        }
+        
+        // 页面加载时自动开始检查
+        window.onload = function() {
+            setTimeout(checkTableStructure, 1000);
+        };
+    </script>
+</body>
+</html>
