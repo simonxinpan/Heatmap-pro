@@ -14,7 +14,7 @@ export default async function handler(request, response) {
         const result = await pool.query(`
             SELECT 
                 ticker, 
-                company_name, 
+                name_zh as company_name, 
                 market_cap,
                 last_price,
                 change_amount,
