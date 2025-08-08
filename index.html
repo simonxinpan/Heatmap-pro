@@ -1,27 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF--8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S&P 500 Heatmap - Live</title>
+    <title>股票热力图 - 实时数据</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 引入 Chart.js 和 Treemap 插件 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js" defer></script>
     <script src="script.js" defer></script>
 </head>
-<body class="bg-gray-900 text-white">
+<body>
     <header class="header">
-        <h1>S&P 500 市场热力图</h1>
+        <h1>股票市场热力图</h1>
         <p id="last-updated" class="last-updated">最后更新: 载入中...</p>
     </header>
-    <main class="container">
-        <div id="loading-indicator" class="loading-indicator">数据加载中...</div>
-        <div id="error-message" class="error-message" style="display: none;"></div>
-        <!-- ** 关键：用一个简单的 canvas 作为图表的画板 ** -->
-        <div id="chart-container" class="chart-container" style="display: none;">
-            <canvas id="heatmapChart"></canvas>
-        </div>
-    </main>
+    
+    <!-- 主容器 -->
+    <div id="app-container" class="app-container">
+        <!-- 热力图将在这里渲染 -->
+    </div>
+    
+    <!-- 悬停提示框 -->
+    <div id="tooltip" class="tooltip"></div>
 </body>
 </html>
