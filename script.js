@@ -19,10 +19,16 @@ function startDataRefresh() {
     dataRefreshInterval = setInterval(async () => {
         console.log('🔄 自动刷新股票数据...');
         try {
-            const res = await fetch('/api/stocks');
+            const res = await fetch('/api/stocks-cached');
             if (res.ok) {
-                const newData = await res.json();
+                const result = await res.json();
+                const newData = result.data || result; // 兼容新旧格式
                 fullMarketData = newData;
+                
+                // 显示缓存状态信息
+                if (result.meta) {
+                    updateCacheStatus(result.meta);
+                }
                 
                 // 如果当前在主页，重新渲染
                 const currentPath = window.location.pathname;
@@ -92,11 +98,27 @@ async function renderHomePage(sectorName = null) {
         // 尝试获取市场数据，如果失败则使用模拟数据
         let marketData;
         try {
-            const res = await fetch('/api/stocks');
+            console.log('🔄 正在获取股票数据...');
+            const res = await fetch('/api/stocks-cached');
             if (!res.ok) {
                 throw new Error('API不可用');
             }
-            marketData = await res.json();
+            const result = await res.json();
+            marketData = result.data || result; // 兼容新旧格式
+            
+            // 显示缓存状态信息
+            if (result.meta) {
+                const { total, cached, updated, marketStatus, cacheMinutes, processingTime } = result.meta;
+                console.log(`📊 股票数据获取完成:`);
+                console.log(`   总数: ${total} | 缓存命中: ${cached} | API更新: ${updated}`);
+                console.log(`   市场状态: ${marketStatus} | 缓存策略: ${cacheMinutes}分钟`);
+                console.log(`   处理时间: ${processingTime}ms`);
+                
+                // 在页面上显示缓存状态
+                updateCacheStatus(result.meta);
+            } else {
+                console.log(`✅ 获取到 ${marketData.length} 只股票数据`);
+            }
         } catch (apiError) {
             console.log('API不可用，使用模拟数据进行演示');
             // 使用标普500主要股票的模拟数据
@@ -170,7 +192,22 @@ async function renderHomePage(sectorName = null) {
             headerHtml = `<header class="header"><h1>${sectorName}</h1><a href="/" class="back-link" onclick="navigate(event, '/')">← 返回全景图</a></header>`;
         } else {
             // 全景图的标题
-            headerHtml = `<header class="header"><h1>股票热力图</h1><div class="data-source">美股市场 (BETA)</div></header>`;
+            headerHtml = `
+                <header class="header">
+                    <div class="header-content">
+                        <div class="header-main">
+                            <h1>股票热力图</h1>
+                            <div class="data-source">美股市场 (BETA)</div>
+                        </div>
+                        <div class="header-actions">
+                            <a href="/cache-admin.html" class="admin-link" title="缓存管理">
+                                <span class="admin-icon">⚙️</span>
+                                <span class="admin-text">缓存管理</span>
+                            </a>
+                        </div>
+                    </div>
+                </header>
+            `;
         }
         
         if (!dataToRender || dataToRender.length === 0) {
@@ -181,6 +218,7 @@ async function renderHomePage(sectorName = null) {
         // 渲染页面骨架
         appContainer.innerHTML = `
             ${headerHtml}
+            <div id="cache-status" class="cache-status" style="display: none;"></div>
             <main id="heatmap-container-final" class="heatmap-container-final"></main>
             <footer class="legend">
                 <span>-3%</span>
@@ -570,6 +608,31 @@ async function renderStockDetailPage(symbol) {
         console.error('Error rendering stock detail page:', error);
         appContainer.innerHTML = `<div class="loading-indicator">${error.message}</div>`;
     }
+}
+
+// 更新缓存状态显示
+function updateCacheStatus(meta) {
+    const statusEl = document.getElementById('cache-status');
+    if (!statusEl) return;
+    
+    const { total, cached, updated, marketStatus, cacheMinutes, processingTime } = meta;
+    const cacheHitRate = total > 0 ? ((cached / total) * 100).toFixed(1) : '0';
+    
+    statusEl.innerHTML = `
+        <div class="cache-info">
+            <span class="cache-stat">📊 ${total}只股票</span>
+            <span class="cache-stat">⚡ ${cacheHitRate}%缓存命中</span>
+            <span class="cache-stat">🔄 ${updated}只更新</span>
+            <span class="cache-stat">📈 ${marketStatus}</span>
+            <span class="cache-stat">⏱️ ${processingTime}ms</span>
+        </div>
+    `;
+    statusEl.style.display = 'block';
+    
+    // 3秒后自动隐藏
+    setTimeout(() => {
+        if (statusEl) statusEl.style.display = 'none';
+    }, 3000);
 }
 
 // 当窗口大小改变时，重新渲染当前的视图

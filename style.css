@@ -48,8 +48,56 @@ body {
     flex-shrink: 0; 
     background-color: var(--header-bg);
 }
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
 .header h1 { font-size: 20px; margin: 0; font-weight: 600; }
 .header .data-source { font-size: 12px; color: var(--text-secondary); }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.admin-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(41, 98, 255, 0.1);
+    color: var(--primary-blue);
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(41, 98, 255, 0.2);
+}
+
+.admin-link:hover {
+    background: rgba(41, 98, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(41, 98, 255, 0.2);
+}
+
+.admin-icon {
+    font-size: 0.9rem;
+}
+
+.admin-text {
+    font-size: 0.8rem;
+}
 
 a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px; font-weight: 500; }
 
@@ -265,6 +313,48 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     transform: translateY(-1px);
 }
 
+/* 缓存状态显示 */
+.cache-status {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.cache-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cache-stat {
+    display: flex;
+    align-items: center;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .upgrade-notice {
@@ -273,6 +363,39 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     
     .upgrade-notice p {
         font-size: 13px;
+    }
+    
+    .cache-status {
+        top: 60px;
+        right: 10px;
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+    
+    .cache-stat {
+        font-size: 0.7rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .header-main {
+        align-items: center;
+    }
+    
+    .admin-link {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .admin-text {
+        display: none;
+    }
+    
+    .admin-icon {
+        font-size: 1.1rem;
     }
 }
 .stock-detail-page { display: flex; gap: 20px; max-width: 1400px; margin: auto; width: 100%; flex-grow: 1; overflow-y: auto; flex-wrap: wrap; padding: 16px; box-sizing: border-box; }
