@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缓存系统部署状态检查</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            position: relative;
+        }
+        .step.success {
+            border-color: #4CAF50;
+            background: #f8fff8;
+        }
+        .step.error {
+            border-color: #f44336;
+            background: #fff8f8;
+        }
+        .step.pending {
+            border-color: #ff9800;
+            background: #fffaf0;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .step-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+        }
+        .status-success { background: #4CAF50; }
+        .status-error { background: #f44336; }
+        .status-pending { background: #ff9800; }
+        .status-unknown { background: #9e9e9e; }
+        
+        .btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #1976D2; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f0f0f0;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 缓存系统部署状态检查</h1>
+            <p>检查和部署标普500热力图缓存系统</p>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <div class="step" id="step1">
+            <div class="step-status status-unknown" id="status1">未检查</div>
+            <div class="step-title">步骤1: 检查数据库表结构</div>
+            <p>验证stocks表是否包含缓存字段 (last_price, change_amount, change_percent, last_updated)</p>
+            <button class="btn" onclick="checkDatabase()">检查数据库结构</button>
+            <div class="result" id="result1" style="display:none"></div>
+        </div>
+        
+        <div class="step" id="step2">
+            <div class="step-status status-unknown" id="status2">等待中</div>
+            <div class="step-title">步骤2: 升级数据库表结构</div>
+            <p>如果缺少缓存字段，执行数据库升级脚本</p>
+            <button class="btn" onclick="upgradeDatabase()" id="upgradeBtn" disabled>升级数据库</button>
+            <div class="result" id="result2" style="display:none"></div>
+        </div>
+        
+        <div class="step" id="step3">
+            <div class="step-status status-unknown" id="status3">等待中</div>
+            <div class="step-title">步骤3: 初始化缓存数据</div>
+            <p>从Finnhub API获取最新报价并填充到数据库缓存</p>
+            <button class="btn" onclick="initializeCache()" id="initBtn" disabled>初始化缓存</button>
+            <div class="result" id="result3" style="display:none"></div>
+        </div>
+        
+        <div class="step" id="step4">
+            <div class="step-status status-unknown" id="status4">等待中</div>
+            <div class="step-title">步骤4: 验证热力图API</div>
+            <p>测试前端API是否能正确返回带颜色的股票数据</p>
+            <button class="btn" onclick="testHeatmapAPI()" id="testBtn" disabled>测试热力图API</button>
+            <div class="result" id="result4" style="display:none"></div>
+        </div>
+        
+        <div class="step" id="step5">
+            <div class="step-status status-unknown" id="status5">等待中</div>
+            <div class="step-title">步骤5: 访问热力图页面</div>
+            <p>打开热力图页面，验证所有502只股票正确显示颜色</p>
+            <button class="btn" onclick="openHeatmap()" id="openBtn" disabled>打开热力图</button>
+            <div class="result" id="result5" style="display:none"></div>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 0;
+        
+        function updateProgress() {
+            const progress = (currentStep / 5) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        function setStepStatus(stepNum, status, message) {
+            const step = document.getElementById(`step${stepNum}`);
+            const statusEl = document.getElementById(`status${stepNum}`);
+            const resultEl = document.getElementById(`result${stepNum}`);
+            
+            step.className = `step ${status}`;
+            statusEl.className = `step-status status-${status}`;
+            statusEl.textContent = {
+                'success': '✅ 完成',
+                'error': '❌ 失败',
+                'pending': '⏳ 进行中',
+                'unknown': '未检查'
+            }[status];
+            
+            if (message) {
+                resultEl.style.display = 'block';
+                resultEl.textContent = message;
+            }
+            
+            if (status === 'success') {
+                currentStep = Math.max(currentStep, stepNum);
+                updateProgress();
+                enableNextStep(stepNum);
+            }
+        }
+        
+        function enableNextStep(stepNum) {
+            const nextButtons = {
+                1: 'upgradeBtn',
+                2: 'initBtn', 
+                3: 'testBtn',
+                4: 'openBtn'
+            };
+            
+            if (nextButtons[stepNum]) {
+                document.getElementById(nextButtons[stepNum]).disabled = false;
+            }
+        }
+        
+        async function checkDatabase() {
+            setStepStatus(1, 'pending', '正在检查数据库表结构...');
+            
+            try {
+                const response = await fetch('/api/check-db-structure');
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.upgradeRequired) {
+                        setStepStatus(1, 'error', `数据库需要升级\n缺失字段: ${data.cacheFieldsStatus.missing.join(', ')}\n现有字段: ${data.cacheFieldsStatus.existing.join(', ')}`);
+                    } else {
+                        setStepStatus(1, 'success', `数据库表结构完整\n包含所有缓存字段: ${data.cacheFieldsStatus.existing.join(', ')}`);
+                        // 如果数据库已经升级，跳过步骤2
+                        setStepStatus(2, 'success', '数据库已包含所有必需字段，无需升级');
+                    }
+                } else {
+                    setStepStatus(1, 'error', `检查失败: ${data.message}`);
+                }
+            } catch (error) {
+                setStepStatus(1, 'error', `网络错误: ${error.message}`);
+            }
+        }
+        
+        async function upgradeDatabase() {
+            setStepStatus(2, 'pending', '正在升级数据库表结构...');
+            
+            try {
+                const response = await fetch('/api/upgrade-database', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer upgrade-secret',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    setStepStatus(2, 'success', `数据库升级成功\n添加字段: ${data.addedFields.map(f => f.column_name).join(', ')}\n${data.nextStep}`);
+                } else {
+                    setStepStatus(2, 'error', `升级失败: ${data.message}`);
+                }
+            } catch (error) {
+                setStepStatus(2, 'error', `网络错误: ${error.message}`);
+            }
+        }
+        
+        async function initializeCache() {
+            setStepStatus(3, 'pending', '正在从Finnhub获取数据并初始化缓存...');
+            
+            try {
+                const response = await fetch('/api/update-stocks', {
+                    headers: {
+                        'Authorization': 'Bearer upgrade-secret'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    setStepStatus(3, 'success', `缓存初始化成功\n更新股票数量: ${data.updatedCount || 'N/A'}\n耗时: ${data.duration || 'N/A'}`);
+                } else {
+                    setStepStatus(3, 'error', `初始化失败: ${data.message || data.error}`);
+                }
+            } catch (error) {
+                setStepStatus(3, 'error', `网络错误: ${error.message}`);
+            }
+        }
+        
+        async function testHeatmapAPI() {
+            setStepStatus(4, 'pending', '正在测试热力图API...');
+            
+            try {
+                const response = await fetch('/api/stocks');
+                const data = await response.json();
+                
+                if (response.ok && Array.isArray(data)) {
+                    const stocksWithColor = data.filter(stock => stock.change_percent !== 0);
+                    const colorPercentage = (stocksWithColor.length / data.length * 100).toFixed(1);
+                    
+                    if (colorPercentage > 80) {
+                        setStepStatus(4, 'success', `API测试成功\n总股票数: ${data.length}\n有颜色股票: ${stocksWithColor.length} (${colorPercentage}%)`);
+                    } else {
+                        setStepStatus(4, 'error', `数据质量不佳\n总股票数: ${data.length}\n有颜色股票: ${stocksWithColor.length} (${colorPercentage}%)\n建议重新初始化缓存`);
+                    }
+                } else {
+                    setStepStatus(4, 'error', `API返回异常: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                setStepStatus(4, 'error', `网络错误: ${error.message}`);
+            }
+        }
+        
+        function openHeatmap() {
+            setStepStatus(5, 'success', '正在打开热力图页面...\n请检查所有股票是否正确显示颜色');
+            window.open('/', '_blank');
+        }
+        
+        // 页面加载时自动开始检查
+        window.onload = function() {
+            setTimeout(checkDatabase, 1000);
+        };
+    </script>
+</body>
+</html>

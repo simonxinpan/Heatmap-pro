@@ -13,17 +13,16 @@ export default async function handler(request, response) {
         // 直接从数据库获取包含报价的股票数据
         const result = await pool.query(`
             SELECT 
-                ticker, 
+                ticker as symbol, 
                 name_zh as company_name, 
                 market_cap,
-                last_price,
-                change_amount,
-                change_percent,
+                COALESCE(last_price, 0) as last_price,
+                COALESCE(change_amount, 0) as change_amount,
+                COALESCE(change_percent, 0) as change_percent,
                 last_updated
             FROM stocks 
-            WHERE last_price IS NOT NULL 
-            ORDER BY market_cap DESC
-        `);
+            ORDER BY market_cap DESC NULLS LAST
+        `);}]}
         
         const stocksData = result.rows;
         console.log(`从数据库获取到 ${stocksData.length} 只股票的缓存数据`);
