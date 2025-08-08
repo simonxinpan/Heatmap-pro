@@ -19,7 +19,7 @@ function startDataRefresh() {
     dataRefreshInterval = setInterval(async () => {
         console.log('🔄 自动刷新股票数据...');
         try {
-            const res = await fetch('/api/stocks-cached');
+            const res = await fetch('/api/stocks-simple');
             if (res.ok) {
                 const result = await res.json();
                 const newData = result.data || result; // 兼容新旧格式
@@ -99,7 +99,7 @@ async function renderHomePage(sectorName = null) {
         let marketData;
         try {
             console.log('🔄 正在获取股票数据...');
-            const res = await fetch('/api/stocks-cached');
+            const res = await fetch('/api/stocks-simple');
             if (!res.ok) {
                 throw new Error('API不可用');
             }
