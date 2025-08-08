@@ -6,13 +6,64 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });
 
-// 这是一个健壮的、带分批和延迟的 getQuotes 辅助函数
-async function getQuotes(symbols, apiKey) {
+// 使用Polygon API获取股票报价的辅助函数
+async function getQuotesFromPolygon(symbols, apiKey) {
+    const quotes = {};
+    const batchSize = 50; // Polygon支持更大的批次
+    
+    for (let i = 0; i < symbols.length; i += batchSize) {
+        const batch = symbols.slice(i, i + batchSize);
+        console.log(`Fetching Polygon quote batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(symbols.length / batchSize)}...`);
+        
+        // 使用Polygon的grouped daily API获取前一交易日数据
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const dateStr = yesterday.toISOString().split('T')[0];
+        
+        try {
+            const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${dateStr}?adjusted=true&apikey=${apiKey}`;
+            const response = await fetch(url);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.results) {
+                    data.results.forEach(result => {
+                        if (batch.includes(result.T)) {
+                            const changePercent = ((result.c - result.o) / result.o) * 100;
+                            quotes[result.T] = {
+                                c: result.c, // 收盘价
+                                o: result.o, // 开盘价
+                                h: result.h, // 最高价
+                                l: result.l, // 最低价
+                                v: result.v, // 成交量
+                                dp: changePercent, // 涨跌幅百分比
+                                d: result.c - result.o // 涨跌额
+                            };
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error(`Polygon API batch ${Math.floor(i / batchSize) + 1} failed:`, error.message);
+        }
+        
+        // 批次间延迟，避免API限制
+        if (i + batchSize < symbols.length) {
+            await new Promise(res => setTimeout(res, 200)); // Polygon限制较宽松
+        }
+    }
+    
+    console.log(`Polygon API返回了 ${Object.keys(quotes).length} 只股票的数据`);
+    return quotes;
+}
+
+// Finnhub API回退函数（保持原有逻辑）
+async function getQuotesFromFinnhub(symbols, apiKey) {
     const quotes = {};
     const batchSize = 25; // 每批25个
     for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
-        console.log(`Fetching quote batch ${Math.floor(i / batchSize) + 1}...`);
+        console.log(`Fetching Finnhub quote batch ${Math.floor(i / batchSize) + 1}...`);
         
         const promises = batch.map(symbol =>
             fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`)
@@ -28,9 +79,12 @@ async function getQuotes(symbols, apiKey) {
 }
 
 export default async function handler(request, response) {
+    const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
     const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
-    if (!FINNHUB_API_KEY) {
-        return response.status(500).json({ error: 'Finnhub API key is not configured.' });
+    
+    // 优先使用Polygon API，如果没有配置则回退到Finnhub
+    if (!POLYGON_API_KEY && !FINNHUB_API_KEY) {
+        return response.status(500).json({ error: 'Neither Polygon nor Finnhub API key is configured.' });
     }
 
     try {
@@ -49,7 +103,14 @@ export default async function handler(request, response) {
         const symbols = companies.map(r => r.ticker);
         
         // 2. 批量获取这些公司的实时报价
-        const quotes = await getQuotes(symbols, FINNHUB_API_KEY);
+        let quotes = {};
+        if (POLYGON_API_KEY) {
+            console.log('使用Polygon API获取股票数据...');
+            quotes = await getQuotesFromPolygon(symbols, POLYGON_API_KEY);
+        } else {
+            console.log('回退到Finnhub API获取股票数据...');
+            quotes = await getQuotesFromFinnhub(symbols, FINNHUB_API_KEY);
+        }
 
         // 3. 优雅地整合数据
         const heatmapData = companies.map(company => {
