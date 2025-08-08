@@ -14,9 +14,12 @@
   - 在 [Finnhub.io](https://finnhub.io) 注册并获取免费 API 密钥
   - 免费版本每分钟限制 60 次请求
 
-- **POLYGON_API_KEY** (可选): Polygon API 密钥
+- **POLYGON_API_KEY** (推荐): Polygon API 密钥
   - 在 [Polygon.io](https://polygon.io) 注册并获取 API 密钥
-  - 如果配置了此密钥，系统将优先使用 Polygon API
+  - **强烈推荐使用**：支持更高的请求频率和更好的性能
+  - 免费版本每分钟 5 次请求，付费版本无限制
+  - 使用grouped daily API获取前一交易日的完整市场数据
+  - 支持批量获取502只股票数据，显著提升加载速度
 
 ### 3. 安全认证
 - **CRON_SECRET**: GitHub Actions 认证密钥
