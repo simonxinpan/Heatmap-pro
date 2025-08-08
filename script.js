@@ -92,13 +92,27 @@ async function renderHomePage(sectorName = null) {
         // 尝试获取市场数据，如果失败则使用模拟数据
         let marketData;
         try {
+            console.log('🔄 尝试从API获取数据...');
             const res = await fetch('/api/stocks');
+            console.log('📡 API响应状态:', res.status, res.statusText);
+            
             if (!res.ok) {
-                throw new Error('API不可用');
+                throw new Error(`API响应错误: ${res.status} ${res.statusText}`);
             }
-            marketData = await res.json();
+            
+            const responseText = await res.text();
+            console.log('📄 API响应内容预览:', responseText.substring(0, 200));
+            
+            // 检查响应是否为JSON格式
+            if (!responseText.trim().startsWith('[') && !responseText.trim().startsWith('{')) {
+                throw new Error('API返回非JSON格式数据，可能需要认证');
+            }
+            
+            marketData = JSON.parse(responseText);
+            console.log('✅ 成功获取API数据，股票数量:', marketData.length);
         } catch (apiError) {
-            console.log('API不可用，使用模拟数据进行演示');
+            console.warn('⚠️ API获取失败:', apiError.message);
+            console.log('🔄 使用模拟数据进行演示');
             // 使用标普500主要股票的模拟数据
             marketData = [
                 // 科技股
@@ -159,6 +173,7 @@ async function renderHomePage(sectorName = null) {
             ];
         }
         fullMarketData = marketData; // 更新全局数据缓存
+        console.log('💾 缓存数据样本:', fullMarketData.slice(0, 2));
 
         let dataToRender = fullMarketData;
         let headerHtml;
@@ -168,12 +183,15 @@ async function renderHomePage(sectorName = null) {
             dataToRender = fullMarketData.filter(stock => stock.sector_zh === sectorName);
             document.title = `${sectorName} - 行业热力图`;
             headerHtml = `<header class="header"><h1>${sectorName}</h1><a href="/" class="back-link" onclick="navigate(event, '/')">← 返回全景图</a></header>`;
+            console.log(`🎯 行业筛选 [${sectorName}]:`, dataToRender.length, '只股票');
         } else {
             // 全景图的标题
             headerHtml = `<header class="header"><h1>股票热力图</h1><div class="data-source">美股市场 (BETA)</div></header>`;
+            console.log('🌍 全景模式:', dataToRender.length, '只股票');
         }
         
         if (!dataToRender || dataToRender.length === 0) {
+            console.error('❌ 没有可渲染的数据');
             appContainer.innerHTML = `<div class="loading-indicator">没有找到数据，后台可能正在更新，请稍后刷新...</div>`;
             return;
         }
@@ -203,8 +221,13 @@ async function renderHomePage(sectorName = null) {
         // 使用 requestAnimationFrame 确保在DOM渲染后执行treemap计算
         requestAnimationFrame(() => {
             const container = document.getElementById('heatmap-container-final');
+            console.log('🎨 准备渲染treemap, 容器:', container ? '✅找到' : '❌未找到');
             if (container) {
+                console.log('📐 容器尺寸:', container.clientWidth, 'x', container.clientHeight);
+                console.log('📊 渲染数据量:', dataToRender.length, '只股票');
                 generateTreemap(dataToRender, container, !sectorName);
+            } else {
+                console.error('❌ 未找到heatmap容器元素');
             }
         });
     } catch (error) {
@@ -215,9 +238,15 @@ async function renderHomePage(sectorName = null) {
 
 // 生成Treemap布局的核心函数
 function generateTreemap(data, container, groupIntoSectors = true) {
+    console.log('🚀 开始生成treemap, 分组模式:', groupIntoSectors ? '按行业' : '平铺');
     container.innerHTML = '';
     const { clientWidth: totalWidth, clientHeight: totalHeight } = container;
-    if (totalWidth === 0 || totalHeight === 0 || !data || data.length === 0) return;
+    console.log('📏 容器实际尺寸:', totalWidth, 'x', totalHeight);
+    
+    if (totalWidth === 0 || totalHeight === 0 || !data || data.length === 0) {
+        console.warn('⚠️ treemap生成条件不满足:', { totalWidth, totalHeight, dataLength: data?.length });
+        return;
+    }
 
     let itemsToLayout;
     if (groupIntoSectors) {
