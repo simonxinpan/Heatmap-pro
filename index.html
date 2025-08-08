@@ -12,7 +12,7 @@
 </head>
 <body class="bg-gray-900 text-white" x-data="heatmapApp()" x-init="init()">
 
-    <header class="p-4 text-center">
+    <header class="p-4 text-center sticky top-0 bg-gray-900 bg-opacity-80 backdrop-blur-sm z-10">
         <h1 class="text-3xl font-bold">S&P 500 市场热力图</h1>
         <p class="text-sm text-gray-400" x-text="lastUpdated"></p>
     </header>
@@ -21,7 +21,6 @@
         <div x-show="loading" class="text-center text-2xl animate-pulse">正在加载市场数据...</div>
         <div x-show="error" class="bg-red-500 text-white p-4 rounded-lg" x-text="error"></div>
         
-        <!-- *** 关键：用一个简单的 canvas 替换所有复杂的 template *** -->
         <div x-show="!loading && !error" class="w-full h-[80vh]" x-cloak>
             <canvas id="heatmapChart"></canvas>
         </div>
@@ -34,11 +33,21 @@
                 loading: true,
                 error: null,
                 lastUpdated: '最后更新: 载入中...',
-                chart: null,
+                chart: null, // *** 关键：我们将在这里存储图表实例 ***
+                refreshInterval: null,
 
                 async init() {
                     await this.loadHeatmapData();
-                    setInterval(() => this.loadHeatmapData(false), 300000); // 5分钟刷新
+                    
+                    // *** 关键修复：将定时器逻辑移到 init 中，并确保它只设置一次 ***
+                    if (this.refreshInterval) clearInterval(this.refreshInterval); // 先清除，以防万一
+                    this.refreshInterval = setInterval(() => {
+                        this.loadHeatmapData(false); // silent refresh
+                    }, 300000); // 5分钟
+                },
+                
+                cleanup() {
+                    clearInterval(this.refreshInterval);
                 },
 
                 async loadHeatmapData(isInitialLoad = true) {
@@ -49,7 +58,7 @@
                         if (!response.ok) throw new Error(`API responded with status ${response.status}`);
                         this.stocks = await response.json();
                         this.lastUpdated = `最后更新: ${new Date().toLocaleTimeString()}`;
-                        this.renderTreemap(); // 调用新的渲染函数
+                        this.renderTreemap();
                     } catch (error) {
                         this.error = `错误: ${error.message}`;
                     } finally {
@@ -57,59 +66,55 @@
                     }
                 },
                 
-                // *** 核心：使用 Treemap 插件进行高性能渲染 ***
                 renderTreemap() {
-                    if (this.chart) {
+                    const ctx = document.getElementById('heatmapChart');
+                    if (!ctx) return;
+
+                    // *** 关键修复：在创建新图表前，绝对地、明确地销毁旧图表 ***
+                    if (this.chart instanceof Chart) {
                         this.chart.destroy();
                     }
-                    const ctx = document.getElementById('heatmapChart');
-                    if (!ctx || this.stocks.length === 0) return;
+                    
+                    if (this.stocks.length === 0 && !this.loading) {
+                        const chartCtx = ctx.getContext('2d');
+                        chartCtx.clearRect(0, 0, ctx.width, ctx.height);
+                        chartCtx.textAlign = 'center';
+                        chartCtx.fillStyle = '#9ca3af';
+                        chartCtx.font = '16px sans-serif';
+                        chartCtx.fillText('No data to display', ctx.width / 2, ctx.height / 2);
+                        return;
+                    }
 
                     const data = this.stocks.map(stock => ({
-                        // Treemap 需要知道每个方块的“价值”（决定面积）和它的“颜色值”
-                        v: Math.abs(stock.quote.dp || 0), // 用涨跌幅绝对值作为面积权重
-                        c: stock.quote.dp || 0, // 用涨跌幅作为颜色值
-                        s: stock.sector_zh, // 用于分组
-                        data: stock // 把原始股票数据挂载上去，方便后面使用
+                        v: Math.abs(stock.quote.dp || 0.01), // 面积权重不能为0
+                        c: stock.quote.dp || 0,
+                        s: stock.sector_zh,
+                        data: stock
                     }));
 
+                    // *** 关键修复：将新的图表实例赋值给 this.chart ***
                     this.chart = new Chart(ctx, {
                         type: 'treemap',
-                        data: {
-                            datasets: [{
-                                tree: data,
-                                key: 'v', // 面积由 v 决定
-                                groups: ['s'], // 按板块 s 分组
-                                backgroundColor: (c) => {
-                                    const value = c.raw.c; // 获取颜色值 dp
-                                    if (value > 0) return `rgba(16, 185, 129, ${0.4 + (Math.min(value, 3) / 3) * 0.6})`;
-                                    if (value < 0) return `rgba(239, 68, 68, ${0.4 + (Math.abs(Math.max(value, -3)) / 3) * 0.6})`;
-                                    return '#4B5563';
-                                },
-                                borderColor: 'rgba(255, 255, 255, 0.2)',
-                                borderWidth: 1,
-                                labels: {
-                                    display: true,
-                                    color: 'white',
-                                    font: { size: 12, weight: 'bold' },
-                                    formatter(c) {
-                                        // 在方块上显示股票代码
-                                        return c.raw.data.ticker;
-                                    }
-                                }
-                            }]
-                        },
+                        data: { datasets: [{
+                            tree: data, key: 'v', groups: ['s'],
+                            backgroundColor: (c) => {
+                                const value = c.raw?.c || 0;
+                                if (value > 0) return `rgba(16, 185, 129, ${0.4 + (Math.min(value, 3) / 3) * 0.6})`;
+                                if (value < 0) return `rgba(239, 68, 68, ${0.4 + (Math.abs(Math.max(value, -3)) / 3) * 0.6})`;
+                                return '#4B5563';
+                            },
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            labels: { display: true, color: 'white', font: { size: 12, weight: 'bold' }, formatter: (c) => c.raw?.data?.ticker }
+                        }]},
                         options: {
                             plugins: {
                                 legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        title: (c) => c[0].raw.data.name_zh,
-                                        label: (c) => `${(c.raw.c > 0 ? '+' : '')}${c.raw.c.toFixed(2)}%`
-                                    }
-                                }
+                                tooltip: { callbacks: {
+                                    title: (c) => c[0]?.raw?.data?.name_zh,
+                                    label: (c) => `${(c.raw?.c > 0 ? '+' : '')}${(c.raw?.c || 0).toFixed(2)}%`
+                                }}
                             },
-                            // 点击方块时，跳转到详情页
                             onClick: (e, elements) => {
                                 if (elements.length > 0) {
                                     const stockData = elements[0].element.$context.raw.data;
