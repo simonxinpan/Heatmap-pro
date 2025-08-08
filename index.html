@@ -1,18 +1,27 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF--8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票热力图-Pro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>S&P 500 Heatmap - Live</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- 引入 Chart.js 和 Treemap 插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
-<body>
-    <div id="app-container"></div>
-    <div id="tooltip" class="tooltip"></div>
-    <script src="script.js"></script>
+<body class="bg-gray-900 text-white">
+    <header class="header">
+        <h1>S&P 500 市场热力图</h1>
+        <p id="last-updated" class="last-updated">最后更新: 载入中...</p>
+    </header>
+    <main class="container">
+        <div id="loading-indicator" class="loading-indicator">数据加载中...</div>
+        <div id="error-message" class="error-message" style="display: none;"></div>
+        <!-- ** 关键：用一个简单的 canvas 作为图表的画板 ** -->
+        <div id="chart-container" class="chart-container" style="display: none;">
+            <canvas id="heatmapChart"></canvas>
+        </div>
+    </main>
 </body>
 </html>
