@@ -22,14 +22,14 @@ export default async function handler(request, response) {
                 last_updated
             FROM stocks 
             ORDER BY market_cap DESC NULLS LAST
-        `);}]}
+        `);
         
         const stocksData = result.rows;
         console.log(`从数据库获取到 ${stocksData.length} 只股票的缓存数据`);
         
         // 格式化返回数据
         const heatmapData = stocksData.map(stock => ({
-            ticker: stock.ticker,
+            symbol: stock.symbol,
             company_name: stock.company_name,
             market_cap: stock.market_cap,
             last_price: parseFloat(stock.last_price) || 0,
