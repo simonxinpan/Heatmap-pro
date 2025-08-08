@@ -1,4 +1,4 @@
-// /api/stocks.js (最终修复版 - 解决数据库连接问题)
+// /api/stocks.js (最终的、最健壮的高性能版)
 import { Pool } from 'pg';
 
 const pool = new Pool({
@@ -6,77 +6,98 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });
 
-// 这是一个健壮的、带分批和延迟的 getQuotes 辅助函数
-async function getQuotes(symbols, apiKey) {
-    const quotes = {};
-    const batchSize = 25; // 每批25个
-    for (let i = 0; i < symbols.length; i += batchSize) {
-        const batch = symbols.slice(i, i + batchSize);
-        console.log(`Fetching quote batch ${Math.floor(i / batchSize) + 1}...`);
+// --- 辅助函数：从 Polygon 获取前一日市场快照 ---
+async function getPreviousDaySnapshot(apiKey) {
+    let date = new Date();
+    let polygonData = null;
+    
+    // 尝试回溯最多7天，以确保能找到最近的一个交易日数据
+    for (let i = 0; i < 7; i++) {
+        const tradeDate = date.toISOString().split('T')[0];
+        const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${tradeDate}?adjusted=true&apiKey=${apiKey}`;
         
-        const promises = batch.map(symbol =>
-            fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => { if (data && data.c !== 0) { quotes[symbol] = data; } })
-                .catch(e => console.error(`Failed to fetch quote for ${symbol}:`, e.message))
-        );
-        
-        await Promise.all(promises);
-        if (i + batchSize < symbols.length) await new Promise(res => setTimeout(res, 1500)); // 每批间隔1.5秒
-    }
-    return quotes;
-}
-
-export default async function handler(request, response) {
-    const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
-    if (!FINNHUB_API_KEY) {
-        return response.status(500).json({ error: 'Finnhub API key is not configured.' });
-    }
-
-    try {
-        // 1. 从 Neon 数据库获取列表
-        console.log("Fetching full company list from Neon DB...");
-        
-        // *** 核心修复：只查询数据库中确定存在的列！ ***
-        const { rows: companies } = await pool.query(
-            'SELECT ticker, name_zh, sector_zh, market_cap FROM stocks ORDER BY ticker;'
-        );
-        
-        if (companies.length === 0) {
-            return response.status(404).json({ error: "No companies found in the database." });
+        try {
+            console.log(`[Polygon] Attempting to fetch snapshot for date: ${tradeDate}`);
+            const response = await fetch(url, { signal: AbortSignal.timeout(8000) }); // 8秒超时
+            if (response.ok) {
+                polygonData = await response.json();
+                if (polygonData && polygonData.resultsCount > 0) {
+                    console.log(`[Polygon] Successfully found snapshot for date: ${tradeDate} with ${polygonData.resultsCount} results.`);
+                    break; // 找到数据，成功跳出循环
+                }
+            }
+        } catch (error) { 
+            console.error(`[Polygon] Failed to fetch for date ${tradeDate}:`, error.message); 
         }
         
-        const symbols = companies.map(r => r.ticker);
-        
-        // 2. 批量获取这些公司的实时报价
-        const quotes = await getQuotes(symbols, FINNHUB_API_KEY);
+        // 如果没找到，回退一天
+        date.setDate(date.getDate() - 1);
+    }
 
-        // 3. 优雅地整合数据
-        const heatmapData = companies.map(company => {
-            const quote = quotes[company.ticker];
-            const changePercent = quote?.dp || 0;
-            
-            // 调试日志：检查前几个股票的数据
-            if (companies.indexOf(company) < 5) {
-                console.log(`Debug ${company.ticker}: quote=${JSON.stringify(quote)}, dp=${quote?.dp}`);
+    const quotesMap = new Map();
+    if (polygonData && polygonData.results) {
+        polygonData.results.forEach(quote => {
+            if (quote.T && typeof quote.c === 'number' && typeof quote.o === 'number') {
+                 quotesMap.set(quote.T, { c: quote.c, o: quote.o });
             }
+        });
+    }
+    console.log(`[Polygon] Built snapshot map with ${quotesMap.size} tickers.`);
+    return quotesMap;
+}
+
+// --- API 主处理函数 ---
+export default async function handler(request, response) {
+    const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
+
+    if (!POLYGON_API_KEY) {
+        return response.status(500).json({ error: 'Polygon API key is not configured.' });
+    }
+
+    const client = await pool.connect(); // 获取一个数据库连接
+    try {
+        // 1. 从数据库获取我们需要的 502 个股票 ticker
+        console.log("Step 1: Fetching company list from Neon DB...");
+        const { rows: companies } = await client.query('SELECT ticker, name_zh, sector_zh, market_cap FROM stocks;');
+        console.log(`Step 1 Complete: Found ${companies.length} companies.`);
+        
+        // 2. 一次网络请求从 Polygon 获取全市场快照
+        console.log("Step 2: Fetching market snapshot from Polygon.io...");
+        const polygonSnapshot = await getPreviousDaySnapshot(POLYGON_API_KEY);
+        console.log("Step 2 Complete: Snapshot received.");
+        
+        // 3. 在后端进行数据整合
+        console.log("Step 3: Merging database info with snapshot data...");
+        const heatmapData = companies.map(company => {
+            const ticker = company.ticker;
+            const quote = polygonSnapshot.get(ticker);
             
+            let change_percent = 0;
+            // 使用前一日的开盘价和收盘价来计算涨跌幅
+            if (quote && quote.o > 0) {
+                change_percent = ((quote.c - quote.o) / quote.o) * 100;
+            }
+
             return {
-                ticker: company.ticker,
+                ticker: ticker,
                 name_zh: company.name_zh,
                 sector_zh: company.sector_zh,
-                market_cap: company.market_cap || 0,
-                change_percent: changePercent,
+                market_cap: company.market_cap, // 传递市值给前端
+                change_percent: change_percent,  // 直接返回扁平化的字段
             };
         });
-
-        console.log(`Returning ${heatmapData.length} stocks to the frontend.`);
         
-        response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+        console.log(`Step 3 Complete: Processed ${heatmapData.length} stocks for frontend.`);
+
+        response.setHeader('Cache-control', 's-maxage=900, stale-while-revalidate=1800'); // 缓存15分钟
         response.status(200).json(heatmapData);
 
     } catch (error) {
-        console.error("API /stocks.js Error:", error);
+        console.error("API /stocks.js CRITICAL ERROR:", error);
         response.status(500).json({ error: 'Failed to generate heatmap data.' });
+    } finally {
+        if (client) {
+            client.release(); // ** 关键：确保数据库连接被释放 **
+        }
     }
 }
