@@ -10,8 +10,11 @@ CREATE TABLE IF NOT EXISTS stocks (
     sector_zh VARCHAR(50),
     sector_en VARCHAR(50),
     market_cap BIGINT,
-    change_percent DECIMAL(5,2),
+    change_percent DECIMAL(8,4),
     current_price DECIMAL(10,2),
+    last_price DECIMAL(10,2),
+    change_amount DECIMAL(10,2),
+    last_updated TIMESTAMPTZ,
     logo TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

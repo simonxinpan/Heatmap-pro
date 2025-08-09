@@ -1,0 +1,45 @@
+name: Update Stock Market Data
+
+on:
+  schedule:
+    # 每个工作日的美股开盘前和收盘后各运行一次
+    # 美东时间 9:00 AM (北京时间 22:00) 和 4:30 PM (北京时间 5:30)
+    - cron: '0 14 * * 1-5'  # UTC 14:00 = 美东 9:00 AM (夏令时)
+    - cron: '30 21 * * 1-5' # UTC 21:30 = 美东 4:30 PM (夏令时)
+  
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  update-stocks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Update Stock Data
+      run: |
+        echo "🚀 Starting stock data update..."
+        
+        # 调用我们的更新API
+        response=$(curl -s -w "\n%{http_code}" \
+          -X POST \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -H "Content-Type: application/json" \
+          "https://heatmap-pro.vercel.app/api/update-stocks")
+        
+        # 分离响应体和状态码
+        http_code=$(echo "$response" | tail -n1)
+        response_body=$(echo "$response" | head -n -1)
+        
+        echo "📊 API Response: $response_body"
+        echo "🔢 HTTP Status: $http_code"
+        
+        # 检查是否成功
+        if [ "$http_code" -eq 200 ]; then
+          echo "✅ Stock data update completed successfully!"
+        else
+          echo "❌ Stock data update failed with status code: $http_code"
+          echo "Response: $response_body"
+          exit 1
+        fi
+        
+        echo "🎯 Heatmap data is now up-to-date!"

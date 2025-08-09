@@ -10,7 +10,7 @@ dotenv.config();
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
-const port = 8000;
+const port = process.env.PORT || 8000;
 
 // MIME类型映射
 const mimeTypes = {

@@ -106,4 +106,4 @@ npm start
 
 ---
 
-**💡 提示**：配置完成后，所有股票点击都将跳转到外部详情页 `https://stock-details-final-gmguhh0c4-simon-pans-projects.vercel.app/?symbol={TICKER}`，实现完整的股票分析功能。
+**💡 提示**：配置完成后，所有股票点击都将跳转到外部详情页 `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol={TICKER}`，实现完整的股票分析功能。

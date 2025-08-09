@@ -481,6 +481,18 @@ body {
     .chart-container {
         height: 300px;
     }
+    
+    .youtube-videos {
+        padding: 16px;
+    }
+    
+    .video-placeholder {
+        padding: 30px 15px;
+    }
+    
+    .video-icon {
+        font-size: 2.5rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -508,6 +520,109 @@ body {
     .current-price {
         font-size: 24px;
     }
+}
+
+/* YouTube 视频样式 */
+.youtube-videos {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+}
+
+.youtube-videos h2 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.video-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.youtube-embed {
+    background: #f8fafc;
+    border-radius: 8px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-placeholder {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.video-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.video-placeholder h3 {
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 1.25rem;
+}
+
+.video-placeholder p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.watch-button {
+    display: inline-block;
+    background: #ff0000;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.watch-button:hover {
+    background: #cc0000;
+}
+
+.video-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.video-link {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+
+.video-link:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.video-link .link-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--primary-color);
+}
+
+.video-link .link-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
 }
 
 /* 隐藏类 */
