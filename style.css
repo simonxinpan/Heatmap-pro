@@ -138,7 +138,7 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     position: absolute; 
     box-sizing: border-box; 
     text-decoration: none; 
-    padding: 2px;
+    padding: 1px;
     transition: transform 0.1s ease-out; 
 }
 .treemap-stock:hover { transform: scale(1.03); z-index: 10; }
@@ -157,6 +157,7 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     text-align: left; 
     cursor: pointer;
     border-radius: 2px;
+    border: 1px solid #ffffff;
     transition: box-shadow 0.1s ease-out;
 }
 
