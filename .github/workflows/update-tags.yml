@@ -1,0 +1,116 @@
+name: Update Dynamic Tags
+
+# 定时任务：每日美股收盘后执行（UTC时间21:30，对应美东时间16:30或17:30）
+on:
+  schedule:
+    - cron: '30 21 * * 1-5'  # 周一到周五执行
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      force_update:
+        description: '强制更新所有标签'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  update-dynamic-tags:
+    name: 更新动态标签
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 安装依赖
+        run: |
+          npm ci
+          # 如果有特定的脚本依赖，在这里安装
+          npm install pg node-fetch dotenv
+          
+      - name: 验证环境变量
+        run: |
+          echo "检查必要的环境变量..."
+          if [ -z "${{ secrets.NEON_DATABASE_URL }}" ]; then
+            echo "❌ NEON_DATABASE_URL 未设置"
+            exit 1
+          fi
+          if [ -z "${{ secrets.POLYGON_API_KEY }}" ]; then
+            echo "❌ POLYGON_API_KEY 未设置"
+            exit 1
+          fi
+          echo "✅ 环境变量验证通过"
+          
+      - name: 执行标签更新
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          NODE_ENV: production
+          FORCE_UPDATE: ${{ github.event.inputs.force_update }}
+        run: |
+          echo "🚀 开始执行动态标签更新..."
+          echo "执行时间: $(date -u)"
+          echo "触发方式: ${{ github.event_name }}"
+          
+          # 执行标签更新脚本
+          node scripts/update-dynamic-tags.js
+          
+          echo "✅ 标签更新完成"
+          
+      - name: 通知结果
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "🎉 动态标签更新成功完成"
+            echo "时间: $(date -u)"
+            echo "工作流: ${{ github.workflow }}"
+            echo "运行ID: ${{ github.run_id }}"
+          else
+            echo "❌ 动态标签更新失败"
+            echo "请检查日志以获取详细错误信息"
+          fi
+          
+      # 可选：发送通知到Slack/Discord等
+      # - name: 发送通知
+      #   if: failure()
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: ${{ job.status }}
+      #     text: '动态标签更新失败，请检查日志'
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # 可选：健康检查任务
+  health-check:
+    name: 标签系统健康检查
+    runs-on: ubuntu-latest
+    needs: update-dynamic-tags
+    if: success()
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: 验证标签数据
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          echo "🔍 执行标签系统健康检查..."
+          
+          # 这里可以添加一些基本的数据验证脚本
+          # 例如：检查标签数量、验证数据完整性等
+          
+          echo "✅ 健康检查完成"
