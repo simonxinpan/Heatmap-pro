@@ -5,7 +5,10 @@ const tooltip = document.getElementById('tooltip');
 let fullMarketData = null; // 用于缓存从API获取的完整数据
 let dataRefreshInterval = null; // 数据刷新定时器
 
-document.addEventListener('DOMContentLoaded', router);
+document.addEventListener('DOMContentLoaded', () => {
+    router();
+    initializeTagSystem();
+});
 window.addEventListener('popstate', router);
 
 // 启动数据自动刷新机制（每5分钟）
@@ -655,6 +658,549 @@ function rerenderCurrentView() {
             generateTreemap(dataToRender, container, false);
         } else {
             generateTreemap(fullMarketData, container, true);
+        }
+    }
+}
+
+// ==================== 标签系统功能 ====================
+
+// 标签系统数据缓存
+let tagSystemData = {
+    static: {},
+    dynamic: {},
+    lastUpdated: null
+};
+
+// 初始化标签系统
+function initializeTagSystem() {
+    const tagButton = document.getElementById('tagButton');
+    if (tagButton) {
+        tagButton.addEventListener('click', openTagModal);
+    }
+    
+    // 加载标签数据
+    loadTagData();
+}
+
+// 加载标签数据
+async function loadTagData() {
+    try {
+        const response = await fetch('/api/tags?action=list');
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                tagSystemData = {
+                    ...result.data,
+                    lastUpdated: new Date()
+                };
+                console.log('✅ 标签数据加载成功');
+            }
+        }
+    } catch (error) {
+        console.error('❌ 标签数据加载失败:', error);
+        // 使用模拟数据作为后备
+        tagSystemData = getMockTagData();
+    }
+}
+
+// 获取模拟标签数据
+function getMockTagData() {
+    return {
+        static: {
+            industries: {
+                '科技': ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'META'],
+                '金融': ['JPM', 'BAC', 'WFC', 'GS', 'MS'],
+                '医疗': ['JNJ', 'PFE', 'UNH', 'ABBV', 'MRK'],
+                '消费': ['AMZN', 'TSLA', 'HD', 'MCD', 'NKE'],
+                '能源': ['XOM', 'CVX', 'COP', 'EOG', 'SLB']
+            },
+            special: {
+                'FAANG': ['META', 'AAPL', 'AMZN', 'NFLX', 'GOOGL'],
+                '道琼斯成分股': ['AAPL', 'MSFT', 'UNH', 'GS', 'HD'],
+                '高分红股': ['T', 'VZ', 'XOM', 'CVX', 'JNJ'],
+                '新兴科技': ['NVDA', 'AMD', 'PLTR', 'SNOW', 'ZM']
+            }
+        },
+        dynamic: {
+            '高市值': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
+            '涨幅榜': ['NVDA', 'META', 'AAPL', 'MSFT', 'GOOGL'],
+            '跌幅榜': ['TSLA', 'NFLX', 'PYPL', 'ZOOM', 'ROKU'],
+            '高价股': ['BRK.A', 'NVR', 'AZO', 'MTD', 'MKTX'],
+            '低价股': ['F', 'GE', 'AAL', 'CCL', 'NCLH']
+        },
+        lastUpdated: new Date()
+    };
+}
+
+// 打开标签模态框
+function openTagModal() {
+    // 创建模态框HTML
+    const modalHTML = `
+        <div id="tagModal" class="tag-modal">
+            <div class="tag-modal-content">
+                <div class="tag-modal-header">
+                    <h2>🏷️ 智能标签系统</h2>
+                    <button class="tag-close-btn" onclick="closeTagModal()">&times;</button>
+                </div>
+                <div class="tag-modal-body">
+                    <div class="tag-search-container">
+                        <input type="text" id="tagSearchInput" placeholder="搜索标签..." class="tag-search-input">
+                        <button onclick="searchTags()" class="tag-search-btn">🔍</button>
+                    </div>
+                    
+                    <div class="tag-categories">
+                        <div class="tag-category">
+                            <h3>📊 行业分类</h3>
+                            <div id="industryTags" class="tag-list"></div>
+                        </div>
+                        
+                        <div class="tag-category">
+                            <h3>⭐ 特殊名单</h3>
+                            <div id="specialTags" class="tag-list"></div>
+                        </div>
+                        
+                        <div class="tag-category">
+                            <h3>📈 动态标签</h3>
+                            <div id="dynamicTags" class="tag-list"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="tagResults" class="tag-results" style="display: none;">
+                        <h3>标签详情</h3>
+                        <div id="tagStockList" class="tag-stock-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 添加到页面
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // 添加样式
+    addTagModalStyles();
+    
+    // 渲染标签
+    renderTags();
+    
+    // 设置搜索事件
+    const searchInput = document.getElementById('tagSearchInput');
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchTags();
+        }
+    });
+}
+
+// 关闭标签模态框
+function closeTagModal() {
+    const modal = document.getElementById('tagModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 添加标签模态框样式
+function addTagModalStyles() {
+    if (document.getElementById('tagModalStyles')) return;
+    
+    const styles = `
+        <style id="tagModalStyles">
+        .tag-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tag-modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .tag-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tag-modal-header h2 {
+            color: #fff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .tag-close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .tag-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(90deg);
+        }
+        
+        .tag-modal-body {
+            padding: 30px;
+        }
+        
+        .tag-search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .tag-search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .tag-search-input:focus {
+            border-color: #4CAF50;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .tag-search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .tag-search-btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .tag-search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .tag-category {
+            margin-bottom: 30px;
+        }
+        
+        .tag-category h3 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .tag-item {
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tag-item:hover {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .tag-results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tag-results h3 {
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        
+        .tag-stock-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .tag-stock-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tag-stock-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .tag-stock-ticker {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .tag-stock-name {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .tag-modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+            
+            .tag-modal-body {
+                padding: 20px;
+            }
+            
+            .tag-stock-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        </style>
+    `;
+    
+    document.head.insertAdjacentHTML('beforeend', styles);
+}
+
+// 渲染标签
+function renderTags() {
+    // 渲染行业标签
+    const industryContainer = document.getElementById('industryTags');
+    if (industryContainer && tagSystemData.static.industries) {
+        industryContainer.innerHTML = '';
+        Object.keys(tagSystemData.static.industries).forEach(industry => {
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.textContent = industry;
+            tagElement.onclick = () => showTagStocks(industry, 'static');
+            industryContainer.appendChild(tagElement);
+        });
+    }
+    
+    // 渲染特殊标签
+    const specialContainer = document.getElementById('specialTags');
+    if (specialContainer && tagSystemData.static.special) {
+        specialContainer.innerHTML = '';
+        Object.keys(tagSystemData.static.special).forEach(special => {
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.textContent = special;
+            tagElement.onclick = () => showTagStocks(special, 'static');
+            specialContainer.appendChild(tagElement);
+        });
+    }
+    
+    // 渲染动态标签
+    const dynamicContainer = document.getElementById('dynamicTags');
+    if (dynamicContainer && tagSystemData.dynamic) {
+        dynamicContainer.innerHTML = '';
+        Object.keys(tagSystemData.dynamic).forEach(dynamic => {
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.textContent = dynamic;
+            tagElement.onclick = () => showTagStocks(dynamic, 'dynamic');
+            dynamicContainer.appendChild(tagElement);
+        });
+    }
+}
+
+// 显示标签对应的股票
+async function showTagStocks(tagName, category) {
+    const resultsContainer = document.getElementById('tagResults');
+    const stockListContainer = document.getElementById('tagStockList');
+    
+    if (!resultsContainer || !stockListContainer) return;
+    
+    // 显示加载状态
+    resultsContainer.style.display = 'block';
+    stockListContainer.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">🔄 加载中...</div>';
+    
+    try {
+        // 尝试从API获取数据
+        const response = await fetch(`/api/tags?action=stocks&tag=${encodeURIComponent(tagName)}&category=${category}`);
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data.stocks) {
+                renderTagStocks(result.data.stocks, tagName);
+                return;
+            }
+        }
+        
+        // API失败时使用本地数据
+        let tickers = [];
+        if (category === 'static') {
+            // 从静态标签中查找
+            for (const [categoryName, tags] of Object.entries(tagSystemData.static)) {
+                if (tags[tagName]) {
+                    tickers = tags[tagName];
+                    break;
+                }
+            }
+        } else {
+            // 从动态标签中查找
+            tickers = tagSystemData.dynamic[tagName] || [];
+        }
+        
+        // 从当前市场数据中筛选
+        if (fullMarketData && tickers.length > 0) {
+            const stocks = fullMarketData.filter(stock => tickers.includes(stock.ticker));
+            renderTagStocks(stocks, tagName);
+        } else {
+            stockListContainer.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">❌ 暂无数据</div>';
+        }
+        
+    } catch (error) {
+        console.error('获取标签股票数据失败:', error);
+        stockListContainer.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">❌ 数据加载失败</div>';
+    }
+}
+
+// 渲染标签股票列表
+function renderTagStocks(stocks, tagName) {
+    const stockListContainer = document.getElementById('tagStockList');
+    if (!stockListContainer) return;
+    
+    if (!stocks || stocks.length === 0) {
+        stockListContainer.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">📭 该标签下暂无股票数据</div>';
+        return;
+    }
+    
+    stockListContainer.innerHTML = '';
+    
+    // 更新标题
+    const resultsTitle = document.querySelector('#tagResults h3');
+    if (resultsTitle) {
+        resultsTitle.textContent = `🏷️ ${tagName} (${stocks.length}只股票)`;
+    }
+    
+    stocks.forEach(stock => {
+        const stockElement = document.createElement('div');
+        stockElement.className = 'tag-stock-item';
+        stockElement.onclick = () => {
+            closeTagModal();
+            navigate(null, `/stock/${stock.ticker}`);
+        };
+        
+        const changePercent = stock.change_percent || 0;
+        const changeColor = changePercent >= 0 ? '#4CAF50' : '#f44336';
+        const changeSign = changePercent >= 0 ? '+' : '';
+        
+        stockElement.innerHTML = `
+            <div class="tag-stock-ticker">${stock.ticker}</div>
+            <div class="tag-stock-name">${stock.name_zh || stock.name_en || '未知'}</div>
+            <div style="color: ${changeColor}; font-size: 12px; margin-top: 4px;">
+                ${changeSign}${changePercent.toFixed(2)}%
+            </div>
+        `;
+        
+        stockListContainer.appendChild(stockElement);
+    });
+}
+
+// 搜索标签
+function searchTags() {
+    const searchInput = document.getElementById('tagSearchInput');
+    const query = searchInput.value.trim().toLowerCase();
+    
+    if (!query) {
+        renderTags(); // 重新显示所有标签
+        return;
+    }
+    
+    // 搜索匹配的标签
+    const allTags = {
+        ...tagSystemData.static.industries,
+        ...tagSystemData.static.special,
+        ...tagSystemData.dynamic
+    };
+    
+    const matchedTags = Object.keys(allTags).filter(tag => 
+        tag.toLowerCase().includes(query)
+    );
+    
+    if (matchedTags.length > 0) {
+        // 显示第一个匹配的标签的股票
+        const firstMatch = matchedTags[0];
+        let category = 'dynamic';
+        
+        // 确定标签类别
+        if (tagSystemData.static.industries[firstMatch]) {
+            category = 'static';
+        } else if (tagSystemData.static.special[firstMatch]) {
+            category = 'static';
+        }
+        
+        showTagStocks(firstMatch, category);
+    } else {
+        // 没有找到匹配的标签
+        const resultsContainer = document.getElementById('tagResults');
+        const stockListContainer = document.getElementById('tagStockList');
+        
+        if (resultsContainer && stockListContainer) {
+            resultsContainer.style.display = 'block';
+            stockListContainer.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">🔍 未找到匹配的标签</div>';
         }
     }
 }
