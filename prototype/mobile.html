@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能标签系统 - 移动端</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #2d3748;
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+
+        .mobile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-bar::placeholder {
+            color: #718096;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tag-categories {
+            margin-bottom: 30px;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .category-tab {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .category-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .mobile-tag-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .mobile-tag {
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            border-left: 5px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        .mobile-tag.stock-performance {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+
+        .mobile-tag.financial-performance {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+        }
+
+        .mobile-tag.industry-classification {
+            background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+        }
+
+        .mobile-tag.trend-ranking {
+            background: linear-gradient(135deg, #a16207 0%, #eab308 100%);
+        }
+
+        .mobile-tag.special-list {
+            background: linear-gradient(135deg, #581c87 0%, #9333ea 100%);
+        }
+
+        .mobile-tag.default {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        }
+
+        .mobile-tag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .mobile-tag:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        }
+
+        .mobile-tag:hover::before {
+            left: 100%;
+        }
+
+        .mobile-tag:active {
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        .mobile-tag.dynamic {
+            border-left-color: #f093fb;
+        }
+
+        .mobile-tag.performance {
+            border-left-color: #4facfe;
+        }
+
+        .mobile-tag.financial {
+            border-left-color: #43e97b;
+        }
+
+        .tag-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .tag-count {
+            font-size: 15px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .tag-trend {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .trend-up {
+            color: #68d391;
+        }
+
+        .trend-down {
+            color: #fc8181;
+        }
+
+        .tag-trend i {
+            font-size: 12px;
+        }
+
+        .hot-stocks {
+            margin-bottom: 30px;
+        }
+
+        .stock-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .stock-info {
+            flex: 1;
+        }
+
+        .stock-ticker {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        .stock-name {
+            color: #718096;
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
+        .stock-price-info {
+            text-align: right;
+        }
+
+        .stock-price {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        .stock-change {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .positive {
+            color: #38a169;
+        }
+
+        .negative {
+            color: #e53e3e;
+        }
+
+        .stock-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .mini-tag {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: #718096;
+            text-decoration: none;
+            font-size: 0.75rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-item i {
+            font-size: 1.2rem;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 99;
+        }
+
+        .floating-action:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 30px 20px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #718096;
+            cursor: pointer;
+        }
+
+        .filter-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .filter-option {
+            padding: 16px;
+            background: #f7fafc;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-option:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-tag {
+            height: 80px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-stock {
+            height: 100px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .pull-refresh {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .refresh-icon {
+            display: inline-block;
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .refreshing .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .demo-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #f56565;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-badge">
+        <i class="fas fa-mobile-alt"></i> 移动端原型
+    </div>
+
+    <header class="mobile-header">
+        <div class="header-top">
+            <div class="logo">
+                <i class="fas fa-tags"></i> 智能标签
+            </div>
+            <button class="menu-btn" onclick="openFilterModal()">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+        <input type="text" class="search-bar" placeholder="搜索股票或标签..." onkeyup="searchContent(this.value)">
+    </header>
+
+    <div class="container">
+        <div class="pull-refresh" id="pullRefresh">
+            <i class="fas fa-sync-alt refresh-icon"></i>
+            下拉刷新数据
+        </div>
+
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-value">502</div>
+                <div class="stat-label">总股票</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24</div>
+                <div class="stat-label">活跃标签</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">78</div>
+                <div class="stat-label">高ROE股票</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+2.1%</div>
+                <div class="stat-label">今日平均涨幅</div>
+            </div>
+        </div>
+
+        <div class="tag-categories">
+            <h2 class="section-title">
+                <i class="fas fa-tags"></i>
+                热门标签
+            </h2>
+            
+            <div class="category-tabs">
+                <div class="category-tab active" onclick="filterMobileTags('all')">全部</div>
+                <div class="category-tab" onclick="filterMobileTags('股市表现类')">📊 股市</div>
+                <div class="category-tab" onclick="filterMobileTags('财务表现类')">💰 财务</div>
+                <div class="category-tab" onclick="filterMobileTags('行业分类')">🏭 行业</div>
+                <div class="category-tab" onclick="filterMobileTags('趋势排位类')">📈 趋势</div>
+                <div class="category-tab" onclick="filterMobileTags('特殊名单类')">⭐ 名单</div>
+
+            </div>
+
+            <div class="mobile-tag-grid" id="mobileTagGrid">
+                <div class="mobile-tag industry-classification" data-category="行业分类" onclick="openTagDetail('科技股')">
+                    <div class="tag-name">🏭 科技股</div>
+                    <div class="tag-count">125只股票</div>
+                    <div class="tag-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        +1.8%
+                    </div>
+                </div>
+
+                <div class="mobile-tag financial-performance" data-category="财务表现类" onclick="openTagDetail('高ROE')">
+                    <div class="tag-name">💰 高ROE</div>
+                    <div class="tag-count">78只股票</div>
+                    <div class="tag-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        +2.3%
+                    </div>
+                </div>
+
+                <div class="mobile-tag stock-performance" data-category="股市表现类" onclick="openTagDetail('52周新高')">
+                    <div class="tag-name">📈 52周新高</div>
+                    <div class="tag-count">23只股票</div>
+                    <div class="tag-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        +4.5%
+                    </div>
+                </div>
+
+                <div class="mobile-tag stock-performance" data-category="股市表现类" onclick="openTagDetail('低市盈率')">
+                    <div class="tag-name">📈 低市盈率</div>
+                    <div class="tag-count">92只股票</div>
+                    <div class="tag-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        +1.2%
+                    </div>
+                </div>
+
+                <div class="mobile-tag special-list" data-category="特殊名单类" onclick="openTagDetail('标普500')">
+                    <div class="tag-name">⭐ 标普500</div>
+                    <div class="tag-count">500只股票</div>
+                    <div class="tag-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        +1.5%
+                    </div>
+                </div>
+
+                <div class="mobile-tag trend-ranking" data-category="趋势排位类" onclick="openTagDetail('近期强势')">
+                    <div class="tag-name">📊 近期强势</div>
+                    <div class="tag-count">45只股票</div>
+                    <div class="tag-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        +3.7%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hot-stocks">
+            <h2 class="section-title">
+                <i class="fas fa-fire"></i>
+                热门股票
+            </h2>
+            
+            <div id="stockList">
+                <div class="stock-card" onclick="openStockDetail('AAPL')">
+                    <div class="stock-header">
+                        <div class="stock-info">
+                            <div class="stock-ticker">AAPL</div>
+                            <div class="stock-name">苹果公司</div>
+                        </div>
+                        <div class="stock-price-info">
+                            <div class="stock-price">$150.25</div>
+                            <div class="stock-change positive">+2.34%</div>
+                        </div>
+                    </div>
+                    <div class="stock-tags">
+                        <span class="mini-tag">科技股</span>
+                        <span class="mini-tag">高ROE</span>
+                        <span class="mini-tag">标普500</span>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="openStockDetail('NVDA')">
+                    <div class="stock-header">
+                        <div class="stock-info">
+                            <div class="stock-ticker">NVDA</div>
+                            <div class="stock-name">英伟达</div>
+                        </div>
+                        <div class="stock-price-info">
+                            <div class="stock-price">$875.43</div>
+                            <div class="stock-change positive">+3.21%</div>
+                        </div>
+                    </div>
+                    <div class="stock-tags">
+                        <span class="mini-tag">科技股</span>
+                        <span class="mini-tag">52周新高</span>
+                        <span class="mini-tag">近期强势</span>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="openStockDetail('MSFT')">
+                    <div class="stock-header">
+                        <div class="stock-info">
+                            <div class="stock-ticker">MSFT</div>
+                            <div class="stock-name">微软公司</div>
+                        </div>
+                        <div class="stock-price-info">
+                            <div class="stock-price">$378.91</div>
+                            <div class="stock-change positive">+1.87%</div>
+                        </div>
+                    </div>
+                    <div class="stock-tags">
+                        <span class="mini-tag">科技股</span>
+                        <span class="mini-tag">高ROE</span>
+                        <span class="mini-tag">稳定增长</span>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="openStockDetail('TSLA')">
+                    <div class="stock-header">
+                        <div class="stock-info">
+                            <div class="stock-ticker">TSLA</div>
+                            <div class="stock-name">特斯拉</div>
+                        </div>
+                        <div class="stock-price-info">
+                            <div class="stock-price">$248.67</div>
+                            <div class="stock-change positive">+4.56%</div>
+                        </div>
+                    </div>
+                    <div class="stock-tags">
+                        <span class="mini-tag">科技股</span>
+                        <span class="mini-tag">高成交量</span>
+                        <span class="mini-tag">近期强势</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-action" onclick="showQuickActions()">
+        <i class="fas fa-plus"></i>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <i class="fas fa-home"></i>
+            首页
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-tags"></i>
+            标签
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-chart-area"></i>
+            热力图
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-star"></i>
+            收藏
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-user"></i>
+            我的
+        </a>
+    </nav>
+
+    <!-- 筛选模态框 -->
+    <div class="modal" id="filterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">筛选选项</h3>
+                <button class="close-btn" onclick="closeFilterModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="filter-options">
+                <div class="filter-option" onclick="applyFilter('sector')">
+                    <i class="fas fa-industry"></i>
+                    <div>按行业筛选</div>
+                </div>
+                <div class="filter-option" onclick="applyFilter('market_cap')">
+                    <i class="fas fa-chart-bar"></i>
+                    <div>按市值筛选</div>
+                </div>
+                <div class="filter-option" onclick="applyFilter('performance')">
+                    <i class="fas fa-trending-up"></i>
+                    <div>按表现筛选</div>
+                </div>
+                <div class="filter-option" onclick="applyFilter('dividend')">
+                    <i class="fas fa-coins"></i>
+                    <div>按股息筛选</div>
+                </div>
+                <div class="filter-option" onclick="applyFilter('volume')">
+                    <i class="fas fa-chart-line"></i>
+                    <div>按成交量筛选</div>
+                </div>
+                <div class="filter-option" onclick="applyFilter('custom')">
+                    <i class="fas fa-cog"></i>
+                    <div>自定义筛选</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRefreshing = false;
+        let startY = 0;
+        let currentY = 0;
+
+        // 下拉刷新功能
+        document.addEventListener('touchstart', function(e) {
+            if (window.scrollY === 0) {
+                startY = e.touches[0].clientY;
+            }
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            if (window.scrollY === 0 && !isRefreshing) {
+                currentY = e.touches[0].clientY;
+                const pullDistance = currentY - startY;
+                
+                if (pullDistance > 0) {
+                    const pullRefresh = document.getElementById('pullRefresh');
+                    pullRefresh.style.transform = `translateY(${Math.min(pullDistance * 0.5, 50)}px)`;
+                    
+                    if (pullDistance > 100) {
+                        pullRefresh.innerHTML = '<i class="fas fa-sync-alt refresh-icon"></i> 释放刷新';
+                    } else {
+                        pullRefresh.innerHTML = '<i class="fas fa-sync-alt refresh-icon"></i> 下拉刷新数据';
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('touchend', function(e) {
+            if (window.scrollY === 0 && !isRefreshing) {
+                const pullDistance = currentY - startY;
+                const pullRefresh = document.getElementById('pullRefresh');
+                
+                if (pullDistance > 100) {
+                    refreshData();
+                } else {
+                    pullRefresh.style.transform = 'translateY(0)';
+                    pullRefresh.innerHTML = '<i class="fas fa-sync-alt refresh-icon"></i> 下拉刷新数据';
+                }
+            }
+        });
+
+        function refreshData() {
+            isRefreshing = true;
+            const pullRefresh = document.getElementById('pullRefresh');
+            pullRefresh.classList.add('refreshing');
+            pullRefresh.innerHTML = '<i class="fas fa-sync-alt refresh-icon"></i> 正在刷新...';
+            
+            setTimeout(() => {
+                pullRefresh.style.transform = 'translateY(0)';
+                pullRefresh.classList.remove('refreshing');
+                pullRefresh.innerHTML = '<i class="fas fa-sync-alt refresh-icon"></i> 刷新完成';
+                isRefreshing = false;
+                
+                setTimeout(() => {
+                    pullRefresh.innerHTML = '<i class="fas fa-sync-alt refresh-icon"></i> 下拉刷新数据';
+                }, 1000);
+            }, 2000);
+        }
+
+        // 结构化标签分类数据
+        const tagCategories = {
+            '股市表现类': {
+                icon: '📈',
+                color: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
+                tags: [
+                    { name: '高成交量', count: 156, trend: '+12%' },
+                    { name: '低市盈率', count: 89, trend: '+8%' },
+                    { name: '高市净率', count: 234, trend: '-3%' },
+                    { name: '高ROE', count: 167, trend: '+15%' },
+                    { name: '高ROA', count: 123, trend: '+7%' },
+                    { name: '52周最高', count: 78, trend: '+25%' },
+                    { name: '52周最低', count: 45, trend: '-18%' }
+                ]
+            },
+            '财务表现类': {
+                icon: '💰',
+                color: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
+                tags: [
+                    { name: '高股息率', count: 78, trend: '+5%' },
+                    { name: '高EPS', count: 145, trend: '+18%' },
+                    { name: '高利润率', count: 92, trend: '+11%' },
+                    { name: '低负债率', count: 134, trend: '+9%' },
+                    { name: '高现金流', count: 87, trend: '+6%' },
+                    { name: '高贝塔', count: 156, trend: '+22%' },
+                    { name: '低贝塔', count: 98, trend: '+8%' },
+                    { name: '高VIX', count: 67, trend: '+35%' },
+                    { name: '低VIX', count: 123, trend: '+12%' },
+                    { name: '高增长率', count: 89, trend: '+18%' }
+                ]
+            },
+            '行业分类': {
+                icon: '🏭',
+                color: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
+                tags: [
+                    { name: '科技股', count: 245, trend: '+22%' },
+                    { name: '金融股', count: 189, trend: '+4%' },
+                    { name: '医疗股', count: 156, trend: '+16%' },
+                    { name: '能源股', count: 98, trend: '-8%' },
+                    { name: '消费股', count: 167, trend: '+12%' },
+                    { name: '工业股', count: 134, trend: '+9%' },
+                    { name: '材料股', count: 87, trend: '+6%' },
+                    { name: '公用事业', count: 76, trend: '+3%' },
+                    { name: '房地产', count: 112, trend: '+7%' },
+                    { name: '通信服务', count: 145, trend: '+18%' },
+                    { name: '必需消费品', count: 123, trend: '+5%' },
+                    { name: '可选消费品', count: 178, trend: '+14%' },
+                    { name: '交通运输', count: 89, trend: '+8%' },
+                    { name: '农业食品', count: 67, trend: '+4%' }
+                ]
+            },
+            '趋势排位类': {
+                icon: '📊',
+                color: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
+                tags: [
+                    { name: '涨幅最大', count: 45, trend: '+35%' },
+                    { name: '跌幅最大', count: 38, trend: '-28%' },
+                    { name: '成交量激增', count: 67, trend: '+45%' },
+                    { name: '突破新高', count: 23, trend: '+18%' },
+                    { name: '技术反弹', count: 56, trend: '+25%' },
+                    { name: '点击最多', count: 100, trend: '+20%' },
+                    { name: '上升最快', count: 50, trend: '+55%' },
+                    { name: '股票最多', count: 500, trend: '+8%' },
+                    { name: '关注度高', count: 200, trend: '+18%' },
+                    { name: '热度排行', count: 150, trend: '+25%' }
+                ]
+            },
+            '特殊名单类': {
+                icon: '⭐',
+                color: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)',
+                tags: [
+                    { name: '标普500', count: 500, trend: '+8%' },
+                    { name: '道琼斯', count: 30, trend: '+6%' },
+                    { name: '纳斯达克', count: 3200, trend: '+12%' },
+                    { name: '中概股', count: 156, trend: '+15%' },
+                    { name: '加密货币', count: 89, trend: '+28%' },
+                    { name: '人工智能', count: 234, trend: '+45%' }
+                ]
+            }
+        };
+
+        function filterMobileTags(category) {
+            const tabs = document.querySelectorAll('.category-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            renderMobileTags(category);
+        }
+
+        function renderMobileTags(filter = 'all') {
+            const container = document.getElementById('mobileTagGrid');
+            let tagsToShow = [];
+
+            if (filter === 'all') {
+                // 显示所有分类的标签
+                Object.entries(tagCategories).forEach(([categoryName, categoryData]) => {
+                    categoryData.tags.forEach(tag => {
+                        tagsToShow.push({
+                            name: tag.name,
+                            count: tag.count,
+                            trend: tag.trend,
+                            category: categoryName,
+                            color: categoryData.color,
+                            icon: categoryData.icon
+                        });
+                    });
+                });
+            } else {
+                // 显示特定分类的标签
+                const categoryData = tagCategories[filter];
+                if (categoryData) {
+                    categoryData.tags.forEach(tag => {
+                        tagsToShow.push({
+                            name: tag.name,
+                            count: tag.count,
+                            trend: tag.trend,
+                            category: filter,
+                            color: categoryData.color,
+                            icon: categoryData.icon
+                        });
+                    });
+                }
+            }
+
+            container.innerHTML = tagsToShow.map(tag => {
+                let categoryClass = 'default';
+                if (tag.category === '股市表现类') {
+                    categoryClass = 'stock-performance';
+                } else if (tag.category === '财务表现类') {
+                    categoryClass = 'financial-performance';
+                } else if (tag.category === '行业分类') {
+                    categoryClass = 'industry-classification';
+                } else if (tag.category === '趋势排位类') {
+                    categoryClass = 'trend-ranking';
+                } else if (tag.category === '特殊名单类') {
+                    categoryClass = 'special-list';
+                }
+                
+                return `
+                    <div class="mobile-tag ${categoryClass}" onclick="openTagDetail('${tag.name}')">
+                        <div class="tag-name">
+                            <span style="margin-right: 5px;">${tag.icon}</span>
+                            ${tag.name}
+                        </div>
+                        <div class="tag-count">${tag.count}只股票</div>
+                        <div class="tag-trend ${tag.trend.startsWith('+') ? 'trend-up' : 'trend-down'}">
+                            <i class="fas fa-arrow-${tag.trend.startsWith('+') ? 'up' : 'down'}"></i>
+                            ${tag.trend}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openTagDetail(tagName) {
+            // 模拟页面跳转
+            alert(`正在打开 "${tagName}" 标签详情页...\n\n在实际应用中，这里会跳转到标签详情页面，展示该标签下的所有股票。`);
+        }
+
+        function openStockDetail(ticker) {
+            alert(`正在打开 ${ticker} 股票详情页...\n\n在实际应用中，这里会跳转到股票详情页面，展示该股票的详细信息和相关标签。`);
+        }
+
+        function openFilterModal() {
+            const modal = document.getElementById('filterModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
+        }
+
+        function closeFilterModal() {
+            const modal = document.getElementById('filterModal');
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function applyFilter(filterType) {
+            closeFilterModal();
+            showLoading();
+            
+            setTimeout(() => {
+                alert(`已应用 "${filterType}" 筛选条件\n\n在实际应用中，这里会根据选择的筛选条件重新加载数据。`);
+                hideLoading();
+            }, 1500);
+        }
+
+        function showQuickActions() {
+            const actions = [
+                '添加自定义标签',
+                '创建股票组合',
+                '设置价格提醒',
+                '分享标签'
+            ];
+            
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            alert(`快速操作: ${action}\n\n在实际应用中，这里会显示快速操作菜单。`);
+        }
+
+        function searchContent(query) {
+            const stockCards = document.querySelectorAll('.stock-card');
+            const tagCards = document.querySelectorAll('.mobile-tag');
+            
+            // 搜索股票
+            stockCards.forEach(card => {
+                const ticker = card.querySelector('.stock-ticker').textContent;
+                const name = card.querySelector('.stock-name').textContent;
+                
+                if (ticker.toLowerCase().includes(query.toLowerCase()) || 
+                    name.toLowerCase().includes(query.toLowerCase())) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = query ? 'none' : 'block';
+                }
+            });
+            
+            // 搜索标签
+            tagCards.forEach(card => {
+                const tagName = card.querySelector('.tag-name').textContent;
+                
+                if (tagName.toLowerCase().includes(query.toLowerCase())) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = query ? 'none' : 'block';
+                }
+            });
+        }
+
+        function showLoading() {
+            const stockList = document.getElementById('stockList');
+            const tagGrid = document.getElementById('mobileTagGrid');
+            
+            stockList.innerHTML = Array(4).fill(0).map(() => 
+                '<div class="loading-skeleton skeleton-stock"></div>'
+            ).join('');
+            
+            tagGrid.innerHTML = Array(6).fill(0).map(() => 
+                '<div class="loading-skeleton skeleton-tag"></div>'
+            ).join('');
+        }
+
+        function hideLoading() {
+            location.reload();
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化标签显示
+            renderMobileTags('all');
+            
+            const cards = document.querySelectorAll('.stat-card, .mobile-tag, .stock-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.4s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+        });
+
+        // 底部导航切换
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

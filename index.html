@@ -7,12 +7,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
     <div id="app-container"></div>
     <div id="tooltip" class="tooltip"></div>
+
+    <!-- 智能标签系统按钮 -->
+    <button id="tagButton" class="tag-button" title="智能标签系统">
+        <i class="fas fa-tags"></i>
+    </button>
+
+    <!-- 标签系统模态框 -->
+    <div id="tagModal" class="tag-modal">
+        <div class="tag-modal-content">
+            <div class="tag-modal-header">
+                <h2>智能标签系统</h2>
+                <span class="tag-modal-close">&times;</span>
+            </div>
+            <div class="tag-modal-body">
+                <div class="tag-categories" id="tagCategories"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 标签详情模态框 -->
+    <div id="tagDetailModal" class="tag-detail-modal">
+        <div class="tag-detail-modal-content">
+            <div class="tag-detail-header">
+                <button class="back-btn" onclick="closeTagDetail()">
+                    <i class="fas fa-arrow-left"></i> 返回
+                </button>
+                <span class="tag-detail-close">&times;</span>
+            </div>
+            <div class="tag-detail-body" id="tagDetailBody"></div>
+        </div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

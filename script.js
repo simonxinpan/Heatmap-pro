@@ -5,8 +5,400 @@ const tooltip = document.getElementById('tooltip');
 let fullMarketData = null; // 用于缓存从API获取的完整数据
 let dataRefreshInterval = null; // 数据刷新定时器
 
-document.addEventListener('DOMContentLoaded', router);
+document.addEventListener('DOMContentLoaded', function() {
+    router();
+    initializeTagSystem();
+});
 window.addEventListener('popstate', router);
+
+// 标签系统初始化
+function initializeTagSystem() {
+    const tagButton = document.getElementById('tagButton');
+    const tagModal = document.getElementById('tagModal');
+    const tagDetailModal = document.getElementById('tagDetailModal');
+    const tagModalClose = document.querySelector('.tag-modal-close');
+    const tagDetailClose = document.querySelector('.tag-detail-close');
+    const backBtn = document.querySelector('.back-btn');
+
+    // 打开标签模态框
+    if (tagButton) {
+        tagButton.addEventListener('click', function() {
+            loadTagCategories();
+            tagModal.style.display = 'block';
+        });
+    }
+
+    // 关闭标签模态框
+    if (tagModalClose) {
+        tagModalClose.addEventListener('click', function() {
+            tagModal.style.display = 'none';
+        });
+    }
+
+    // 关闭标签详情模态框
+    if (tagDetailClose) {
+        tagDetailClose.addEventListener('click', function() {
+            tagDetailModal.style.display = 'none';
+        });
+    }
+
+    // 返回按钮
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            tagDetailModal.style.display = 'none';
+            tagModal.style.display = 'block';
+        });
+    }
+
+    // 点击模态框外部关闭
+    window.addEventListener('click', function(event) {
+        if (event.target === tagModal) {
+            tagModal.style.display = 'none';
+        }
+        if (event.target === tagDetailModal) {
+            tagDetailModal.style.display = 'none';
+        }
+    });
+}
+
+// 加载标签分类
+async function loadTagCategories() {
+    try {
+        const response = await fetch('/api/tags');
+        const tags = await response.json();
+        
+        const categorizedTags = categorizeTags(tags);
+        renderTagCategories(categorizedTags);
+    } catch (error) {
+        console.error('加载标签失败:', error);
+        // 使用模拟数据作为后备
+        renderTagCategories(getMockTagCategories());
+    }
+}
+
+// 标签分类
+function categorizeTags(tags) {
+    const categories = {
+        'stock-performance': {
+            title: '股市表现类',
+            icon: '📈',
+            tags: []
+        },
+        'financial-performance': {
+            title: '财务表现类',
+            icon: '💰',
+            tags: []
+        },
+        'industry-classification': {
+            title: '行业分类',
+            icon: '🏭',
+            tags: []
+        },
+        'trend-ranking': {
+            title: '趋势排位类',
+            icon: '🚀',
+            tags: []
+        },
+        'special-list': {
+            title: '特殊名单类',
+            icon: '⭐',
+            tags: []
+        }
+    };
+
+    tags.forEach(tag => {
+        const category = tag.category || 'special-list';
+        if (categories[category]) {
+            categories[category].tags.push(tag);
+        }
+    });
+
+    return categories;
+}
+
+// 获取模拟标签数据
+function getMockTagCategories() {
+    return {
+        'stock-performance': {
+            title: '股市表现类',
+            icon: '📈',
+            tags: [
+                { id: 1, name: '52周最高', category: 'stock-performance' },
+                { id: 2, name: '52周最低', category: 'stock-performance' },
+                { id: 3, name: '高股息率', category: 'stock-performance' },
+                { id: 4, name: '低市盈率', category: 'stock-performance' },
+                { id: 5, name: '高市值', category: 'stock-performance' }
+            ]
+        },
+        'financial-performance': {
+            title: '财务表现类',
+            icon: '💰',
+            tags: [
+                { id: 6, name: '高ROE', category: 'financial-performance' },
+                { id: 7, name: '低负债率', category: 'financial-performance' },
+                { id: 8, name: '高增长率', category: 'financial-performance' },
+                { id: 9, name: '高贝塔系数', category: 'financial-performance' },
+                { id: 10, name: 'VIX恐慌指数相关', category: 'financial-performance' }
+            ]
+        },
+        'industry-classification': {
+            title: '行业分类',
+            icon: '🏭',
+            tags: [
+                { id: 11, name: '科技股', category: 'industry-classification' },
+                { id: 12, name: '金融股', category: 'industry-classification' },
+                { id: 13, name: '医疗保健', category: 'industry-classification' },
+                { id: 14, name: '能源股', category: 'industry-classification' },
+                { id: 15, name: '消费品', category: 'industry-classification' },
+                { id: 16, name: '工业股', category: 'industry-classification' },
+                { id: 17, name: '房地产', category: 'industry-classification' },
+                { id: 18, name: '公用事业', category: 'industry-classification' },
+                { id: 19, name: '材料股', category: 'industry-classification' },
+                { id: 20, name: '通信服务', category: 'industry-classification' },
+                { id: 21, name: '必需消费品', category: 'industry-classification' },
+                { id: 22, name: '可选消费品', category: 'industry-classification' },
+                { id: 23, name: '生物技术', category: 'industry-classification' },
+                { id: 24, name: '半导体', category: 'industry-classification' }
+            ]
+        },
+        'trend-ranking': {
+            title: '趋势排位类',
+            icon: '🚀',
+            tags: [
+                { id: 25, name: '近期强势', category: 'trend-ranking' },
+                { id: 26, name: '近期弱势', category: 'trend-ranking' },
+                { id: 27, name: '成交量放大', category: 'trend-ranking' },
+                { id: 28, name: '突破新高', category: 'trend-ranking' },
+                { id: 29, name: '跌破支撑', category: 'trend-ranking' }
+            ]
+        },
+        'special-list': {
+            title: '特殊名单类',
+            icon: '⭐',
+            tags: [
+                { id: 30, name: '标普500', category: 'special-list' },
+                { id: 31, name: '纳斯达克100', category: 'special-list' },
+                { id: 32, name: '道琼斯', category: 'special-list' },
+                { id: 33, name: 'ESG评级高', category: 'special-list' },
+                { id: 34, name: '分析师推荐', category: 'special-list' }
+            ]
+        }
+    };
+}
+
+// 渲染标签分类
+function renderTagCategories(categories) {
+    const container = document.getElementById('tagCategories');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    Object.entries(categories).forEach(([categoryKey, category]) => {
+        if (category.tags.length === 0) return;
+
+        const categorySection = document.createElement('div');
+        categorySection.className = 'category-section';
+        categorySection.innerHTML = `
+            <div class="category-header">
+                <span class="category-icon">${category.icon}</span>
+                <h3 class="category-title">${category.title}</h3>
+            </div>
+            <div class="category-tags">
+                ${category.tags.map(tag => `
+                    <span class="tag ${categoryKey}" data-tag-id="${tag.id}" data-category="${categoryKey}">
+                        ${tag.name}
+                    </span>
+                `).join('')}
+            </div>
+        `;
+
+        container.appendChild(categorySection);
+    });
+
+    // 添加标签点击事件
+    container.addEventListener('click', function(event) {
+        if (event.target.classList.contains('tag')) {
+            const tagId = event.target.dataset.tagId;
+            const category = event.target.dataset.category;
+            const tagName = event.target.textContent;
+            showTagDetail(tagId, tagName, category);
+        }
+    });
+}
+
+// 显示标签详情
+async function showTagDetail(tagId, tagName, category) {
+    try {
+        const response = await fetch(`/api/tags/${tagId}/stocks`);
+        const data = await response.json();
+        
+        renderTagDetail({
+            id: tagId,
+            name: tagName,
+            category: category,
+            ...data
+        });
+    } catch (error) {
+        console.error('加载标签详情失败:', error);
+        // 使用模拟数据作为后备
+        renderTagDetail(getMockTagDetail(tagId, tagName, category));
+    }
+
+    document.getElementById('tagModal').style.display = 'none';
+    document.getElementById('tagDetailModal').style.display = 'block';
+}
+
+// 获取模拟标签详情数据
+function getMockTagDetail(tagId, tagName, category) {
+    const mockData = {
+        1: {
+            description: '过去52周内达到最高价格的股票',
+            totalStocks: 156,
+            avgReturn: '+12.5%',
+            totalMarketCap: '$2.8T',
+            stocks: [
+                { ticker: 'AAPL', name: 'Apple Inc.', price: 175.43, change: 2.15, changePercent: 1.24 },
+                { ticker: 'MSFT', name: 'Microsoft Corp.', price: 338.11, change: 4.22, changePercent: 1.27 },
+                { ticker: 'GOOGL', name: 'Alphabet Inc.', price: 125.37, change: -0.85, changePercent: -0.67 },
+                { ticker: 'AMZN', name: 'Amazon.com Inc.', price: 127.74, change: 1.33, changePercent: 1.05 },
+                { ticker: 'TSLA', name: 'Tesla Inc.', price: 248.50, change: 8.75, changePercent: 3.65 }
+            ]
+        },
+        6: {
+            description: '净资产收益率超过15%的优质公司',
+            totalStocks: 89,
+            avgReturn: '+18.3%',
+            totalMarketCap: '$1.5T',
+            stocks: [
+                { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 421.13, change: 12.45, changePercent: 3.05 },
+                { ticker: 'META', name: 'Meta Platforms', price: 296.73, change: 5.21, changePercent: 1.79 },
+                { ticker: 'NFLX', name: 'Netflix Inc.', price: 378.45, change: -2.15, changePercent: -0.56 },
+                { ticker: 'CRM', name: 'Salesforce Inc.', price: 189.33, change: 3.67, changePercent: 1.98 },
+                { ticker: 'ADBE', name: 'Adobe Inc.', price: 512.78, change: 7.89, changePercent: 1.56 }
+            ]
+        },
+        11: {
+            description: '科技行业相关的创新型公司',
+            totalStocks: 234,
+            avgReturn: '+15.7%',
+            totalMarketCap: '$4.2T',
+            stocks: [
+                { ticker: 'AAPL', name: 'Apple Inc.', price: 175.43, change: 2.15, changePercent: 1.24 },
+                { ticker: 'MSFT', name: 'Microsoft Corp.', price: 338.11, change: 4.22, changePercent: 1.27 },
+                { ticker: 'GOOGL', name: 'Alphabet Inc.', price: 125.37, change: -0.85, changePercent: -0.67 },
+                { ticker: 'META', name: 'Meta Platforms', price: 296.73, change: 5.21, changePercent: 1.79 },
+                { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 421.13, change: 12.45, changePercent: 3.05 }
+            ]
+        },
+        30: {
+            description: '标准普尔500指数成分股',
+            totalStocks: 500,
+            avgReturn: '+11.2%',
+            totalMarketCap: '$35.8T',
+            stocks: [
+                { ticker: 'AAPL', name: 'Apple Inc.', price: 175.43, change: 2.15, changePercent: 1.24 },
+                { ticker: 'MSFT', name: 'Microsoft Corp.', price: 338.11, change: 4.22, changePercent: 1.27 },
+                { ticker: 'AMZN', name: 'Amazon.com Inc.', price: 127.74, change: 1.33, changePercent: 1.05 },
+                { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 421.13, change: 12.45, changePercent: 3.05 },
+                { ticker: 'GOOGL', name: 'Alphabet Inc.', price: 125.37, change: -0.85, changePercent: -0.67 }
+            ]
+        },
+        25: {
+            description: '近期表现强劲的股票',
+            totalStocks: 78,
+            avgReturn: '+22.8%',
+            totalMarketCap: '$1.9T',
+            stocks: [
+                { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 421.13, change: 12.45, changePercent: 3.05 },
+                { ticker: 'TSLA', name: 'Tesla Inc.', price: 248.50, change: 8.75, changePercent: 3.65 },
+                { ticker: 'META', name: 'Meta Platforms', price: 296.73, change: 5.21, changePercent: 1.79 },
+                { ticker: 'AMD', name: 'Advanced Micro Devices', price: 102.33, change: 4.12, changePercent: 4.20 },
+                { ticker: 'NFLX', name: 'Netflix Inc.', price: 378.45, change: 6.78, changePercent: 1.82 }
+            ]
+        }
+    };
+
+    return {
+        id: tagId,
+        name: tagName,
+        category: category,
+        description: mockData[tagId]?.description || '暂无描述',
+        totalStocks: mockData[tagId]?.totalStocks || 0,
+        avgReturn: mockData[tagId]?.avgReturn || '0%',
+        totalMarketCap: mockData[tagId]?.totalMarketCap || '$0',
+        stocks: mockData[tagId]?.stocks || []
+    };
+}
+
+// 渲染标签详情
+function renderTagDetail(tagData) {
+    const container = document.getElementById('tagDetailContent');
+    if (!container) return;
+
+    const categoryTitles = {
+        'stock-performance': '股市表现类',
+        'financial-performance': '财务表现类',
+        'industry-classification': '行业分类',
+        'trend-ranking': '趋势排位类',
+        'special-list': '特殊名单类'
+    };
+
+    container.innerHTML = `
+        <div class="tag-header ${tagData.category}">
+            <div class="tag-title">
+                <h1 class="tag-name">${tagData.name}</h1>
+            </div>
+            <p class="tag-description">${tagData.description}</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">${tagData.totalStocks}</div>
+                <p class="stat-label">股票总数</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${tagData.avgReturn}</div>
+                <p class="stat-label">平均回报</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${tagData.totalMarketCap}</div>
+                <p class="stat-label">总市值</p>
+            </div>
+        </div>
+        
+        <div class="stocks-section">
+            <div class="stocks-header">
+                <h3 class="stocks-title">相关股票</h3>
+            </div>
+            <table class="stocks-table">
+                <thead>
+                    <tr>
+                        <th>股票代码</th>
+                        <th>公司名称</th>
+                        <th>当前价格</th>
+                        <th>涨跌额</th>
+                        <th>涨跌幅</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tagData.stocks.map(stock => `
+                        <tr>
+                            <td class="stock-ticker">${stock.ticker}</td>
+                            <td class="stock-name">${stock.name}</td>
+                            <td class="stock-price">$${stock.price.toFixed(2)}</td>
+                            <td class="stock-change ${stock.change >= 0 ? 'positive' : 'negative'}">
+                                ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}
+                            </td>
+                            <td class="stock-change ${stock.changePercent >= 0 ? 'positive' : 'negative'}">
+                                ${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
 
 // 启动数据自动刷新机制（每5分钟）
 function startDataRefresh() {

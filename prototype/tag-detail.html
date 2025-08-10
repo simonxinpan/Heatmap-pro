@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高ROE - 相关股票 | 智能标签系统</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 20px;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .tag-header {
+            color: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .tag-header.stock-performance {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            box-shadow: 0 8px 32px rgba(30, 58, 138, 0.3);
+        }
+        
+        .tag-header.financial-performance {
+            background: linear-gradient(135deg, #7f1d1d, #dc2626);
+            box-shadow: 0 8px 32px rgba(127, 29, 29, 0.3);
+        }
+        
+        .tag-header.industry-classification {
+            background: linear-gradient(135deg, #14532d, #16a34a);
+            box-shadow: 0 8px 32px rgba(20, 83, 45, 0.3);
+        }
+        
+        .tag-header.trend-ranking {
+            background: linear-gradient(135deg, #a16207, #eab308);
+            box-shadow: 0 8px 32px rgba(161, 98, 7, 0.3);
+        }
+        
+        .tag-header.special-list {
+            background: linear-gradient(135deg, #581c87, #9333ea);
+            box-shadow: 0 8px 32px rgba(88, 28, 135, 0.3);
+        }
+
+        .tag-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .tag-badge {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .tag-category {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .tag-title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .category-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #fa709a, #fee140);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .category-icon {
+            font-size: 1.1rem;
+        }
+
+        .tag-trend {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .tag-trend.positive {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .tag-trend.negative {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .tag-description {
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .tag-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-filter {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .search-input {
+            flex: 1;
+            max-width: 300px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .stock-list {
+            padding: 0;
+        }
+
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .stock-row {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .stock-item:hover {
+            background-color: #f7fafc;
+        }
+
+        .stock-item:last-child {
+            border-bottom: none;
+        }
+
+        .stock-main-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stock-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .stock-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stock-ticker {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        .stock-name {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .stock-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .mini-tag {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .stock-metrics {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .stock-price {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #2d3748;
+        }
+
+        .stock-change {
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .positive {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .negative {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .stock-extra {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
+        .heatmap-view {
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .heatmap-view h3 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .heatmap-view p {
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .upgrade-btn {
+            background: white;
+            color: #667eea;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f7fafc;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .page-btn:hover:not(.active) {
+            background: #f7fafc;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                gap: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-filter {
+                flex-direction: column;
+            }
+            
+            .search-input {
+                max-width: none;
+            }
+            
+            .stock-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .stock-metrics {
+                align-items: flex-start;
+            }
+        }
+
+        .demo-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f56565;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-badge">
+        <i class="fas fa-flask"></i> 产品原型
+    </div>
+
+    <header class="header">
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                <i class="fas fa-tags"></i> 智能标签系统
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="#">标签云</a>
+                <a href="#">热力图</a>
+                <a href="#">分析工具</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > <a href="#">标签</a> > 高ROE
+        </div>
+
+        <div class="tag-header">
+            <div class="tag-title-section">
+                <div class="category-badge">
+                    <span class="category-icon">💰</span>
+                    <span class="category-name">财务表现类</span>
+                </div>
+                <span class="tag-badge">高ROE</span>
+            </div>
+            <div class="tag-meta">
+                <span class="tag-count">78 只股票</span>
+                <span class="tag-trend positive">+2.1%</span>
+            </div>
+            <div class="tag-description">
+                净资产收益率(ROE)大于15%的股票，反映公司盈利能力强，股东回报率高。ROE是衡量公司运用股东资金效率的重要指标。
+            </div>
+            <div class="tag-stats">
+                <div class="stat-card">
+                    <div class="stat-value">78</div>
+                    <div class="stat-label">相关股票</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">23.4%</div>
+                    <div class="stat-label">平均ROE</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">$1.2T</div>
+                    <div class="stat-label">总市值</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">+2.1%</div>
+                    <div class="stat-label">平均涨幅</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-filter">
+                <input type="text" class="search-input" placeholder="搜索股票代码或名称..." onkeyup="searchStocks(this.value)">
+                <select class="filter-select" onchange="filterBySector(this.value)">
+                    <option value="all">所有行业</option>
+                    <option value="tech">科技</option>
+                    <option value="finance">金融</option>
+                    <option value="healthcare">医疗健康</option>
+                    <option value="consumer">消费</option>
+                </select>
+                <select class="filter-select" onchange="sortStocks(this.value)">
+                    <option value="market_cap">按市值排序</option>
+                    <option value="price">按价格排序</option>
+                    <option value="change">按涨跌幅排序</option>
+                    <option value="roe">按ROE排序</option>
+                </select>
+            </div>
+            <div class="view-controls">
+                <button class="view-btn active" onclick="switchView('list')">
+                    <i class="fas fa-list"></i> 列表视图
+                </button>
+                <button class="view-btn" onclick="switchView('heatmap')">
+                    <i class="fas fa-chart-area"></i> 热力图
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div id="listView" class="stock-list">
+                <div class="stock-item" data-sector="tech">
+                    <div class="stock-main-info">
+                        <div class="stock-logo">AAPL</div>
+                        <div class="stock-details">
+                            <div class="stock-ticker">AAPL</div>
+                            <div class="stock-name">苹果公司</div>
+                            <div class="stock-tags">
+                                <span class="mini-tag">科技股</span>
+                                <span class="mini-tag">标普500</span>
+                                <span class="mini-tag">高股息率</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stock-metrics">
+                        <div class="stock-price">$150.25</div>
+                        <div class="stock-change positive">+2.34%</div>
+                        <div class="stock-extra">
+                            <span>ROE: 28.5%</span>
+                            <span>市值: $2.5T</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-item" data-sector="tech">
+                    <div class="stock-main-info">
+                        <div class="stock-logo">MSFT</div>
+                        <div class="stock-details">
+                            <div class="stock-ticker">MSFT</div>
+                            <div class="stock-name">微软公司</div>
+                            <div class="stock-tags">
+                                <span class="mini-tag">科技股</span>
+                                <span class="mini-tag">标普500</span>
+                                <span class="mini-tag">稳定增长</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stock-metrics">
+                        <div class="stock-price">$378.91</div>
+                        <div class="stock-change positive">+1.87%</div>
+                        <div class="stock-extra">
+                            <span>ROE: 25.2%</span>
+                            <span>市值: $2.8T</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-item" data-sector="tech">
+                    <div class="stock-main-info">
+                        <div class="stock-logo">GOOGL</div>
+                        <div class="stock-details">
+                            <div class="stock-ticker">GOOGL</div>
+                            <div class="stock-name">谷歌A类</div>
+                            <div class="stock-tags">
+                                <span class="mini-tag">科技股</span>
+                                <span class="mini-tag">标普500</span>
+                                <span class="mini-tag">低市盈率</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stock-metrics">
+                        <div class="stock-price">$2,845.12</div>
+                        <div class="stock-change negative">-0.45%</div>
+                        <div class="stock-extra">
+                            <span>ROE: 18.7%</span>
+                            <span>市值: $1.8T</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-item" data-sector="tech">
+                    <div class="stock-main-info">
+                        <div class="stock-logo">NVDA</div>
+                        <div class="stock-details">
+                            <div class="stock-ticker">NVDA</div>
+                            <div class="stock-name">英伟达</div>
+                            <div class="stock-tags">
+                                <span class="mini-tag">科技股</span>
+                                <span class="mini-tag">52周新高</span>
+                                <span class="mini-tag">近期强势</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stock-metrics">
+                        <div class="stock-price">$875.43</div>
+                        <div class="stock-change positive">+3.21%</div>
+                        <div class="stock-extra">
+                            <span>ROE: 35.8%</span>
+                            <span>市值: $2.1T</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-item" data-sector="finance">
+                    <div class="stock-main-info">
+                        <div class="stock-logo">JPM</div>
+                        <div class="stock-details">
+                            <div class="stock-ticker">JPM</div>
+                            <div class="stock-name">摩根大通</div>
+                            <div class="stock-tags">
+                                <span class="mini-tag">金融</span>
+                                <span class="mini-tag">标普500</span>
+                                <span class="mini-tag">高股息率</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stock-metrics">
+                        <div class="stock-price">$168.45</div>
+                        <div class="stock-change positive">+1.23%</div>
+                        <div class="stock-extra">
+                            <span>ROE: 16.4%</span>
+                            <span>市值: $485B</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-item" data-sector="healthcare">
+                    <div class="stock-main-info">
+                        <div class="stock-logo">JNJ</div>
+                        <div class="stock-details">
+                            <div class="stock-ticker">JNJ</div>
+                            <div class="stock-name">强生公司</div>
+                            <div class="stock-tags">
+                                <span class="mini-tag">医疗健康</span>
+                                <span class="mini-tag">标普500</span>
+                                <span class="mini-tag">稳定增长</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stock-metrics">
+                        <div class="stock-price">$162.78</div>
+                        <div class="stock-change positive">+0.89%</div>
+                        <div class="stock-extra">
+                            <span>ROE: 22.1%</span>
+                            <span>市值: $428B</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="heatmapView" class="heatmap-view" style="display: none;">
+                <h3><i class="fas fa-chart-area"></i> 热力图视图</h3>
+                <p>通过颜色深浅直观展示高ROE股票的市值分布和表现情况</p>
+                <button class="upgrade-btn" onclick="alert('这是付费功能的预览，完整版本将提供交互式热力图')">
+                    <i class="fas fa-crown"></i> 升级到专业版
+                </button>
+            </div>
+
+            <div class="pagination">
+                <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">4</button>
+                <button class="page-btn">5</button>
+                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchView(viewType) {
+            const listView = document.getElementById('listView');
+            const heatmapView = document.getElementById('heatmapView');
+            const buttons = document.querySelectorAll('.view-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            if (viewType === 'list') {
+                listView.style.display = 'block';
+                heatmapView.style.display = 'none';
+                buttons[0].classList.add('active');
+            } else {
+                listView.style.display = 'none';
+                heatmapView.style.display = 'block';
+                buttons[1].classList.add('active');
+            }
+        }
+
+        function searchStocks(query) {
+            const stockItems = document.querySelectorAll('.stock-item');
+            stockItems.forEach(item => {
+                const ticker = item.querySelector('.stock-ticker').textContent;
+                const name = item.querySelector('.stock-name').textContent;
+                
+                if (ticker.toLowerCase().includes(query.toLowerCase()) || 
+                    name.toLowerCase().includes(query.toLowerCase())) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function filterBySector(sector) {
+            const stockItems = document.querySelectorAll('.stock-item');
+            stockItems.forEach(item => {
+                if (sector === 'all' || item.dataset.sector === sector) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function sortStocks(sortBy) {
+            const stockList = document.getElementById('listView');
+            const stockItems = Array.from(stockList.querySelectorAll('.stock-item'));
+            
+            stockItems.sort((a, b) => {
+                switch(sortBy) {
+                    case 'price':
+                        const priceA = parseFloat(a.querySelector('.stock-price').textContent.replace('$', '').replace(',', ''));
+                        const priceB = parseFloat(b.querySelector('.stock-price').textContent.replace('$', '').replace(',', ''));
+                        return priceB - priceA;
+                    case 'change':
+                        const changeA = parseFloat(a.querySelector('.stock-change').textContent.replace('%', ''));
+                        const changeB = parseFloat(b.querySelector('.stock-change').textContent.replace('%', ''));
+                        return changeB - changeA;
+                    case 'roe':
+                        const roeA = parseFloat(a.querySelector('.stock-extra span').textContent.split(': ')[1].replace('%', ''));
+                        const roeB = parseFloat(b.querySelector('.stock-extra span').textContent.split(': ')[1].replace('%', ''));
+                        return roeB - roeA;
+                    default:
+                        return 0;
+                }
+            });
+            
+            stockItems.forEach(item => stockList.appendChild(item));
+        }
+
+        // 结构化标签分类数据
+        const tagCategories = {
+            '股市表现类': {
+                icon: '📈',
+                color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            },
+            '财务表现类': {
+                icon: '💰',
+                color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+            },
+            '行业分类': {
+                icon: '🏭',
+                color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+            },
+            '趋势排位类': {
+                icon: '📊',
+                color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+            },
+            '特殊名单类': {
+                icon: '⭐',
+                color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+            }
+        };
+
+        // 模拟标签数据
+        const tagData = {
+            '高ROE': {
+                category: '财务表现类',
+                description: 'ROE（净资产收益率）超过15%的优质股票，代表公司盈利能力强劲',
+                totalStocks: 167,
+                avgReturn: '+15.2%',
+                marketCap: '1.2万亿',
+                stocks: [
+                    { ticker: 'AAPL', name: '苹果公司', price: 175.43, change: 2.15, changePercent: 1.24, volume: '45.2M', marketCap: '2.8T', pe: 28.5, roe: 18.2, industry: '科技' },
+                    { ticker: 'MSFT', name: '微软', price: 338.11, change: -1.23, changePercent: -0.36, volume: '32.1M', marketCap: '2.5T', pe: 32.1, roe: 19.8, industry: '科技' },
+                    { ticker: 'GOOGL', name: '谷歌', price: 125.37, change: 3.45, changePercent: 2.83, volume: '28.9M', marketCap: '1.6T', pe: 24.7, roe: 16.4, industry: '科技' },
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 8.92, changePercent: 2.16, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' },
+                    { ticker: 'TSLA', name: '特斯拉', price: 248.50, change: -5.67, changePercent: -2.23, volume: '89.4M', marketCap: '789B', pe: 58.9, roe: 15.7, industry: '汽车' }
+                ]
+            },
+            '高增长率': {
+                category: '财务表现类',
+                description: 'EPS增长率超过25%的高成长股票，具有强劲的盈利增长潜力',
+                totalStocks: 123,
+                avgReturn: '+19.8%',
+                marketCap: '8900亿',
+                stocks: [
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 8.92, changePercent: 2.16, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' },
+                    { ticker: 'AMD', name: 'AMD', price: 112.45, change: 4.23, changePercent: 3.91, volume: '38.7M', marketCap: '181B', pe: 45.8, roe: 8.9, industry: '科技' },
+                    { ticker: 'TSLA', name: '特斯拉', price: 248.50, change: -5.67, changePercent: -2.23, volume: '89.4M', marketCap: '789B', pe: 58.9, roe: 15.7, industry: '汽车' },
+                    { ticker: 'SHOP', name: 'Shopify', price: 67.89, change: 2.34, changePercent: 3.57, volume: '15.2M', marketCap: '85B', pe: 89.3, roe: 12.4, industry: '电商' },
+                    { ticker: 'SQ', name: 'Block', price: 78.23, change: 1.87, changePercent: 2.45, volume: '12.8M', marketCap: '45B', pe: 156.7, roe: 8.9, industry: '金融科技' }
+                ]
+            },
+            '高股息率': {
+                category: '股市表现类',
+                description: '股息率超过4%的稳健收益股票，适合追求稳定现金流的投资者',
+                totalStocks: 145,
+                avgReturn: '+2.7%',
+                marketCap: '6800亿',
+                stocks: [
+                    { ticker: 'T', name: 'AT&T', price: 15.23, change: 0.12, changePercent: 0.79, volume: '45.2M', marketCap: '109B', pe: 8.5, roe: 7.2, industry: '通信' },
+                    { ticker: 'VZ', name: 'Verizon', price: 32.45, change: -0.23, changePercent: -0.70, volume: '18.7M', marketCap: '136B', pe: 9.1, roe: 25.8, industry: '通信' },
+                    { ticker: 'XOM', name: '埃克森美孚', price: 108.76, change: 2.34, changePercent: 2.20, volume: '15.3M', marketCap: '452B', pe: 13.2, roe: 17.9, industry: '能源' },
+                    { ticker: 'CVX', name: '雪佛龙', price: 147.89, change: 1.87, changePercent: 1.28, volume: '8.9M', marketCap: '278B', pe: 14.7, roe: 15.6, industry: '能源' },
+                    { ticker: 'JNJ', name: '强生', price: 162.34, change: 0.45, changePercent: 0.28, volume: '6.2M', marketCap: '427B', pe: 15.8, roe: 24.1, industry: '医疗' },
+                    { ticker: 'KO', name: '可口可乐', price: 58.92, change: 0.34, changePercent: 0.58, volume: '12.4M', marketCap: '254B', pe: 24.3, roe: 42.8, industry: '消费' },
+                    { ticker: 'PG', name: '宝洁', price: 145.67, change: -0.89, changePercent: -0.61, volume: '7.8M', marketCap: '347B', pe: 23.9, roe: 31.2, industry: '消费' },
+                    { ticker: 'MMM', name: '3M', price: 89.45, change: 1.23, changePercent: 1.39, volume: '3.2M', marketCap: '50B', pe: 11.7, roe: 18.9, industry: '工业' }
+                ]
+            },
+            '52周最高': {
+                category: '股市表现类',
+                description: '接近或达到52周最高价的股票，显示强劲的上涨动能',
+                totalStocks: 78,
+                avgReturn: '+25.3%',
+                marketCap: '9800亿',
+                stocks: [
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 8.92, changePercent: 2.16, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' },
+                    { ticker: 'AMD', name: 'AMD', price: 112.45, change: 4.23, changePercent: 3.91, volume: '38.7M', marketCap: '181B', pe: 45.8, roe: 8.9, industry: '科技' }
+                ]
+            },
+            '高贝塔': {
+                category: '财务表现类',
+                description: '贝塔系数大于1.5的高波动性股票，适合风险偏好较高的投资者',
+                totalStocks: 156,
+                avgReturn: '+22.1%',
+                marketCap: '7600亿',
+                stocks: [
+                    { ticker: 'TSLA', name: '特斯拉', price: 248.50, change: -5.67, changePercent: -2.23, volume: '89.4M', marketCap: '789B', pe: 58.9, roe: 15.7, industry: '汽车' },
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 8.92, changePercent: 2.16, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' }
+                ]
+            },
+            '科技股': {
+                category: '行业分类',
+                description: '科技行业相关股票，包括软件、硬件、互联网等领域',
+                totalStocks: 345,
+                avgReturn: '+11.2%',
+                marketCap: '15600亿',
+                stocks: [
+                    { ticker: 'AAPL', name: '苹果', price: 189.95, change: 2.45, changePercent: 1.31, volume: '67.8M', marketCap: '2.9T', pe: 29.8, roe: 147.4, industry: '科技' },
+                    { ticker: 'MSFT', name: '微软', price: 378.85, change: 4.23, changePercent: 1.13, volume: '28.4M', marketCap: '2.8T', pe: 34.2, roe: 38.7, industry: '科技' },
+                    { ticker: 'GOOGL', name: '谷歌', price: 138.21, change: -1.87, changePercent: -1.33, volume: '31.2M', marketCap: '1.7T', pe: 25.4, roe: 27.1, industry: '科技' },
+                    { ticker: 'META', name: 'Meta', price: 326.54, change: 8.92, changePercent: 2.81, volume: '19.7M', marketCap: '827B', pe: 23.1, roe: 36.9, industry: '科技' },
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 12.67, changePercent: 3.10, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' },
+                    { ticker: 'AMZN', name: '亚马逊', price: 144.05, change: 2.34, changePercent: 1.65, volume: '45.6M', marketCap: '1.5T', pe: 48.7, roe: 13.8, industry: '科技' },
+                    { ticker: 'TSLA', name: '特斯拉', price: 248.50, change: -5.67, changePercent: -2.23, volume: '89.4M', marketCap: '789B', pe: 58.9, roe: 15.7, industry: '汽车科技' },
+                    { ticker: 'CRM', name: 'Salesforce', price: 216.78, change: 3.45, changePercent: 1.62, volume: '8.9M', marketCap: '211B', pe: 89.3, roe: 4.2, industry: '软件' }
+                ]
+            },
+            '涨幅最大': {
+                category: '趋势排位类',
+                description: '近30日涨幅最大的股票，展现强劲的上涨趋势',
+                totalStocks: 45,
+                avgReturn: '+35.7%',
+                marketCap: '4500亿',
+                stocks: [
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 8.92, changePercent: 2.16, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' },
+                    { ticker: 'AMD', name: 'AMD', price: 112.45, change: 4.23, changePercent: 3.91, volume: '38.7M', marketCap: '181B', pe: 45.8, roe: 8.9, industry: '科技' }
+                ]
+            },
+            '标普500': {
+                category: '特殊名单类',
+                description: '标普500指数成分股，代表美国大型上市公司',
+                totalStocks: 500,
+                avgReturn: '+7.2%',
+                marketCap: '42000亿',
+                stocks: [
+                    { ticker: 'AAPL', name: '苹果', price: 189.95, change: 2.45, changePercent: 1.31, volume: '67.8M', marketCap: '2.9T', pe: 29.8, roe: 147.4, industry: '科技' },
+                    { ticker: 'MSFT', name: '微软', price: 378.85, change: 4.23, changePercent: 1.13, volume: '28.4M', marketCap: '2.8T', pe: 34.2, roe: 38.7, industry: '科技' },
+                    { ticker: 'AMZN', name: '亚马逊', price: 144.05, change: 2.34, changePercent: 1.65, volume: '45.6M', marketCap: '1.5T', pe: 48.7, roe: 13.8, industry: '科技' },
+                    { ticker: 'GOOGL', name: '谷歌', price: 138.21, change: -1.87, changePercent: -1.33, volume: '31.2M', marketCap: '1.7T', pe: 25.4, roe: 27.1, industry: '科技' },
+                    { ticker: 'BRK.B', name: '伯克希尔', price: 348.92, change: 1.23, changePercent: 0.35, volume: '4.2M', marketCap: '764B', pe: 8.9, roe: 12.4, industry: '金融' },
+                    { ticker: 'UNH', name: '联合健康', price: 524.67, change: 3.45, changePercent: 0.66, volume: '2.8M', marketCap: '492B', pe: 24.7, roe: 26.8, industry: '医疗' },
+                    { ticker: 'JNJ', name: '强生', price: 162.34, change: 0.45, changePercent: 0.28, volume: '6.2M', marketCap: '427B', pe: 15.8, roe: 24.1, industry: '医疗' },
+                    { ticker: 'JPM', name: '摩根大通', price: 147.89, change: 2.67, changePercent: 1.84, volume: '12.4M', marketCap: '432B', pe: 11.2, roe: 15.6, industry: '金融' }
+                ]
+            },
+            '近期强势': {
+                category: '趋势排位类',
+                description: '近30天涨幅超过15%的强势股票',
+                totalStocks: 89,
+                avgReturn: '+22.4%',
+                marketCap: '3200亿',
+                stocks: [
+                    { ticker: 'NVDA', name: '英伟达', price: 421.13, change: 12.67, changePercent: 3.10, volume: '52.3M', marketCap: '1.0T', pe: 65.2, roe: 22.1, industry: '科技' },
+                    { ticker: 'AMD', name: 'AMD', price: 112.45, change: 8.23, changePercent: 7.91, volume: '38.7M', marketCap: '181B', pe: 45.8, roe: 8.9, industry: '科技' },
+                    { ticker: 'META', name: 'Meta', price: 326.54, change: 15.92, changePercent: 5.13, volume: '19.7M', marketCap: '827B', pe: 23.1, roe: 36.9, industry: '科技' },
+                    { ticker: 'SMCI', name: '超微电脑', price: 875.42, change: 45.67, changePercent: 5.50, volume: '8.9M', marketCap: '52B', pe: 89.3, roe: 12.4, industry: '科技' },
+                    { ticker: 'COIN', name: 'Coinbase', price: 234.56, change: 18.92, changePercent: 8.77, volume: '15.2M', marketCap: '58B', pe: 156.7, roe: 8.9, industry: '金融科技' },
+                    { ticker: 'PLTR', name: 'Palantir', price: 18.45, change: 1.87, changePercent: 11.28, volume: '45.6M', marketCap: '39B', pe: 89.3, roe: 4.2, industry: '软件' },
+                    { ticker: 'ROKU', name: 'Roku', price: 67.89, change: 5.34, changePercent: 8.54, volume: '12.8M', marketCap: '7B', pe: -23.4, roe: -15.6, industry: '媒体' },
+                    { ticker: 'ZM', name: 'Zoom', price: 78.23, change: 6.87, changePercent: 9.63, volume: '8.4M', marketCap: '23B', pe: 34.7, roe: 18.9, industry: '软件' }
+                ]
+            }
+        };
+
+        // 初始化页面
+        function initializePage() {
+            // 从URL获取标签名称
+            const urlParams = new URLSearchParams(window.location.search);
+            const tagName = urlParams.get('tag') || '高ROE';
+            
+            // 加载标签数据
+            loadTagData(tagName);
+        }
+        
+        // 加载标签数据
+        function loadTagData(tagName) {
+            const tag = tagData[tagName];
+            if (!tag) return;
+            
+            const categoryInfo = tagCategories[tag.category];
+            
+            // 更新标题和分类信息
+            document.querySelector('.tag-badge').textContent = tagName;
+            document.querySelector('.category-icon').textContent = categoryInfo.icon;
+            document.querySelector('.category-name').textContent = tag.category;
+            document.querySelector('.category-badge').style.background = categoryInfo.color;
+            document.querySelector('.tag-count').textContent = `${tag.totalStocks} 只股票`;
+            document.querySelector('.tag-trend').textContent = tag.avgReturn;
+            document.querySelector('.tag-trend').className = `tag-trend ${tag.avgReturn.startsWith('+') ? 'positive' : 'negative'}`;
+            document.querySelector('.tag-description').textContent = tag.description;
+            
+            // 根据分类添加对应的CSS类到tag-header
+            const tagHeader = document.querySelector('.tag-header');
+            tagHeader.className = 'tag-header'; // 重置类名
+            
+            if (tag.category === '股市表现类') {
+                tagHeader.classList.add('stock-performance');
+            } else if (tag.category === '财务表现类') {
+                tagHeader.classList.add('financial-performance');
+            } else if (tag.category === '行业分类') {
+                tagHeader.classList.add('industry-classification');
+            } else if (tag.category === '趋势排位类') {
+                tagHeader.classList.add('trend-ranking');
+            } else if (tag.category === '特殊名单类') {
+                tagHeader.classList.add('special-list');
+            }
+            
+            // 更新统计信息
+            document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = tag.totalStocks;
+            document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = tag.avgReturn;
+            document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = tag.marketCap;
+            
+            // 渲染股票列表
+            renderStockList(tag.stocks);
+        }
+        
+        // 渲染股票列表
+        function renderStockList(stocks) {
+            const container = document.getElementById('stockList');
+            container.innerHTML = stocks.map(stock => `
+                <tr class="stock-row">
+                    <td>
+                        <div class="stock-info">
+                            <div class="stock-symbol">${stock.ticker}</div>
+                            <div class="stock-name">${stock.name}</div>
+                        </div>
+                    </td>
+                    <td class="price">$${stock.price.toFixed(2)}</td>
+                    <td class="change ${stock.change >= 0 ? 'positive' : 'negative'}">
+                        ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}
+                        <span class="change-percent">(${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%)</span>
+                    </td>
+                    <td class="volume">${stock.volume}</td>
+                    <td class="market-cap">${stock.marketCap}</td>
+                    <td class="pe-ratio">${stock.pe}</td>
+                    <td class="roe">${stock.roe}%</td>
+                    <td class="industry">${stock.industry}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化页面
+            initializePage();
+            
+            // 模拟加载数据
+            setTimeout(() => {
+                document.querySelector('.loading').style.display = 'none';
+                document.querySelector('.content').style.display = 'block';
+                
+                // 添加动画效果
+                const rows = document.querySelectorAll('.stock-row');
+                rows.forEach((row, index) => {
+                    setTimeout(() => {
+                        row.style.opacity = '1';
+                        row.style.transform = 'translateY(0)';
+                    }, index * 50);
+                });
+            }, 1500);
+        });
+
+        // 模拟加载状态
+        function showLoading() {
+            const listView = document.getElementById('listView');
+            listView.innerHTML = '<div class="loading"><div class="spinner"></div>正在加载股票数据...</div>';
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
