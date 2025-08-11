@@ -211,6 +211,10 @@ async function renderHomePage(sectorName = null) {
                             <div class="data-source">美股市场 (BETA)</div>
                         </div>
                         <div class="header-actions">
+                            <a href="/public/tags.html" class="admin-link" title="标签系统">
+                                <span class="admin-icon">🏷️</span>
+                                <span class="admin-text">标签系统</span>
+                            </a>
                             <a href="/cache-admin.html" class="admin-link" title="缓存管理">
                                 <span class="admin-icon">⚙️</span>
                                 <span class="admin-text">缓存管理</span>
