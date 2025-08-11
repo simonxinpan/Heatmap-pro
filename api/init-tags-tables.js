@@ -1,7 +1,5 @@
 // /api/init-tags-tables.js - 初始化标签表结构
 import { Pool } from 'pg';
-import fs from 'fs';
-import path from 'path';
 
 const pool = new Pool({
     connectionString: process.env.NEON_DATABASE_URL,
@@ -18,9 +16,38 @@ export default async function handler(req, res) {
     try {
         console.log('开始初始化标签表结构...');
         
-        // 读取表创建脚本
-        const sqlPath = path.join(process.cwd(), 'create_tags_tables.sql');
-        const createTablesSql = fs.readFileSync(sqlPath, 'utf8');
+        // 直接定义表创建 SQL
+        const createTablesSql = `
+            -- 创建标签表
+            CREATE TABLE IF NOT EXISTS tags (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE,
+                color VARCHAR(7) NOT NULL,
+                type VARCHAR(50) DEFAULT '静态',
+                category VARCHAR(100),
+                description TEXT,
+                criteria TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            -- 创建股票标签关联表
+            CREATE TABLE IF NOT EXISTS stock_tags (
+                id SERIAL PRIMARY KEY,
+                stock_id INTEGER NOT NULL,
+                tag_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+                FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+                UNIQUE(stock_id, tag_id)
+            );
+            
+            -- 创建索引
+            CREATE INDEX IF NOT EXISTS idx_stock_tags_stock_id ON stock_tags(stock_id);
+            CREATE INDEX IF NOT EXISTS idx_stock_tags_tag_id ON stock_tags(tag_id);
+            CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+            CREATE INDEX IF NOT EXISTS idx_tags_type ON tags(type);
+        `;
         
         // 执行表创建脚本
         await client.query(createTablesSql);
