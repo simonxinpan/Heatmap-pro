@@ -15,7 +15,7 @@ export default async function handler(req, res) {
         let data;
         if (symbol) { // 场景1: 查询某只股票的所有标签
             const { rows } = await client.query(
-                `SELECT t.name, t.color FROM tags t
+                `SELECT t.name FROM tags t
                  JOIN stock_tags st ON t.id = st.tag_id
                  JOIN stocks s ON st.stock_id = s.id
                  WHERE s.ticker = $1`, [symbol.toUpperCase()]
@@ -31,9 +31,9 @@ export default async function handler(req, res) {
             data = rows;
         } else { // 场景3: (默认) 获取所有标签及其股票数量
             const { rows } = await client.query(
-                `SELECT t.name, t.color, COUNT(st.stock_id)::int as stock_count FROM tags t
+                `SELECT t.name, COUNT(st.stock_id)::int as stock_count FROM tags t
                  LEFT JOIN stock_tags st ON t.id = st.tag_id
-                 GROUP BY t.id, t.name, t.color
+                 GROUP BY t.id, t.name
                  ORDER BY stock_count DESC, t.name`
             );
             data = rows;
