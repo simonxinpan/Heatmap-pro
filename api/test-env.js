@@ -107,17 +107,17 @@ async function initTagsTables(request, response) {
         await client.query(`
             CREATE TABLE IF NOT EXISTS stock_tags (
                 id SERIAL PRIMARY KEY,
-                stock_id INTEGER NOT NULL,
+                ticker VARCHAR(10) NOT NULL,
                 tag_id INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+                FOREIGN KEY (ticker) REFERENCES stocks(ticker) ON DELETE CASCADE,
                 FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
-                UNIQUE(stock_id, tag_id)
+                UNIQUE(ticker, tag_id)
             );
         `);
         
         // 创建索引
-        await client.query('CREATE INDEX IF NOT EXISTS idx_stock_tags_stock_id ON stock_tags(stock_id);');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_stock_tags_ticker ON stock_tags(ticker);');
         await client.query('CREATE INDEX IF NOT EXISTS idx_stock_tags_tag_id ON stock_tags(tag_id);');
         await client.query('CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);');
         await client.query('CREATE INDEX IF NOT EXISTS idx_tags_type ON tags(type);');
@@ -146,8 +146,8 @@ async function initTagsTables(request, response) {
         
         // 为股票分配标签（基于行业分类）
         await client.query(`
-            INSERT INTO stock_tags (stock_id, tag_id)
-            SELECT s.id, t.id
+            INSERT INTO stock_tags (ticker, tag_id)
+            SELECT s.ticker, t.id
             FROM stocks s
             JOIN tags t ON (
                 (s.sector_zh = '信息技术' AND t.name = '科技股') OR
@@ -163,19 +163,19 @@ async function initTagsTables(request, response) {
                 (s.sector_zh = '媒体娱乐' AND t.name = '通讯服务') OR
                 (s.sector_zh = '半导体' AND t.name = '半导体')
             )
-            ON CONFLICT (stock_id, tag_id) DO NOTHING;
+            ON CONFLICT (ticker, tag_id) DO NOTHING;
         `);
         
         // 为所有股票添加大盘股标签
         await client.query(`
-            INSERT INTO stock_tags (stock_id, tag_id)
-            SELECT s.id, t.id
+            INSERT INTO stock_tags (ticker, tag_id)
+            SELECT s.ticker, t.id
             FROM stocks s
             CROSS JOIN tags t
             WHERE t.name = '大盘股'
             AND NOT EXISTS (
                 SELECT 1 FROM stock_tags st 
-                WHERE st.stock_id = s.id AND st.tag_id = t.id
+                WHERE st.ticker = s.ticker AND st.tag_id = t.id
             );
         `);
         
