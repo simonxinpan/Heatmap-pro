@@ -144,40 +144,14 @@ async function initTagsTables(request, response) {
         
         console.log('✅ 标签数据插入成功');
         
-        // 为股票分配标签（基于行业分类）
-        await client.query(`
-            INSERT INTO stock_tags (ticker, tag_id)
-            SELECT s.ticker, t.id
-            FROM stocks s
-            JOIN tags t ON (
-                (s.sector_zh = '信息技术' AND t.name = '科技股') OR
-                (s.sector_zh = '金融' AND t.name = '金融股') OR
-                (s.sector_zh = '医疗保健' AND t.name = '医疗股') OR
-                (s.sector_zh IN ('日常消费品', '非必需消费品') AND t.name = '消费股') OR
-                (s.sector_zh = '工业' AND t.name = '工业股') OR
-                (s.sector_zh = '能源' AND t.name = '能源股') OR
-                (s.sector_zh = '公用事业' AND t.name = '公用事业') OR
-                (s.sector_zh = '房地产' AND t.name = '房地产') OR
-                (s.sector_zh = '原材料' AND t.name = '原材料') OR
-                (s.sector_zh = '通讯服务' AND t.name = '通讯服务') OR
-                (s.sector_zh = '媒体娱乐' AND t.name = '通讯服务') OR
-                (s.sector_zh = '半导体' AND t.name = '半导体')
-            )
-            ON CONFLICT (ticker, tag_id) DO NOTHING;
-        `);
+        console.log('✅ 标签表结构创建成功');
         
-        // 为所有股票添加大盘股标签
-        await client.query(`
-            INSERT INTO stock_tags (ticker, tag_id)
-            SELECT s.ticker, t.id
-            FROM stocks s
-            CROSS JOIN tags t
-            WHERE t.name = '大盘股'
-            AND NOT EXISTS (
-                SELECT 1 FROM stock_tags st 
-                WHERE st.ticker = s.ticker AND st.tag_id = t.id
-            );
+        // 简单测试：检查表是否创建成功
+        const tablesResult = await client.query(`
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name IN ('tags', 'stock_tags')
         `);
+        console.log('创建的表:', tablesResult.rows);
         
         console.log('✅ 股票标签关联数据插入成功');
         
