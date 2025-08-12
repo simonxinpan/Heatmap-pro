@@ -103,15 +103,13 @@ async function initTagsTables(request, response) {
             );
         `);
         
-        // 创建股票标签关联表
+        // 创建股票标签关联表（暂时不使用外键约束）
         await client.query(`
             CREATE TABLE IF NOT EXISTS stock_tags (
                 id SERIAL PRIMARY KEY,
                 ticker VARCHAR(10) NOT NULL,
                 tag_id INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (ticker) REFERENCES stocks(ticker) ON DELETE CASCADE,
-                FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
                 UNIQUE(ticker, tag_id)
             );
         `);
