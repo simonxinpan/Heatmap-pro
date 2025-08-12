@@ -103,20 +103,7 @@ async function initTagsTables(request, response) {
             );
         `);
         
-        // 创建股票标签关联表（暂时不使用外键约束）
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS stock_tags (
-                id SERIAL PRIMARY KEY,
-                ticker VARCHAR(10) NOT NULL,
-                tag_id INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(ticker, tag_id)
-            );
-        `);
-        
         // 创建索引
-        await client.query('CREATE INDEX IF NOT EXISTS idx_stock_tags_ticker ON stock_tags(ticker);');
-        await client.query('CREATE INDEX IF NOT EXISTS idx_stock_tags_tag_id ON stock_tags(tag_id);');
         await client.query('CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);');
         await client.query('CREATE INDEX IF NOT EXISTS idx_tags_type ON tags(type);');
         
@@ -147,22 +134,20 @@ async function initTagsTables(request, response) {
         // 简单测试：检查表是否创建成功
         const tablesResult = await client.query(`
             SELECT table_name FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name IN ('tags', 'stock_tags')
+            WHERE table_schema = 'public' AND table_name = 'tags'
         `);
         console.log('创建的表:', tablesResult.rows);
         
-        console.log('✅ 股票标签关联数据插入成功');
+        console.log('✅ 标签表初始化完成');
         
         // 检查结果
         const tagsCount = await client.query('SELECT COUNT(*) as count FROM tags');
-        const stockTagsCount = await client.query('SELECT COUNT(*) as count FROM stock_tags');
         
         response.status(200).json({
             success: true,
             message: '标签系统初始化成功',
             data: {
-                tagsCount: parseInt(tagsCount.rows[0].count),
-                stockTagsCount: parseInt(stockTagsCount.rows[0].count)
+                tagsCount: parseInt(tagsCount.rows[0].count)
             }
         });
         
