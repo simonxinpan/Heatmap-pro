@@ -14,25 +14,19 @@ export default async function handler(request, response) {
         // 从数据库获取完整的股票数据
         const { rows: stocks } = await pool.query(`
             SELECT 
-                s.ticker,
-                s.name_zh,
-                s.sector_zh,
-                s.price,
-                s.change_amount,
-                s.change_percent,
-                s.volume,
-                s.market_cap,
-                s.pe_ratio,
-                s.dividend_yield,
-                s.updated_at,
-                ARRAY_AGG(t.name) FILTER (WHERE t.name IS NOT NULL) as tags
-            FROM stocks s
-            LEFT JOIN stock_tags st ON s.ticker = st.ticker
-            LEFT JOIN tags t ON st.tag_id = t.id
-            GROUP BY s.ticker, s.name_zh, s.sector_zh, s.price, s.change_amount, 
-                     s.change_percent, s.volume, s.market_cap, s.pe_ratio, 
-                     s.dividend_yield, s.updated_at
-            ORDER BY s.ticker
+                ticker,
+                name_zh,
+                sector_zh,
+                price,
+                change_amount,
+                change_percent,
+                volume,
+                market_cap,
+                pe_ratio,
+                dividend_yield,
+                updated_at
+            FROM stocks
+            ORDER BY ticker
         `);
         
         if (stocks.length === 0) {
@@ -54,7 +48,7 @@ export default async function handler(request, response) {
             market_cap: stock.market_cap || 0,
             pe_ratio: stock.pe_ratio || null,
             dividend_yield: stock.dividend_yield || null,
-            tags: stock.tags || [],
+            tags: [],
             updated_at: stock.updated_at
         }));
         
