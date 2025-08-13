@@ -4,6 +4,7 @@ import path from 'path';
 import url from 'url';
 import dotenv from 'dotenv';
 import stocksHandler from './api/stocks.js';
+import testEnvHandler from './api/test-env.js';
 
 // 加载环境变量
 dotenv.config();
@@ -46,6 +47,13 @@ const server = http.createServer(async (req, res) => {
             // 处理股票API请求
             if (pathname === '/api/stocks') {
                 await stocksHandler(req, res);
+                return;
+            }
+            
+            // 处理测试环境API请求
+            if (pathname === '/api/test-env') {
+                console.log('Handling test-env API request');
+                await testEnvHandler(req, res);
                 return;
             }
             
