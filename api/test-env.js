@@ -96,30 +96,37 @@ async function initSP500Data(response) {
         const client = await pool.connect();
         
         // 清空现有数据
-        await client.query('TRUNCATE TABLE stock_tags RESTART IDENTITY');
-        await client.query('TRUNCATE TABLE tags RESTART IDENTITY CASCADE');
+        await client.query('TRUNCATE TABLE stock_tags RESTART IDENTITY CASCADE');
         await client.query('TRUNCATE TABLE stocks RESTART IDENTITY CASCADE');
         
         // 插入SP500股票数据
         const stocksData = [
-            ['AAPL', '苹果公司', '信息技术'],
-            ['MSFT', '微软', '信息技术'],
-            ['GOOGL', '谷歌A', '信息技术'],
-            ['AMZN', '亚马逊', '非必需消费品'],
-            ['NVDA', '英伟达', '半导体'],
-            ['META', 'Meta Platforms', '信息技术'],
-            ['TSLA', '特斯拉', '非必需消费品'],
-            ['BRK.B', '伯克希尔哈撒韦B', '金融'],
-            ['JPM', '摩根大通', '金融'],
-            ['JNJ', '强生', '医疗保健']
+            ['AAPL', 'Apple Inc.', '苹果公司', 'Technology', '信息技术'],
+            ['MSFT', 'Microsoft Corporation', '微软', 'Technology', '信息技术'],
+            ['GOOGL', 'Alphabet Inc.', '谷歌A', 'Technology', '信息技术'],
+            ['AMZN', 'Amazon.com Inc.', '亚马逊', 'Consumer Discretionary', '非必需消费品'],
+            ['NVDA', 'NVIDIA Corporation', '英伟达', 'Technology', '半导体'],
+            ['META', 'Meta Platforms Inc.', 'Meta Platforms', 'Technology', '信息技术'],
+            ['TSLA', 'Tesla Inc.', '特斯拉', 'Consumer Discretionary', '非必需消费品'],
+            ['BRK.B', 'Berkshire Hathaway Inc.', '伯克希尔哈撒韦B', 'Financials', '金融'],
+            ['JPM', 'JPMorgan Chase & Co.', '摩根大通', 'Financials', '金融'],
+            ['JNJ', 'Johnson & Johnson', '强生', 'Health Care', '医疗保健']
         ];
         
-        for (const [ticker, name_zh, sector_zh] of stocksData) {
-            await client.query(
-                'INSERT INTO stocks (ticker, name_zh, sector_zh) VALUES ($1, $2, $3)',
-                [ticker, name_zh, sector_zh]
+        let insertedCount = 0;
+        for (const [ticker, name_en, name_zh, sector_en, sector_zh] of stocksData) {
+            const result = await client.query(
+                'INSERT INTO stocks (ticker, name_en, name_zh, sector_en, sector_zh) VALUES ($1, $2, $3, $4, $5) RETURNING ticker',
+                [ticker, name_en, name_zh, sector_en, sector_zh]
             );
+            if (result.rowCount > 0) {
+                insertedCount++;
+            }
         }
+        
+        // 验证插入结果
+        const countResult = await client.query('SELECT COUNT(*) as count FROM stocks');
+        const actualCount = countResult.rows[0].count;
         
         client.release();
         await pool.end();
@@ -127,14 +134,19 @@ async function initSP500Data(response) {
         response.status(200).json({
             success: true,
             message: 'SP500数据初始化成功',
-            data: { stocksCount: stocksData.length }
+            data: { 
+                stocksCount: stocksData.length,
+                insertedCount: insertedCount,
+                actualCount: actualCount
+            }
         });
         
     } catch (error) {
         response.status(500).json({
             success: false,
             error: 'SP500数据初始化失败',
-            details: error.message
+            details: error.message,
+            stack: error.stack
         });
     }
 }
