@@ -1,4 +1,4 @@
-// /api/stocks.js (最终优化版 - 智能回退 + 高效 Polygon)
+// /api/stocks.js (最终读取器版本 - 纯数据库读取)
 import { Pool } from 'pg';
 
 const pool = new Pool({
@@ -6,93 +6,75 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });
 
-// --- 辅助函数 1: 从 Polygon 高效获取前一日市场快照 ---
-async function getQuotesFromPolygon(apiKey) {
-    let date = new Date();
-    // 尝试回溯最多7天，以确保能找到最近的一个有数据的交易日
-    for (let i = 0; i < 7; i++) {
-        const tradeDate = date.toISOString().split('T')[0];
-        const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${tradeDate}?adjusted=true&apiKey=${apiKey}`;
-        try {
-            console.log(`[Polygon] Attempting to fetch snapshot for date: ${tradeDate}`);
-            const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.resultsCount > 0) {
-                    console.log(`[Polygon] Successfully found snapshot for date: ${tradeDate}`);
-                    const quotes = {};
-                    data.results.forEach(q => {
-                        if (q.T && q.o > 0) {
-                            quotes[q.T] = { dp: ((q.c - q.o) / q.o) * 100 };
-                        }
-                    });
-                    return quotes; // ** 成功，直接返回结果 **
-                }
-            }
-        } catch (error) { console.error(`[Polygon] Failed for date ${tradeDate}:`, error.message); }
-        date.setDate(date.getDate() - 1);
-    }
-    console.warn("[Polygon] Could not fetch any snapshot data after 7 attempts.");
-    return {}; // 7天都失败，返回空对象
-}
-
-// --- 辅助函数 2: 从 Finnhub 批量获取实时报价 (作为备用) ---
-async function getQuotesFromFinnhub(symbols, apiKey) {
-    const quotes = {};
-    const batchSize = 25;
-    for (let i = 0; i < symbols.length; i += batchSize) {
-        const batch = symbols.slice(i, i + batchSize);
-        console.log(`[Finnhub Fallback] Fetching batch ${Math.floor(i / batchSize) + 1}...`);
-        const promises = batch.map(symbol =>
-            fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => { if (data && typeof data.dp === 'number') { quotes[symbol] = { dp: data.dp }; } })
-        );
-        await Promise.allSettled(promises);
-        if (i + batchSize < symbols.length) await new Promise(res => setTimeout(res, 1500));
-    }
-    return quotes;
-}
-
 // --- API 主处理函数 ---
 export default async function handler(request, response) {
-    const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
-    const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
-
     try {
-        const { rows: companies } = await pool.query(
-            'SELECT ticker, name_zh, sector_zh, market_cap FROM stocks ORDER BY ticker;'
-        );
-        if (companies.length === 0) return response.status(404).json({ error: "No companies found in db." });
+        console.log('Fetching stock data from database...');
         
-        const symbols = companies.map(r => r.ticker);
-        let quotes = {};
-
-        // ** 智能 API 调度 **
-        if (POLYGON_API_KEY) {
-            console.log('Using primary source: Polygon.io');
-            quotes = await getQuotesFromPolygon(POLYGON_API_KEY);
-        } else if (FINNHUB_API_KEY) {
-            console.log('Using fallback source: Finnhub');
-            quotes = await getQuotesFromFinnhub(symbols, FINNHUB_API_KEY);
-        } else {
-            console.error('No API keys configured.');
+        // 从数据库获取完整的股票数据
+        const { rows: stocks } = await pool.query(`
+            SELECT 
+                s.ticker,
+                s.name_zh,
+                s.sector_zh,
+                s.price,
+                s.change_amount,
+                s.change_percent,
+                s.volume,
+                s.market_cap,
+                s.pe_ratio,
+                s.dividend_yield,
+                s.updated_at,
+                ARRAY_AGG(t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+            FROM stocks s
+            LEFT JOIN stock_tags st ON s.ticker = st.ticker
+            LEFT JOIN tags t ON st.tag_id = t.id
+            GROUP BY s.ticker, s.name_zh, s.sector_zh, s.price, s.change_amount, 
+                     s.change_percent, s.volume, s.market_cap, s.pe_ratio, 
+                     s.dividend_yield, s.updated_at
+            ORDER BY s.ticker
+        `);
+        
+        if (stocks.length === 0) {
+            return response.status(404).json({ 
+                error: "No stocks found in database.",
+                hint: "Please run the database initialization script first."
+            });
         }
-
-        // ** 数据整合 **
-        const heatmapData = companies.map(company => ({
-            ticker: company.ticker,
-            name_zh: company.name_zh,
-            sector_zh: company.sector_zh,
-            market_cap: company.market_cap || 0,
-            change_percent: quotes[company.ticker]?.dp || 0, // 统一使用 dp 字段
+        
+        // 格式化数据为热力图所需格式
+        const heatmapData = stocks.map(stock => ({
+            ticker: stock.ticker,
+            name_zh: stock.name_zh,
+            sector_zh: stock.sector_zh,
+            price: stock.price || 0,
+            change_amount: stock.change_amount || 0,
+            change_percent: stock.change_percent || 0,
+            volume: stock.volume || 0,
+            market_cap: stock.market_cap || 0,
+            pe_ratio: stock.pe_ratio || null,
+            dividend_yield: stock.dividend_yield || null,
+            tags: stock.tags || [],
+            updated_at: stock.updated_at
         }));
-
+        
+        console.log(`Successfully fetched ${heatmapData.length} stocks from database`);
+        
+        // 设置缓存头
         response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-        response.status(200).json(heatmapData);
-
+        response.status(200).json({
+            success: true,
+            data: heatmapData,
+            count: heatmapData.length,
+            last_updated: stocks[0]?.updated_at || null
+        });
+        
     } catch (error) {
         console.error("API /stocks.js Error:", error);
-        response.status(500).json({ error: 'Failed to generate heatmap data.' });
+        response.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch stock data from database.',
+            details: error.message
+        });
     }
 }
