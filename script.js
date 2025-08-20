@@ -160,6 +160,29 @@ async function renderHomePage(sectorName = null) {
             console.log(`   无效股票: ${invalidStocks} 只`);
             console.log(`   发现的行业数量: ${Object.keys(sectorAnalysis).length}`);
             console.log(`   各行业股票数量:`, sectorAnalysis);
+            
+            // 🔧 关键修复：数据类型转换，解决NaN问题
+            console.log('🔧 开始数据类型转换...');
+            let originalCount = marketData.length;
+            marketData = marketData.map(stock => ({
+                ...stock,
+                market_cap: parseFloat(stock.market_cap) || 0, // 将市值字符串转为浮点数
+                change_percent: parseFloat(stock.change_percent) || 0 // 将涨跌幅字符串转为浮点数
+            })).filter(stock => 
+                !isNaN(stock.market_cap) && stock.market_cap > 0 // 过滤掉转换失败或市值为0的股票
+            );
+            
+            console.log(`✅ 数据类型转换完成:`);
+            console.log(`   原始股票数: ${originalCount}`);
+            console.log(`   有效股票数: ${marketData.length}`);
+            console.log(`   过滤掉的股票: ${originalCount - marketData.length}`);
+            
+            // 验证转换结果
+            if (marketData.length > 0) {
+                const sample = marketData[0];
+                console.log(`📋 数据样本检查:`);
+                console.log(`   ${sample.ticker}: market_cap=${sample.market_cap} (${typeof sample.market_cap}), change_percent=${sample.change_percent} (${typeof sample.change_percent})`);
+            }
         } catch (apiError) {
             console.log('API不可用，使用模拟数据进行演示');
             // 使用标普500主要股票的模拟数据
@@ -398,41 +421,64 @@ function generateTreemap(data, container, groupIntoSectors = true) {
     }
     
     // 开始布局
-    layout(itemsToLayout, 0, 0, totalWidth, totalHeight, container);
+    try {
+        console.log('🎯 开始执行布局算法...');
+        layout(itemsToLayout, 0, 0, totalWidth, totalHeight, container);
+        console.log(`📐 布局完成，准备渲染 ${elementsToRender.length} 个元素`);
+    } catch (layoutError) {
+        console.error('❌ 布局算法执行失败:', layoutError);
+        return;
+    }
     
     // 批量渲染股票元素（性能优化）
     const batchSize = 50; // 每批渲染50个元素
     let currentBatch = 0;
+    let renderedCount = 0;
     
     function renderBatch() {
-        const start = currentBatch * batchSize;
-        const end = Math.min(start + batchSize, elementsToRender.length);
-        const batchFragment = document.createDocumentFragment();
-        
-        for (let i = start; i < end; i++) {
-            const { node, x, y, width, height, parentEl } = elementsToRender[i];
-            const stockEl = createStockElement(node, width, height);
-            stockEl.style.left = `${x}px`;
-            stockEl.style.top = `${y}px`;
+        try {
+            const start = currentBatch * batchSize;
+            const end = Math.min(start + batchSize, elementsToRender.length);
+            const batchFragment = document.createDocumentFragment();
             
-            if (parentEl === container) {
-                batchFragment.appendChild(stockEl);
-            } else {
-                parentEl.appendChild(stockEl);
+            for (let i = start; i < end; i++) {
+                const { node, x, y, width, height, parentEl } = elementsToRender[i];
+                
+                // 验证数据完整性
+                if (!node || isNaN(x) || isNaN(y) || isNaN(width) || isNaN(height)) {
+                    console.warn(`⚠️ 跳过无效元素 ${i}:`, { node: node?.ticker, x, y, width, height });
+                    continue;
+                }
+                
+                const stockEl = createStockElement(node, width, height);
+                stockEl.style.left = `${x}px`;
+                stockEl.style.top = `${y}px`;
+                
+                if (parentEl === container) {
+                    batchFragment.appendChild(stockEl);
+                } else {
+                    parentEl.appendChild(stockEl);
+                }
+                renderedCount++;
             }
-        }
-        
-        if (batchFragment.hasChildNodes()) {
-            container.appendChild(batchFragment);
-        }
-        
-        currentBatch++;
-        
-        // 如果还有更多元素需要渲染，使用requestAnimationFrame继续
-        if (end < elementsToRender.length) {
-            requestAnimationFrame(renderBatch);
-        } else {
-            console.log(`✅ 完成渲染 ${elementsToRender.length} 只股票`);
+            
+            if (batchFragment.hasChildNodes()) {
+                container.appendChild(batchFragment);
+            }
+            
+            currentBatch++;
+            
+            // 如果还有更多元素需要渲染，使用requestAnimationFrame继续
+            if (end < elementsToRender.length) {
+                requestAnimationFrame(renderBatch);
+            } else {
+                console.log(`✅ 渲染完成! 成功渲染 ${renderedCount} 只股票 (计划: ${elementsToRender.length})`);
+                if (renderedCount !== elementsToRender.length) {
+                    console.warn(`⚠️ 渲染数量不匹配，可能有 ${elementsToRender.length - renderedCount} 只股票被跳过`);
+                }
+            }
+        } catch (renderError) {
+            console.error('❌ 批量渲染过程中发生错误:', renderError);
         }
     }
     
