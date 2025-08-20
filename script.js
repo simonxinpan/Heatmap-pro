@@ -127,6 +127,39 @@ async function renderHomePage(sectorName = null) {
                     console.log(`✅ 获取到 ${marketData.length} 只股票数据`);
                 }
             }
+            
+            // 🔍 调试日志：检查原始数据的sector_zh字段
+            console.log('🔍 开始分析原始股票数据的行业字段...');
+            const sectorAnalysis = {};
+            let validStocks = 0;
+            let invalidStocks = 0;
+            
+            marketData.forEach((stock, index) => {
+                const sector = stock.sector_zh;
+                const sectorType = typeof sector;
+                const sectorValue = sector === null ? 'null' : sector === undefined ? 'undefined' : `'${sector}'`;
+                
+                if (index < 10) { // 只打印前10只股票的详细信息
+                    console.log(`股票 ${index + 1}: ${stock.ticker} | 行业: ${sectorValue} (${sectorType})`);
+                }
+                
+                if (sector && typeof sector === 'string' && sector.trim() !== '') {
+                    const cleanSector = sector.trim();
+                    sectorAnalysis[cleanSector] = (sectorAnalysis[cleanSector] || 0) + 1;
+                    validStocks++;
+                } else {
+                    invalidStocks++;
+                    if (invalidStocks <= 5) { // 只打印前5个无效的股票
+                        console.warn(`⚠️ 无效行业数据: ${stock.ticker} | sector_zh: ${sectorValue}`);
+                    }
+                }
+            });
+            
+            console.log(`📊 行业数据分析结果:`);
+            console.log(`   有效股票: ${validStocks} 只`);
+            console.log(`   无效股票: ${invalidStocks} 只`);
+            console.log(`   发现的行业数量: ${Object.keys(sectorAnalysis).length}`);
+            console.log(`   各行业股票数量:`, sectorAnalysis);
         } catch (apiError) {
             console.log('API不可用，使用模拟数据进行演示');
             // 使用标普500主要股票的模拟数据
@@ -261,25 +294,41 @@ async function renderHomePage(sectorName = null) {
 
 // 生成Treemap布局的核心函数（性能优化版）
 function generateTreemap(data, container, groupIntoSectors = true) {
+    console.log('🎨 开始生成热力图...');
+    console.log(`输入数据: ${data ? data.length : 0} 只股票`);
+    console.log(`分组模式: ${groupIntoSectors ? '按行业分组' : '扁平显示'}`);
+    
     container.innerHTML = '';
     const { clientWidth: totalWidth, clientHeight: totalHeight } = container;
-    if (totalWidth === 0 || totalHeight === 0 || !data || data.length === 0) return;
+    if (totalWidth === 0 || totalHeight === 0 || !data || data.length === 0) {
+        console.warn('⚠️ 容器尺寸为0或数据为空，跳过渲染');
+        return;
+    }
 
     // 性能优化：使用DocumentFragment减少DOM操作
     const fragment = document.createDocumentFragment();
     const elementsToRender = [];
     
     let itemsToLayout;
+    let totalStocksToRender = 0;
+    
     if (groupIntoSectors) {
         const stocksBySector = groupDataBySector(data);
-        itemsToLayout = Object.entries(stocksBySector).map(([sectorName, sectorData]) => ({
-            name: sectorName, 
-            isSector: true, 
-            value: sectorData.total_market_cap,
-            items: sectorData.stocks.map(s => ({ ...s, value: s.market_cap, isSector: false }))
-        }));
+        itemsToLayout = Object.entries(stocksBySector).map(([sectorName, sectorData]) => {
+            totalStocksToRender += sectorData.stocks.length;
+            return {
+                name: sectorName, 
+                isSector: true, 
+                value: sectorData.total_market_cap,
+                items: sectorData.stocks.map(s => ({ ...s, value: s.market_cap, isSector: false }))
+            };
+        });
+        console.log(`🏢 创建了 ${itemsToLayout.length} 个行业分组`);
+        console.log(`📊 总计要渲染的股票数: ${totalStocksToRender}`);
     } else {
         itemsToLayout = data.map(s => ({ ...s, value: s.market_cap, isSector: false }));
+        totalStocksToRender = itemsToLayout.length;
+        console.log(`📊 扁平模式，要渲染的股票数: ${totalStocksToRender}`);
     }
 
     // 递归布局函数
@@ -497,13 +546,54 @@ function createStockElement(stock, width, height) {
 // 按行业分组数据
 function groupDataBySector(data) {
     if (!data) return {};
-    return data.reduce((acc, stock) => {
-        const sector = stock.sector_zh || '其他';
-        if (!acc[sector]) { acc[sector] = { stocks: [], total_market_cap: 0 }; }
+    
+    console.log('🔄 开始按行业分组数据...');
+    console.log(`输入数据: ${data.length} 只股票`);
+    
+    let processedCount = 0;
+    let skippedCount = 0;
+    const sectorStats = {};
+    
+    const result = data.reduce((acc, stock) => {
+        let sector = stock.sector_zh;
+        
+        // 清理和验证sector字段
+        if (sector && typeof sector === 'string') {
+            sector = sector.trim(); // 清理前后空格
+            if (sector === '') {
+                sector = '其他'; // 空字符串归类为其他
+            }
+        } else {
+            sector = '其他'; // null, undefined或非字符串归类为其他
+            if (skippedCount < 5) { // 只记录前5个问题股票
+                console.warn(`⚠️ 股票 ${stock.ticker} 的行业字段无效:`, stock.sector_zh);
+            }
+            skippedCount++;
+        }
+        
+        // 统计每个行业的股票数量
+        sectorStats[sector] = (sectorStats[sector] || 0) + 1;
+        
+        if (!acc[sector]) { 
+            acc[sector] = { stocks: [], total_market_cap: 0 }; 
+        }
         acc[sector].stocks.push(stock);
         acc[sector].total_market_cap += (stock.market_cap || 0);
+        processedCount++;
+        
         return acc;
     }, {});
+    
+    console.log(`✅ 分组完成! 处理了 ${processedCount} 只股票`);
+    console.log(`📊 各行业分组结果:`, sectorStats);
+    console.log(`🏢 最终行业数量: ${Object.keys(result).length}`);
+    
+    // 打印每个行业的详细信息
+    Object.entries(result).forEach(([sectorName, sectorData]) => {
+        console.log(`   ${sectorName}: ${sectorData.stocks.length} 只股票, 总市值: ${(sectorData.total_market_cap / 1000000).toFixed(0)}M`);
+    });
+    
+    return result;
 }
 
 // 根据涨跌幅获取颜色类
