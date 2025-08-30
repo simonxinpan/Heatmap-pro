@@ -105,220 +105,42 @@
             </div>
         </section>
 
-        <!-- 分行业热力图 -->
-        <section id="sector-heatmaps" class="heatmap-section">
+        <!-- 行业仪表盘 -->
+        <section id="sector-dashboard" class="dashboard-section">
             <div class="section-header">
                 <div class="header-content">
-                    <h2 class="section-title">🏭 分行业热力图矩阵</h2>
-                    <p class="section-subtitle">按行业板块分组展示，快速对比各行业表现</p>
+                    <h2 class="section-title">🏭 行业仪表盘</h2>
+                    <p class="section-subtitle">实时展示各行业关键指标和迷你热力图</p>
                 </div>
                 <div class="section-controls">
                     <div class="control-group">
                         <label>排序方式:</label>
-                        <select id="sector-sort">
-                            <option value="performance">按表现排序</option>
+                        <select id="dashboard-sort">
                             <option value="market_cap">按市值排序</option>
+                            <option value="performance">按表现排序</option>
                             <option value="volume">按成交量排序</option>
                         </select>
                     </div>
                     <div class="control-group">
                         <label>显示模式:</label>
-                        <select id="sector-display-mode">
+                        <select id="dashboard-display-mode">
                             <option value="grid">网格模式</option>
-                            <option value="list">列表模式</option>
                             <option value="compact">紧凑模式</option>
                         </select>
                     </div>
-                    <button class="refresh-btn" onclick="refreshSectorHeatmaps()">🔄 刷新</button>
+                    <button class="refresh-btn" onclick="refreshDashboard()">🔄 刷新</button>
                 </div>
             </div>
             
-            <div class="sector-heatmaps-grid" id="sector-heatmaps-grid">
-                <!-- 科技行业 -->
-                <div class="sector-heatmap-card" data-sector="technology">
-                    <div class="sector-card-header">
-                        <div class="sector-info">
-                            <h3 class="sector-name">💻 科技行业</h3>
-                            <div class="sector-metrics">
-                                <span class="sector-change positive">+2.34%</span>
-                                <span class="sector-count">128只股票</span>
-                            </div>
-                        </div>
-                        <button class="sector-expand-btn" onclick="expandSector('technology')">
-                            <span>🔍</span>
-                        </button>
-                    </div>
-                    <div class="sector-mini-heatmap" id="tech-mini-heatmap">
-                        <div class="mini-heatmap-placeholder">
-                            <p>加载中...</p>
-                        </div>
-                    </div>
-                    <div class="sector-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">$15.2T</span>
-                            <span class="stat-label">总市值</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">AAPL</span>
-                            <span class="stat-label">领涨股</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 医疗保健 -->
-                <div class="sector-heatmap-card" data-sector="healthcare">
-                    <div class="sector-card-header">
-                        <div class="sector-info">
-                            <h3 class="sector-name">🏥 医疗保健</h3>
-                            <div class="sector-metrics">
-                                <span class="sector-change positive">+1.87%</span>
-                                <span class="sector-count">95只股票</span>
-                            </div>
-                        </div>
-                        <button class="sector-expand-btn" onclick="expandSector('healthcare')">
-                            <span>🔍</span>
-                        </button>
-                    </div>
-                    <div class="sector-mini-heatmap" id="healthcare-mini-heatmap">
-                        <div class="mini-heatmap-placeholder">
-                            <p>加载中...</p>
-                        </div>
-                    </div>
-                    <div class="sector-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">$8.7T</span>
-                            <span class="stat-label">总市值</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">JNJ</span>
-                            <span class="stat-label">领涨股</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 金融服务 -->
-                <div class="sector-heatmap-card" data-sector="financial">
-                    <div class="sector-card-header">
-                        <div class="sector-info">
-                            <h3 class="sector-name">🏦 金融服务</h3>
-                            <div class="sector-metrics">
-                                <span class="sector-change negative">-0.52%</span>
-                                <span class="sector-count">87只股票</span>
-                            </div>
-                        </div>
-                        <button class="sector-expand-btn" onclick="expandSector('financial')">
-                            <span>🔍</span>
-                        </button>
-                    </div>
-                    <div class="sector-mini-heatmap" id="financial-mini-heatmap">
-                        <div class="mini-heatmap-placeholder">
-                            <p>加载中...</p>
-                        </div>
-                    </div>
-                    <div class="sector-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">$6.3T</span>
-                            <span class="stat-label">总市值</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">JPM</span>
-                            <span class="stat-label">领涨股</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 消费品 -->
-                <div class="sector-heatmap-card" data-sector="consumer">
-                    <div class="sector-card-header">
-                        <div class="sector-info">
-                            <h3 class="sector-name">🛍️ 消费品</h3>
-                            <div class="sector-metrics">
-                                <span class="sector-change positive">+0.93%</span>
-                                <span class="sector-count">76只股票</span>
-                            </div>
-                        </div>
-                        <button class="sector-expand-btn" onclick="expandSector('consumer')">
-                            <span>🔍</span>
-                        </button>
-                    </div>
-                    <div class="sector-mini-heatmap" id="consumer-mini-heatmap">
-                        <div class="mini-heatmap-placeholder">
-                            <p>加载中...</p>
-                        </div>
-                    </div>
-                    <div class="sector-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">$4.8T</span>
-                            <span class="stat-label">总市值</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">AMZN</span>
-                            <span class="stat-label">领涨股</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 能源 -->
-                <div class="sector-heatmap-card" data-sector="energy">
-                    <div class="sector-card-header">
-                        <div class="sector-info">
-                            <h3 class="sector-name">⚡ 能源</h3>
-                            <div class="sector-metrics">
-                                <span class="sector-change negative">-1.24%</span>
-                                <span class="sector-count">42只股票</span>
-                            </div>
-                        </div>
-                        <button class="sector-expand-btn" onclick="expandSector('energy')">
-                            <span>🔍</span>
-                        </button>
-                    </div>
-                    <div class="sector-mini-heatmap" id="energy-mini-heatmap">
-                        <div class="mini-heatmap-placeholder">
-                            <p>加载中...</p>
-                        </div>
-                    </div>
-                    <div class="sector-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">$2.1T</span>
-                            <span class="stat-label">总市值</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">XOM</span>
-                            <span class="stat-label">领涨股</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 工业 -->
-                <div class="sector-heatmap-card" data-sector="industrial">
-                    <div class="sector-card-header">
-                        <div class="sector-info">
-                            <h3 class="sector-name">🏭 工业</h3>
-                            <div class="sector-metrics">
-                                <span class="sector-change positive">+1.15%</span>
-                                <span class="sector-count">89只股票</span>
-                            </div>
-                        </div>
-                        <button class="sector-expand-btn" onclick="expandSector('industrial')">
-                            <span>🔍</span>
-                        </button>
-                    </div>
-                    <div class="sector-mini-heatmap" id="industrial-mini-heatmap">
-                        <div class="mini-heatmap-placeholder">
-                            <p>加载中...</p>
-                        </div>
-                    </div>
-                    <div class="sector-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">$3.9T</span>
-                            <span class="stat-label">总市值</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">BA</span>
-                            <span class="stat-label">领涨股</span>
-                        </div>
-                    </div>
-                </div>
+            <!-- 加载状态 -->
+            <div id="dashboard-loading" class="dashboard-loading">
+                <div class="loading-spinner"></div>
+                <p>正在加载行业数据...</p>
+            </div>
+            
+            <!-- 动态生成的行业仪表盘网格 -->
+            <div class="industry-dashboard-grid" id="dashboard-grid">
+                <!-- 行业卡片将由JavaScript动态生成 -->
             </div>
         </section>
 
@@ -407,5 +229,6 @@
     <script src="HeatmapRenderer.js"></script>
     <script src="StockHeatmap.js"></script>
     <script src="panoramic-heatmap.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
