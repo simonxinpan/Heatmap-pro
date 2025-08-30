@@ -76,7 +76,11 @@ const mockStockData = [
 
 export default async function handler(request, response) {
     try {
-        console.log('🔄 Fetching simplified stock data for heatmap...');
+        // 从URL参数中获取sector筛选条件
+        const url = new URL(request.url, `http://${request.headers.host}`);
+        const sector = url.searchParams.get('sector');
+        
+        console.log(`🔄 Fetching simplified stock data for heatmap${sector ? ` (sector: ${sector})` : ' (all sectors)'}...`);
         
         // 设置强缓存头，提升性能
         response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600'); // 5分钟缓存，10分钟过期重新验证
@@ -85,7 +89,7 @@ export default async function handler(request, response) {
         
         // 尝试从数据库获取数据
         try {
-            const { rows: stocks } = await pool.query(`
+            let query = `
                 SELECT 
                     ticker,
                     name_zh,
@@ -99,9 +103,19 @@ export default async function handler(request, response) {
                     sector_zh IS NOT NULL AND sector_zh != '' AND
                     market_cap IS NOT NULL AND market_cap > 0 AND
                     change_percent IS NOT NULL
-                ORDER BY market_cap DESC
-                LIMIT 502
-            `);
+            `;
+            
+            let queryParams = [];
+            
+            // 如果提供了sector参数，添加筛选条件
+            if (sector) {
+                query += ` AND sector_zh = $1`;
+                queryParams.push(sector);
+            }
+            
+            query += ` ORDER BY market_cap DESC LIMIT 502`;
+            
+            const { rows: stocks } = await pool.query(query, queryParams);
             
             if (stocks.length > 0) {
                 console.log(`✅ Successfully fetched ${stocks.length} stocks from database`);
@@ -122,14 +136,22 @@ export default async function handler(request, response) {
         }
         
         // 如果数据库不可用或没有数据，使用模拟数据
-        console.log(`📊 Using mock data: ${mockStockData.length} stocks`);
+        let filteredMockData = mockStockData;
+        
+        // 如果提供了sector参数，筛选模拟数据
+        if (sector) {
+            filteredMockData = mockStockData.filter(stock => stock.sector_zh === sector);
+        }
+        
+        console.log(`📊 Using mock data: ${filteredMockData.length} stocks${sector ? ` (sector: ${sector})` : ''}`);
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120'); // 较短缓存
         
         const responseData = {
-            data: mockStockData,
+            data: filteredMockData,
             timestamp: new Date().toISOString(),
-            count: mockStockData.length,
-            source: 'mock'
+            count: filteredMockData.length,
+            source: 'mock',
+            sector: sector || 'all'
         };
         
         response.writeHead(200, { 'Content-Type': 'application/json' });
@@ -142,11 +164,19 @@ export default async function handler(request, response) {
         console.log('🔄 Fallback to mock data due to error');
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
         
+        let fallbackMockData = mockStockData;
+        
+        // 如果提供了sector参数，筛选模拟数据
+        if (sector) {
+            fallbackMockData = mockStockData.filter(stock => stock.sector_zh === sector);
+        }
+        
         const responseData = {
-            data: mockStockData,
+            data: fallbackMockData,
             timestamp: new Date().toISOString(),
-            count: mockStockData.length,
+            count: fallbackMockData.length,
             source: 'mock',
+            sector: sector || 'all',
             error: 'Database connection failed'
         };
         

@@ -418,6 +418,128 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   height: 120px;
+  padding: 0.5rem;
+  margin: 1rem 0;
+}
+
+.mini-heatmap .heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 2px;
+  height: 100%;
+}
+
+.mini-heatmap .heatmap-cell {
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.mini-heatmap .heatmap-cell.empty {
+  background-color: #e5e7eb;
+}
+
+.mini-heatmap .heatmap-cell:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.sector-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sector-icon {
+  font-size: 1.2rem;
+}
+
+.sector-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stock-count {
+  font-weight: 500;
+}
+
+.sector-leader {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.sector-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.sector-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.sector-error button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.sector-error button:hover {
+  background: var(--primary-dark);
+}
+
+.sector-card.error {
+  border-color: var(--danger-color);
+  background: #fef2f2;
+}
+
+.sector-card.error .sector-change.error {
+  background: var(--danger-color);
+  color: white;
+}
+
+.sector-card.error .mini-heatmap.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--danger-color);
+  font-size: 0.9rem;
+}
   margin-bottom: 1rem;
 }
 

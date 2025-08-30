@@ -94,6 +94,44 @@ app.get('/api/stocks', (req, res) => {
     res.json(mockStocks);
 });
 
+// API路由 - 简化股票数据（支持sector筛选）
+app.get('/api/stocks-simple', (req, res) => {
+    const { sector } = req.query;
+    
+    // 扩展的模拟股票数据
+    const allStocks = [
+        { ticker: 'AAPL', name_zh: '苹果公司', sector_zh: '信息技术', market_cap: 2800000000000, change_percent: 2.5 },
+        { ticker: 'MSFT', name_zh: '微软', sector_zh: '信息技术', market_cap: 2400000000000, change_percent: 1.8 },
+        { ticker: 'GOOGL', name_zh: '谷歌', sector_zh: '信息技术', market_cap: 1600000000000, change_percent: -0.5 },
+        { ticker: 'NVDA', name_zh: '英伟达', sector_zh: '信息技术', market_cap: 1200000000000, change_percent: 4.1 },
+        { ticker: 'META', name_zh: '脸书', sector_zh: '信息技术', market_cap: 800000000000, change_percent: 1.2 },
+        { ticker: 'TSLA', name_zh: '特斯拉', sector_zh: '汽车', market_cap: 800000000000, change_percent: 3.2 },
+        { ticker: 'JPM', name_zh: '摩根大通', sector_zh: '金融', market_cap: 450000000000, change_percent: 0.8 },
+        { ticker: 'BAC', name_zh: '美国银行', sector_zh: '金融', market_cap: 280000000000, change_percent: -0.3 },
+        { ticker: 'WFC', name_zh: '富国银行', sector_zh: '金融', market_cap: 180000000000, change_percent: 1.1 },
+        { ticker: 'JNJ', name_zh: '强生', sector_zh: '医疗保健', market_cap: 420000000000, change_percent: 0.5 },
+        { ticker: 'PFE', name_zh: '辉瑞', sector_zh: '医疗保健', market_cap: 220000000000, change_percent: -1.2 },
+        { ticker: 'UNH', name_zh: '联合健康', sector_zh: '医疗保健', market_cap: 480000000000, change_percent: 2.1 }
+    ];
+    
+    // 根据sector参数筛选
+    let filteredStocks = allStocks;
+    if (sector) {
+        filteredStocks = allStocks.filter(stock => stock.sector_zh === sector);
+    }
+    
+    // 返回数据格式
+    const response = {
+        data: filteredStocks,
+        timestamp: new Date().toISOString(),
+        source: 'mock',
+        sector: sector || null,
+        total: filteredStocks.length
+    };
+    
+    res.json(response);
+});
+
 // API路由 - 模拟行业数据
 app.get('/api/sectors', (req, res) => {
     const mockSectors = [

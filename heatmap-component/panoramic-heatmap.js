@@ -110,16 +110,86 @@ class PanoramicHeatmap {
         try {
             this.isLoading = true;
             
-            // 加载市场全景热力图
-            await this.loadMarketHeatmap();
+            // 检查URL参数，如果有sector参数，优先加载该行业
+            const urlParams = new URLSearchParams(window.location.search);
+            const sectorParam = urlParams.get('sector');
             
-            // 加载各行业小热力图
-            await this.loadSectorMiniHeatmaps();
+            if (sectorParam) {
+                // 如果有sector参数，直接加载该行业的详细热力图
+                await this.loadSectorDetailedHeatmap(sectorParam);
+                this.expandSector(sectorParam);
+            } else {
+                // 否则加载市场全景热力图
+                await this.loadMarketHeatmap();
+                
+                // 延迟加载行业小热力图，提升首屏加载速度
+                setTimeout(() => {
+                    this.loadSectorMiniHeatmapsLazy();
+                }, 500);
+            }
             
         } catch (error) {
             console.error('加载初始数据失败:', error);
         } finally {
             this.isLoading = false;
+        }
+    }
+
+    /**
+     * 懒加载各行业小热力图
+     */
+    async loadSectorMiniHeatmapsLazy() {
+        const sectors = ['信息技术', '医疗保健', '金融服务', '消费品', '能源', '工业'];
+        
+        // 使用Intersection Observer实现可视区域懒加载
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const sectorCard = entry.target;
+                    const sector = sectorCard.dataset.sector;
+                    if (sector && !this.heatmaps[sector]) {
+                        this.loadSectorMiniHeatmap(sector);
+                        observer.unobserve(sectorCard);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '100px' // 提前100px开始加载
+        });
+        
+        // 观察所有行业卡片
+        sectors.forEach(sector => {
+            const sectorCard = document.querySelector(`[data-sector="${sector}"]`);
+            if (sectorCard) {
+                observer.observe(sectorCard);
+            }
+        });
+    }
+
+    /**
+     * 加载特定行业的详细热力图
+     */
+    async loadSectorDetailedHeatmap(sector) {
+        try {
+            // 获取行业数据
+            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sector)}`);
+            const sectorData = await response.json();
+            
+            if (sectorData.data && sectorData.data.length > 0) {
+                // 更新页面标题和信息
+                this.updateFeaturedSectorInfo(sector, sectorData);
+                
+                // 加载详细热力图
+                await this.loadFeaturedSectorHeatmap(sector);
+            } else {
+                console.warn(`No data found for sector: ${sector}`);
+                // 回退到全景视图
+                await this.loadMarketHeatmap();
+            }
+        } catch (error) {
+            console.error(`Failed to load sector ${sector}:`, error);
+            // 回退到全景视图
+            await this.loadMarketHeatmap();
         }
     }
 
@@ -254,13 +324,21 @@ class PanoramicHeatmap {
      * 更新特定行业信息
      */
     updateFeaturedSectorInfo(sector) {
+        // 支持中文和英文行业名称映射
         const sectorNames = {
             'technology': '💻 科技行业',
-            'healthcare': '🏥 医疗保健',
+            'healthcare': '🏥 医疗保健', 
             'financial': '🏦 金融服务',
             'consumer': '🛍️ 消费品',
             'energy': '⚡ 能源',
-            'industrial': '🏭 工业'
+            'industrial': '🏭 工业',
+            // 中文映射
+            '科技': '💻 科技行业',
+            '医疗保健': '🏥 医疗保健',
+            '金融服务': '🏦 金融服务', 
+            '消费品': '🛍️ 消费品',
+            '能源': '⚡ 能源',
+            '工业': '🏭 工业'
         };
         
         const sectorStats = {
@@ -269,14 +347,24 @@ class PanoramicHeatmap {
             'financial': { count: 87, change: '-0.52%', leader: 'JPM', volume: '$1.8B' },
             'consumer': { count: 76, change: '+0.93%', leader: 'AMZN', volume: '$2.1B' },
             'energy': { count: 42, change: '-1.24%', leader: 'XOM', volume: '$0.9B' },
-            'industrial': { count: 89, change: '+1.15%', leader: 'BA', volume: '$1.1B' }
+            'industrial': { count: 89, change: '+1.15%', leader: 'BA', volume: '$1.1B' },
+            // 中文映射
+            '科技': { count: 128, change: '+2.34%', leader: 'AAPL', volume: '$2.8B' },
+            '医疗保健': { count: 95, change: '+1.87%', leader: 'JNJ', volume: '$1.2B' },
+            '金融服务': { count: 87, change: '-0.52%', leader: 'JPM', volume: '$1.8B' },
+            '消费品': { count: 76, change: '+0.93%', leader: 'AMZN', volume: '$2.1B' },
+            '能源': { count: 42, change: '-1.24%', leader: 'XOM', volume: '$0.9B' },
+            '工业': { count: 89, change: '+1.15%', leader: 'BA', volume: '$1.1B' }
         };
         
-        document.getElementById('featured-sector-name').textContent = sectorNames[sector] + '深度分析';
-        document.getElementById('featured-sector-count').textContent = sectorStats[sector].count;
-        document.getElementById('featured-sector-change').textContent = sectorStats[sector].change;
-        document.getElementById('featured-sector-leader').textContent = sectorStats[sector].leader;
-        document.getElementById('featured-sector-volume').textContent = sectorStats[sector].volume;
+        const sectorName = sectorNames[sector] || sector;
+        const stats = sectorStats[sector] || { count: 0, change: '0%', leader: 'N/A', volume: '$0' };
+        
+        document.getElementById('featured-sector-name').textContent = sectorName + '深度分析';
+        document.getElementById('featured-sector-count').textContent = stats.count;
+        document.getElementById('featured-sector-change').textContent = stats.change;
+        document.getElementById('featured-sector-leader').textContent = stats.leader;
+        document.getElementById('featured-sector-volume').textContent = stats.volume;
     }
 
     /**
@@ -414,7 +502,14 @@ class PanoramicHeatmap {
             'financial': detailed ? 87 : (miniHeatmap ? 25 : 12),
             'consumer': detailed ? 76 : (miniHeatmap ? 22 : 10),
             'energy': detailed ? 42 : (miniHeatmap ? 18 : 8),
-            'industrial': detailed ? 89 : (miniHeatmap ? 30 : 14)
+            'industrial': detailed ? 89 : (miniHeatmap ? 30 : 14),
+            // 中文行业名称支持
+            '科技': detailed ? 128 : (miniHeatmap ? 35 : 20),
+            '医疗保健': detailed ? 95 : (miniHeatmap ? 28 : 15),
+            '金融服务': detailed ? 87 : (miniHeatmap ? 25 : 12),
+            '消费品': detailed ? 76 : (miniHeatmap ? 22 : 10),
+            '能源': detailed ? 42 : (miniHeatmap ? 18 : 8),
+            '工业': detailed ? 89 : (miniHeatmap ? 30 : 14)
         };
         
         const count = counts[sector] || 10;

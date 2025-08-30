@@ -20,25 +20,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 获取DOM元素引用
         initializeElements();
         
+        // 从URL参数中获取sector筛选条件
+        const urlParams = new URLSearchParams(window.location.search);
+        const sector = urlParams.get('sector');
+        
         // 显示加载状态
         showLoadingState();
         
-        // 加载全市场数据
-        await loadMarketData();
+        // 根据URL参数加载对应数据
+        await loadMarketData(false, sector);
         
         // 初始化热力图
         initializeHeatmap();
         
-        // 填充行业筛选下拉菜单
-        populateSectorFilter();
+        // 填充行业筛选下拉菜单（如果是全市场视图）
+        if (!sector) {
+            populateSectorFilter();
+        }
         
         // 绑定事件监听器
         bindEventListeners();
         
-        // 渲染初始热力图（全市场）
-        renderHeatmap(allStocks, '全市场 (S&P 500)');
+        // 渲染热力图
+        const title = sector ? `${sector} 板块热力图` : '全市场 (S&P 500)';
+        renderHeatmap(allStocks, title);
         
-        console.log('✅ 全景热力图初始化完成');
+        // 更新页面标题
+        if (heatmapTitle) {
+            heatmapTitle.textContent = title;
+        }
+        
+        console.log(`✅ ${title}初始化完成`);
         
     } catch (error) {
         console.error('❌ 初始化失败:', error);
@@ -66,27 +78,35 @@ function initializeElements() {
 }
 
 /**
- * 加载全市场数据（支持本地缓存）
+ * 加载股票数据（支持本地缓存和sector筛选）
  */
-async function loadMarketData(forceRefresh = false) {
+async function loadMarketData(forceRefresh = false, sector = null) {
     if (isLoading) return;
     
     isLoading = true;
     
     try {
-        console.log('🔄 开始加载全市场数据...');
+        const dataType = sector ? `${sector}板块` : '全市场';
+        console.log(`🔄 开始加载${dataType}数据...`);
         
-        // 检查本地缓存
+        // 构建API URL
+        let apiUrl = '/api/stocks-simple';
+        if (sector) {
+            apiUrl += `?sector=${encodeURIComponent(sector)}`;
+        }
+        
+        // 检查本地缓存（sector特定的缓存key）
+        const cacheKey = sector ? `stocks_${sector}` : 'stocks_all';
         if (!forceRefresh) {
-            const cachedData = getCachedData();
+            const cachedData = getCachedData(false, cacheKey);
             if (cachedData) {
                 allStocks = cachedData.data;
-                console.log(`✅ 从本地缓存加载 ${allStocks.length} 只股票数据`);
+                console.log(`✅ 从本地缓存加载 ${allStocks.length} 只${dataType}股票数据`);
                 return;
             }
         }
         
-        const response = await fetch('/api/stocks-simple', {
+        const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
                 'Cache-Control': forceRefresh ? 'no-cache' : 'max-age=300' // 强制刷新时不使用缓存
@@ -110,7 +130,7 @@ async function loadMarketData(forceRefresh = false) {
             }
             
             // 缓存完整响应数据
-            setCachedData(responseData);
+            setCachedData(responseData, cacheKey);
         } else if (Array.isArray(responseData)) {
             // 旧格式：直接返回数组
             stocksData = responseData;
@@ -119,7 +139,7 @@ async function loadMarketData(forceRefresh = false) {
                 data: stocksData,
                 timestamp: new Date().toISOString(),
                 source: 'api'
-            });
+            }, cacheKey);
         } else {
             throw new Error('API返回数据格式错误');
         }
@@ -135,7 +155,7 @@ async function loadMarketData(forceRefresh = false) {
         console.error('❌ 数据加载失败:', error);
         
         // 尝试使用过期的缓存数据
-        const expiredCache = getCachedData(true);
+        const expiredCache = getCachedData(true, cacheKey);
         if (expiredCache) {
             allStocks = expiredCache.data;
             console.log('⚠️ 使用过期缓存数据作为回退');
@@ -345,11 +365,11 @@ async function handleRefresh() {
 /**
  * 获取本地缓存数据
  * @param {boolean} allowExpired - 是否允许返回过期数据
+ * @param {string} cacheKey - 缓存键名，默认为全市场数据
  * @returns {object|null} 缓存的数据或null
  */
-function getCachedData(allowExpired = false) {
+function getCachedData(allowExpired = false, cacheKey = 'heatmap_stocks_data') {
     try {
-        const cacheKey = 'heatmap_stocks_data';
         const cachedItem = localStorage.getItem(cacheKey);
         
         if (!cachedItem) {
@@ -383,10 +403,10 @@ function getCachedData(allowExpired = false) {
 /**
  * 设置本地缓存数据
  * @param {object} data - 要缓存的数据
+ * @param {string} cacheKey - 缓存键名，默认为全市场数据
  */
-function setCachedData(data) {
+function setCachedData(data, cacheKey = 'heatmap_stocks_data') {
     try {
-        const cacheKey = 'heatmap_stocks_data';
         const cacheItem = {
             ...data,
             cacheTimestamp: new Date().toISOString()
