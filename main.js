@@ -167,3 +167,4 @@ window.addEventListener('beforeunload', () => {
         heatmapApp.destroy();
     }
 });
+
