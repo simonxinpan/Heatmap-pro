@@ -373,70 +373,141 @@
     font-size: 1rem;
 }
 
-.sectors-grid {
+.sector-heatmaps-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 1.5rem;
+    margin-top: 1.5rem;
 }
 
-.sector-card {
-    background: #f9fafb;
+.sector-heatmap-card {
+    background: white;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 1.5rem;
     transition: all 0.3s ease;
     cursor: pointer;
-    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.sector-card:hover {
-    background: #f3f4f6;
+.sector-heatmap-card:hover {
     border-color: #3b82f6;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-.sector-header {
+.sector-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
 }
 
-.sector-title {
+.sector-card-title {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #1f2937;
 }
 
+.sector-card-change {
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.sector-card-change.positive {
+    color: #16a34a;
+    background: #f0fdf4;
+}
+
+.sector-card-change.negative {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+.sector-expand-btn {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.sector-expand-btn:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+}
+
 .sector-stats {
     display: flex;
-    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: #1f2937;
     font-size: 0.9rem;
 }
 
-.sector-count {
+.stat-label {
     color: #6b7280;
+    font-size: 0.8rem;
 }
 
-.sector-change {
-    font-weight: 600;
-}
-
-.sector-change.positive {
-    color: #16a34a;
-}
-
-.sector-change.negative {
-    color: #dc2626;
-}
-
-.sector-heatmap-mini {
-    height: 120px;
-    background: white;
+.sector-mini-heatmap {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
+    height: 180px;
+    margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
+    min-width: 300px;
+    transition: all 0.3s ease;
+}
+
+.sector-mini-heatmap:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.mini-heatmap-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    font-size: 0.9rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.mini-heatmap-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #64748b;
+    font-size: 0.9rem;
+    background: linear-gradient(45deg, #f1f5f9 25%, transparent 25%), 
+                linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f1f5f9 75%), 
+                linear-gradient(-45deg, transparent 75%, #f1f5f9 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
 .mini-loading {
