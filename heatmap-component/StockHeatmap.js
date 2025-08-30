@@ -465,6 +465,45 @@ class StockHeatmap {
         await this.loadData();
     }
     
+    /**
+     * 直接渲染提供的股票数据
+     * @param {Array} stockDataArray - 股票数据数组
+     * @param {string} title - 热力图标题
+     */
+    render(stockDataArray, title = '股票热力图') {
+        if (!Array.isArray(stockDataArray) || stockDataArray.length === 0) {
+            this.showError('没有可显示的数据');
+            return;
+        }
+        
+        this.showLoading();
+        
+        try {
+            // 转换数据格式为热力图所需的格式
+            const processedData = this.dataProcessor.processStockData(stockDataArray);
+            
+            this.currentData = processedData;
+            this.renderer.render(processedData, this.options.metric);
+            this.updateLegendStats(processedData);
+            
+            // 更新标题
+            const titleElement = this.container.querySelector('.heatmap-title');
+            if (titleElement) {
+                titleElement.textContent = title;
+            }
+            
+            if (this.options.onDataUpdate) {
+                this.options.onDataUpdate(processedData);
+            }
+            
+        } catch (error) {
+            console.error('Failed to render heatmap:', error);
+            this.showError('热力图渲染失败');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
     async loadData() {
         if (this.isLoading) return;
         

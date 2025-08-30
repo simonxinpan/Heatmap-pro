@@ -137,21 +137,24 @@ class DataProcessor {
     
     // 处理股票数据
     processStockData(stocks) {
-        return stocks.map(stock => ({
-            symbol: stock.symbol,
-            name: stock.name || stock.symbol,
-            price: parseFloat(stock.price) || 0,
-            change_percent: parseFloat(stock.change_percent) || 0,
-            volume: parseInt(stock.volume) || 0,
-            market_cap: parseInt(stock.market_cap) || 0,
-            industry: stock.industry || '其他',
-            sector: stock.sector || '其他',
-            tags: stock.tags || [],
-            // 计算热力图所需的额外字段
-            size: this.calculateSize(stock),
-            color: this.calculateColor(stock.change_percent),
-            category: this.categorizeStock(stock)
-        }));
+        return stocks.map(stock => {
+            const processedStock = {
+                symbol: stock.ticker || stock.symbol,
+                name: stock.name_zh || stock.name || stock.ticker || stock.symbol,
+                price: parseFloat(stock.price) || 0,
+                change_percent: parseFloat(stock.change_percent) || 0,
+                volume: parseInt(stock.volume) || 0,
+                market_cap: parseInt(stock.market_cap) || 0,
+                industry: stock.sector_zh || stock.industry || stock.sector || '其他',
+                sector: stock.sector_zh || stock.sector || '其他',
+                tags: stock.tags || [],
+                // 计算热力图所需的额外字段
+                size: this.calculateSize(stock),
+                color: this.calculateColor(stock.change_percent),
+                category: this.categorizeStock(stock)
+            };
+            return processedStock;
+        });
     }
     
     // 按行业分组

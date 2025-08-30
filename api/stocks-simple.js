@@ -78,6 +78,11 @@ export default async function handler(request, response) {
     try {
         console.log('🔄 Fetching simplified stock data for heatmap...');
         
+        // 设置强缓存头，提升性能
+        response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600'); // 5分钟缓存，10分钟过期重新验证
+        response.setHeader('CDN-Cache-Control', 'max-age=300'); // CDN缓存5分钟
+        response.setHeader('Vary', 'Accept-Encoding'); // 支持压缩缓存
+        
         // 尝试从数据库获取数据
         try {
             const { rows: stocks } = await pool.query(`
@@ -86,19 +91,31 @@ export default async function handler(request, response) {
                     name_zh,
                     sector_zh,
                     market_cap,
-                    change_percent
+                    change_percent,
+                    volume,
+                    last_updated
                 FROM stocks
                 WHERE 
                     sector_zh IS NOT NULL AND sector_zh != '' AND
                     market_cap IS NOT NULL AND market_cap > 0 AND
                     change_percent IS NOT NULL
                 ORDER BY market_cap DESC
+                LIMIT 502
             `);
             
             if (stocks.length > 0) {
                 console.log(`✅ Successfully fetched ${stocks.length} stocks from database`);
-                response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-                return response.status(200).json(stocks);
+                
+                // 添加数据时间戳
+                const responseData = {
+                    data: stocks,
+                    timestamp: new Date().toISOString(),
+                    count: stocks.length,
+                    source: 'database'
+                };
+                
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                return response.end(JSON.stringify(responseData));
             }
         } catch (dbError) {
             console.log('⚠️ Database unavailable, using mock data:', dbError.message);
@@ -107,7 +124,16 @@ export default async function handler(request, response) {
         // 如果数据库不可用或没有数据，使用模拟数据
         console.log(`📊 Using mock data: ${mockStockData.length} stocks`);
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120'); // 较短缓存
-        response.status(200).json(mockStockData);
+        
+        const responseData = {
+            data: mockStockData,
+            timestamp: new Date().toISOString(),
+            count: mockStockData.length,
+            source: 'mock'
+        };
+        
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(responseData));
         
     } catch (error) {
         console.error('❌ API /stocks-simple.js Error:', error);
@@ -115,6 +141,16 @@ export default async function handler(request, response) {
         // 最后的后备方案：返回模拟数据
         console.log('🔄 Fallback to mock data due to error');
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-        response.status(200).json(mockStockData);
+        
+        const responseData = {
+            data: mockStockData,
+            timestamp: new Date().toISOString(),
+            count: mockStockData.length,
+            source: 'mock',
+            error: 'Database connection failed'
+        };
+        
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(responseData));
     }
 }
