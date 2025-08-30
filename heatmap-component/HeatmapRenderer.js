@@ -68,13 +68,13 @@ class HeatmapRenderer {
         style.textContent = `
             .heatmap-cell {
                 stroke: #fff;
-                stroke-width: 2;
+                stroke-width: 3;
                 cursor: pointer;
                 transition: all 0.2s ease;
             }
             
             .heatmap-cell:hover {
-                stroke-width: 3;
+                stroke-width: 4;
                 stroke: #333;
             }
             
@@ -157,7 +157,7 @@ class HeatmapRenderer {
             const row = Math.floor(index / cols);
             
             // 增加间距以创建醒目的空白条效果
-            const gap = 6; // 增加间距到6像素
+            const gap = 12; // 增加间距到12像素，确保每个股票方块之间都有醒目的空白条
             
             return {
                 ...item,
