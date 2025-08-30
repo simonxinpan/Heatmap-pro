@@ -68,13 +68,13 @@ class HeatmapRenderer {
         style.textContent = `
             .heatmap-cell {
                 stroke: #fff;
-                stroke-width: 1;
+                stroke-width: 2;
                 cursor: pointer;
                 transition: all 0.2s ease;
             }
             
             .heatmap-cell:hover {
-                stroke-width: 2;
+                stroke-width: 3;
                 stroke: #333;
             }
             
@@ -156,12 +156,15 @@ class HeatmapRenderer {
             const col = index % cols;
             const row = Math.floor(index / cols);
             
+            // 增加间距以创建醒目的空白条效果
+            const gap = 6; // 增加间距到6像素
+            
             return {
                 ...item,
-                x: padding + col * cellWidth,
-                y: padding + row * cellHeight,
-                width: cellWidth - 2, // 留出边距
-                height: cellHeight - 2,
+                x: padding + col * cellWidth + gap / 2,
+                y: padding + row * cellHeight + gap / 2,
+                width: cellWidth - gap, // 留出更大的边距
+                height: cellHeight - gap,
                 index: index
             };
         });
