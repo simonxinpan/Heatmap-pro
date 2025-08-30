@@ -1,0 +1,73 @@
+{
+  "name": "stock-heatmap-component",
+  "version": "1.0.0",
+  "description": "可移植的股票热力图组件，支持多种数据源和显示模式",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "StockHeatmap.js",
+    "DataProcessor.js",
+    "HeatmapRenderer.js",
+    "config.js",
+    "README.md",
+    "examples.html"
+  ],
+  "scripts": {
+    "build": "rollup -c rollup.config.js",
+    "dev": "rollup -c rollup.config.js -w",
+    "serve": "http-server . -p 8080 -o",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "heatmap",
+    "stock",
+    "visualization",
+    "finance",
+    "component",
+    "javascript",
+    "svg",
+    "data-visualization"
+  ],
+  "author": "UX-Core Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/stock-heatmap-component.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/stock-heatmap-component/issues"
+  },
+  "homepage": "https://github.com/your-org/stock-heatmap-component#readme",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-commonjs": "^24.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "rollup": "^3.0.0",
+    "http-server": "^14.0.0"
+  },
+  "peerDependencies": {
+    "d3": "^7.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js"
+    },
+    "./StockHeatmap": "./StockHeatmap.js",
+    "./DataProcessor": "./DataProcessor.js",
+    "./HeatmapRenderer": "./HeatmapRenderer.js",
+    "./config": "./config.js"
+  },
+  "config": {
+    "buildTarget": "es2018",
+    "outputFormat": "umd"
+  }
+}

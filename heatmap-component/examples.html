@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>热力图组件使用示例</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .example-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .example-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        
+        .example-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .heatmap-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 15px 0;
+            min-height: 300px;
+            position: relative;
+        }
+        
+        .controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 热力图组件使用示例</h1>
+            <p>展示如何在不同场景下使用可移植的股票热力图组件</p>
+        </div>
+        
+        <!-- 示例1：全景热力图 -->
+        <div class="example-section">
+            <div class="example-title">📊 全景热力图 (Panoramic Heatmap)</div>
+            <div class="example-description">
+                适用于主页面或仪表板，显示整个市场的股票表现概览。
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadPanoramicData()">加载市场数据</button>
+                <button class="btn btn-secondary" onclick="changePanoramicMetric('volume')">切换到成交量</button>
+                <button class="btn btn-secondary" onclick="changePanoramicMetric('changePercent')">切换到涨跌幅</button>
+                <button class="btn btn-secondary" onclick="exportPanoramic()">导出图片</button>
+            </div>
+            
+            <div id="panoramic-heatmap" class="heatmap-container"></div>
+            
+            <div class="code-block">
+// 创建全景热力图
+const panoramicHeatmap = createPanoramicHeatmap('panoramic-heatmap', {
+    onStockClick: (stock) => {
+        console.log('点击股票:', stock);
+        alert(`点击了 ${stock.name || stock.symbol}`);
+    }
+});
+
+// 加载数据
+panoramicHeatmap.loadMarketData();
+            </div>
+        </div>
+        
+        <!-- 示例2：行业热力图 -->
+        <div class="example-section">
+            <div class="example-title">🏭 行业热力图 (Sector Heatmap)</div>
+            <div class="example-description">
+                显示特定行业内股票的表现，适用于行业分析页面。
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadSectorData('科技')">科技行业</button>
+                <button class="btn btn-primary" onclick="loadSectorData('金融')">金融行业</button>
+                <button class="btn btn-primary" onclick="loadSectorData('医疗')">医疗行业</button>
+                <button class="btn btn-secondary" onclick="refreshSector()">刷新数据</button>
+            </div>
+            
+            <div id="sector-heatmap" class="heatmap-container"></div>
+            
+            <div class="code-block">
+// 创建行业热力图
+const sectorHeatmap = createHeatmap('sector-heatmap', {
+    width: 800,
+    height: 400,
+    showLabels: true,
+    onStockClick: (stock) => {
+        // 跳转到股票详情页
+        window.open(`/stock-detail.html?symbol=${stock.symbol}`, '_blank');
+    }
+});
+
+// 加载特定行业数据
+sectorHeatmap.loadSectorData('科技');
+            </div>
+        </div>
+        
+        <!-- 示例3：标签热力图 -->
+        <div class="example-section">
+            <div class="example-title">🏷️ 标签热力图 (Tag Heatmap)</div>
+            <div class="example-description">
+                基于标签分类显示股票，适用于主题投资或概念股分析。
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadTagData('人工智能')">人工智能</button>
+                <button class="btn btn-primary" onclick="loadTagData('新能源')">新能源</button>
+                <button class="btn btn-primary" onclick="loadTagData('芯片')">芯片概念</button>
+                <button class="btn btn-secondary" onclick="refreshTag()">刷新数据</button>
+            </div>
+            
+            <div id="tag-heatmap" class="heatmap-container"></div>
+            
+            <div class="code-block">
+// 创建标签热力图
+const tagHeatmap = createHeatmap('tag-heatmap', {
+    width: 800,
+    height: 400,
+    colorScheme: 'greenRed',
+    animation: true
+});
+
+// 加载标签数据
+tagHeatmap.loadTagData('人工智能');
+            </div>
+        </div>
+        
+        <!-- 示例4：紧凑型热力图 -->
+        <div class="example-section">
+            <div class="example-title">📱 紧凑型热力图 (Compact Heatmap)</div>
+            <div class="example-description">
+                适用于侧边栏、卡片或移动端显示，占用空间较小但信息丰富。
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadCompactData('gainers')">涨幅榜</button>
+                <button class="btn btn-primary" onclick="loadCompactData('losers')">跌幅榜</button>
+                <button class="btn btn-primary" onclick="loadCompactData('active')">活跃股</button>
+            </div>
+            
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div id="compact-heatmap-1" class="heatmap-container" style="width: 350px; height: 250px;"></div>
+                <div id="compact-heatmap-2" class="heatmap-container" style="width: 350px; height: 250px;"></div>
+            </div>
+            
+            <div class="code-block">
+// 创建紧凑型热力图
+const compactHeatmap1 = createCompactHeatmap('compact-heatmap-1');
+const compactHeatmap2 = createCompactHeatmap('compact-heatmap-2');
+
+// 加载不同类型的数据
+compactHeatmap1.loadTrendingData('gainers');
+compactHeatmap2.loadTrendingData('losers');
+            </div>
+        </div>
+        
+        <!-- 示例5：迷你热力图 -->
+        <div class="example-section">
+            <div class="example-title">🔍 迷你热力图 (Mini Heatmap)</div>
+            <div class="example-description">
+                最小化的热力图，适用于仪表板小部件或快速预览。
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadMiniData()">加载数据</button>
+                <button class="btn btn-secondary" onclick="toggleMiniAnimation()">切换动画</button>
+            </div>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div id="mini-heatmap-1" class="heatmap-container" style="width: 200px; height: 150px;"></div>
+                <div id="mini-heatmap-2" class="heatmap-container" style="width: 200px; height: 150px;"></div>
+                <div id="mini-heatmap-3" class="heatmap-container" style="width: 200px; height: 150px;"></div>
+            </div>
+            
+            <div class="code-block">
+// 创建迷你热力图
+const miniHeatmap1 = createMiniHeatmap('mini-heatmap-1');
+const miniHeatmap2 = createMiniHeatmap('mini-heatmap-2');
+const miniHeatmap3 = createMiniHeatmap('mini-heatmap-3');
+
+// 加载不同数据
+miniHeatmap1.loadSectorData('科技');
+miniHeatmap2.loadSectorData('金融');
+miniHeatmap3.loadSectorData('医疗');
+            </div>
+        </div>
+        
+        <!-- 状态显示 -->
+        <div id="status-container"></div>
+    </div>
+    
+    <!-- 引入组件文件 -->
+    <script src="config.js"></script>
+    <script src="DataProcessor.js"></script>
+    <script src="StockHeatmap.js"></script>
+    <script src="HeatmapRenderer.js"></script>
+    <script src="index.js"></script>
+    
+    <script>
+        // 全局变量存储组件实例
+        let panoramicHeatmap, sectorHeatmap, tagHeatmap;
+        let compactHeatmap1, compactHeatmap2;
+        let miniHeatmap1, miniHeatmap2, miniHeatmap3;
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeHeatmaps();
+        });
+        
+        function initializeHeatmaps() {
+            try {
+                // 初始化全景热力图
+                panoramicHeatmap = createPanoramicHeatmap('panoramic-heatmap', {
+                    onStockClick: (stock) => {
+                        showStatus(`点击了股票: ${stock.name || stock.symbol}`, 'success');
+                    },
+                    onStockHover: (stock) => {
+                        console.log('悬停股票:', stock);
+                    }
+                });
+                
+                // 初始化行业热力图
+                sectorHeatmap = createHeatmap('sector-heatmap', {
+                    width: 800,
+                    height: 400,
+                    showLabels: true,
+                    onStockClick: (stock) => {
+                        showStatus(`查看股票详情: ${stock.name || stock.symbol}`, 'success');
+                    }
+                });
+                
+                // 初始化标签热力图
+                tagHeatmap = createHeatmap('tag-heatmap', {
+                    width: 800,
+                    height: 400,
+                    colorScheme: 'greenRed',
+                    animation: true
+                });
+                
+                // 初始化紧凑型热力图
+                compactHeatmap1 = createCompactHeatmap('compact-heatmap-1');
+                compactHeatmap2 = createCompactHeatmap('compact-heatmap-2');
+                
+                // 初始化迷你热力图
+                miniHeatmap1 = createMiniHeatmap('mini-heatmap-1');
+                miniHeatmap2 = createMiniHeatmap('mini-heatmap-2');
+                miniHeatmap3 = createMiniHeatmap('mini-heatmap-3');
+                
+                // 加载初始数据
+                loadInitialData();
+                
+                showStatus('所有热力图组件初始化成功！', 'success');
+                
+            } catch (error) {
+                showStatus('初始化失败: ' + error.message, 'error');
+            }
+        }
+        
+        function loadInitialData() {
+            // 加载全景数据
+            loadPanoramicData();
+            
+            // 加载行业数据
+            loadSectorData('科技');
+            
+            // 加载标签数据
+            loadTagData('人工智能');
+            
+            // 加载紧凑型数据
+            loadCompactData('gainers');
+            
+            // 加载迷你数据
+            loadMiniData();
+        }
+        
+        // 全景热力图相关函数
+        function loadPanoramicData() {
+            if (panoramicHeatmap) {
+                panoramicHeatmap.loadMarketData();
+                showStatus('正在加载全景市场数据...', 'success');
+            }
+        }
+        
+        function changePanoramicMetric(metric) {
+            if (panoramicHeatmap) {
+                panoramicHeatmap.updateMetric(metric);
+                showStatus(`切换到指标: ${metric}`, 'success');
+            }
+        }
+        
+        function exportPanoramic() {
+            if (panoramicHeatmap) {
+                panoramicHeatmap.exportAsImage('panoramic-heatmap.png');
+                showStatus('正在导出全景热力图...', 'success');
+            }
+        }
+        
+        // 行业热力图相关函数
+        function loadSectorData(sector) {
+            if (sectorHeatmap) {
+                sectorHeatmap.loadSectorData(sector);
+                showStatus(`正在加载${sector}行业数据...`, 'success');
+            }
+        }
+        
+        function refreshSector() {
+            if (sectorHeatmap) {
+                sectorHeatmap.refresh();
+                showStatus('正在刷新行业数据...', 'success');
+            }
+        }
+        
+        // 标签热力图相关函数
+        function loadTagData(tag) {
+            if (tagHeatmap) {
+                tagHeatmap.loadTagData(tag);
+                showStatus(`正在加载${tag}标签数据...`, 'success');
+            }
+        }
+        
+        function refreshTag() {
+            if (tagHeatmap) {
+                tagHeatmap.refresh();
+                showStatus('正在刷新标签数据...', 'success');
+            }
+        }
+        
+        // 紧凑型热力图相关函数
+        function loadCompactData(type) {
+            if (compactHeatmap1 && compactHeatmap2) {
+                if (type === 'gainers') {
+                    compactHeatmap1.loadTrendingData('gainers');
+                    compactHeatmap2.loadTrendingData('losers');
+                } else if (type === 'losers') {
+                    compactHeatmap1.loadTrendingData('losers');
+                    compactHeatmap2.loadTrendingData('active');
+                } else {
+                    compactHeatmap1.loadTrendingData('active');
+                    compactHeatmap2.loadTrendingData('gainers');
+                }
+                showStatus(`正在加载${type}数据...`, 'success');
+            }
+        }
+        
+        // 迷你热力图相关函数
+        function loadMiniData() {
+            if (miniHeatmap1 && miniHeatmap2 && miniHeatmap3) {
+                miniHeatmap1.loadSectorData('科技');
+                miniHeatmap2.loadSectorData('金融');
+                miniHeatmap3.loadSectorData('医疗');
+                showStatus('正在加载迷你热力图数据...', 'success');
+            }
+        }
+        
+        function toggleMiniAnimation() {
+            // 这里可以实现动画切换逻辑
+            showStatus('动画效果已切换', 'success');
+        }
+        
+        // 状态显示函数
+        function showStatus(message, type = 'success') {
+            const container = document.getElementById('status-container');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            
+            container.appendChild(statusDiv);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 3000);
+        }
+        
+        // 监听组件事件
+        document.addEventListener('heatmap:renderComplete', function(event) {
+            console.log('热力图渲染完成:', event.detail);
+        });
+        
+        document.addEventListener('heatmap:error', function(event) {
+            showStatus('热力图错误: ' + event.detail.message, 'error');
+        });
+    </script>
+</body>
+</html>

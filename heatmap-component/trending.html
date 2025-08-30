@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趋势风云榜 - Stock Trending</title>
+    <link rel="stylesheet" href="heatmap-center.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .trending-list {
+            display: grid;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .trending-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .trending-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color);
+        }
+        .trending-rank {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            min-width: 60px;
+        }
+        .trending-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+        .trending-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        .trending-code {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-family: 'Courier New', monospace;
+        }
+        .trending-metrics {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        .trending-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .trending-change {
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--border-radius-sm);
+        }
+        .trending-change.positive {
+            background: var(--success-bg);
+            color: var(--success-color);
+        }
+        .trending-change.negative {
+            background: var(--danger-bg);
+            color: var(--danger-color);
+        }
+        .trending-volume {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .filter-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .filter-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .filter-tab:hover {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- 全局导航栏 -->
+    <nav class="global-navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <span class="navbar-logo">📊</span>
+                <span class="navbar-title">Stock Explorer</span>
+            </a>
+            <ul class="navbar-links">
+                <li>
+                    <a href="index.html" class="global-nav-link">
+                        <span class="nav-icon">🏷️</span>
+                        标签云广场
+                    </a>
+                </li>
+                <li>
+                    <a href="trending.html" class="global-nav-link active">
+                        <span class="nav-icon">📈</span>
+                        趋势风云榜
+                    </a>
+                </li>
+                <li>
+                    <a href="heatmap-center.html" class="global-nav-link">
+                        <span class="nav-icon">🔥</span>
+                        股票热力图
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <!-- 页面标题区域 -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">📈 趋势风云榜</h1>
+                <p class="hero-subtitle">实时追踪市场热点，发现投资机会</p>
+            </div>
+        </section>
+
+        <!-- 趋势榜单区域 -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title">股票排行榜</h2>
+                
+                <!-- 筛选标签 -->
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="gainers">涨幅榜</button>
+                    <button class="filter-tab" data-filter="losers">跌幅榜</button>
+                    <button class="filter-tab" data-filter="volume">成交量榜</button>
+                    <button class="filter-tab" data-filter="market-cap">市值榜</button>
+                </div>
+
+                <!-- 榜单列表 -->
+                <div class="trending-list" id="trending-list">
+                    <!-- 涨幅榜数据 -->
+                    <div class="trending-item" data-category="gainers">
+                        <div class="trending-rank">1</div>
+                        <div class="trending-info">
+                            <div class="trending-name">比亚迪</div>
+                            <div class="trending-code">002594</div>
+                        </div>
+                        <div class="trending-metrics">
+                            <div class="trending-price">¥285.60</div>
+                            <div class="trending-change positive">+8.45%</div>
+                            <div class="trending-volume">成交额: 156.8亿</div>
+                        </div>
+                    </div>
+
+                    <div class="trending-item" data-category="gainers">
+                        <div class="trending-rank">2</div>
+                        <div class="trending-info">
+                            <div class="trending-name">宁德时代</div>
+                            <div class="trending-code">300750</div>
+                        </div>
+                        <div class="trending-metrics">
+                            <div class="trending-price">¥198.50</div>
+                            <div class="trending-change positive">+7.23%</div>
+                            <div class="trending-volume">成交额: 89.2亿</div>
+                        </div>
+                    </div>
+
+                    <div class="trending-item" data-category="gainers">
+                        <div class="trending-rank">3</div>
+                        <div class="trending-info">
+                            <div class="trending-name">隆基绿能</div>
+                            <div class="trending-code">601012</div>
+                        </div>
+                        <div class="trending-metrics">
+                            <div class="trending-price">¥22.85</div>
+                            <div class="trending-change positive">+6.78%</div>
+                            <div class="trending-volume">成交额: 45.6亿</div>
+                        </div>
+                    </div>
+
+                    <div class="trending-item" data-category="gainers">
+                        <div class="trending-rank">4</div>
+                        <div class="trending-info">
+                            <div class="trending-name">中芯国际</div>
+                            <div class="trending-code">688981</div>
+                        </div>
+                        <div class="trending-metrics">
+                            <div class="trending-price">¥45.20</div>
+                            <div class="trending-change positive">+5.92%</div>
+                            <div class="trending-volume">成交额: 67.3亿</div>
+                        </div>
+                    </div>
+
+                    <div class="trending-item" data-category="gainers">
+                        <div class="trending-rank">5</div>
+                        <div class="trending-info">
+                            <div class="trending-name">腾讯控股</div>
+                            <div class="trending-code">00700</div>
+                        </div>
+                        <div class="trending-metrics">
+                            <div class="trending-price">¥398.60</div>
+                            <div class="trending-change positive">+4.85%</div>
+                            <div class="trending-volume">成交额: 234.7亿</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速导航 -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title">深度分析</h2>
+                <div class="quick-nav-grid">
+                    <a href="heatmap-center.html#market-overview" class="nav-card">
+                        <div class="nav-card-icon">🔥</div>
+                        <h3>热力图分析</h3>
+                        <p>查看市场整体热度分布</p>
+                    </a>
+                    <a href="heatmap-center.html#sector-analysis" class="nav-card">
+                        <div class="nav-card-icon">🏭</div>
+                        <h3>行业对比</h3>
+                        <p>分析各行业表现差异</p>
+                    </a>
+                    <a href="index.html" class="nav-card">
+                        <div class="nav-card-icon">🏷️</div>
+                        <h3>概念标签</h3>
+                        <p>探索热门投资主题</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Stock Trending. 专业的股票趋势分析平台.</p>
+            <div class="footer-links">
+                <a href="#">关于我们</a>
+                <a href="#">数据来源</a>
+                <a href="#">使用条款</a>
+                <a href="#">隐私政策</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 筛选标签交互
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterTabs = document.querySelectorAll('.filter-tab');
+            const trendingItems = document.querySelectorAll('.trending-item');
+            
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有活跃状态
+                    filterTabs.forEach(t => t.classList.remove('active'));
+                    // 添加当前活跃状态
+                    this.classList.add('active');
+                    
+                    const filter = this.dataset.filter;
+                    
+                    // 这里可以添加实际的筛选逻辑
+                    console.log('筛选类型:', filter);
+                    
+                    // 模拟筛选效果
+                    trendingItems.forEach((item, index) => {
+                        item.style.opacity = '0.3';
+                        setTimeout(() => {
+                            item.style.opacity = '1';
+                        }, index * 100);
+                    });
+                });
+            });
+            
+            // 榜单项点击事件
+            trendingItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const stockCode = this.querySelector('.trending-code').textContent;
+                    // 跳转到热力图页面并高亮对应股票
+                    window.location.href = `heatmap-center.html#stock-${stockCode}`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
