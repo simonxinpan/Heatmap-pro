@@ -19,7 +19,7 @@ class DataProcessor {
         }
         
         try {
-            const response = await fetch('/api/stocks');
+            const response = await fetch('/api/stocks-simple');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }

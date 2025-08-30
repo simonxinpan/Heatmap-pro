@@ -1,4 +1,4 @@
-﻿// 股票热力图 Pro - 主脚本
+// 股票热力图 Pro - 主脚本
 // 负责初始化热力图组件，获取数据并设置交互
 
 class HeatmapProApp {
@@ -43,16 +43,14 @@ class HeatmapProApp {
                 autoRefresh: true,
                 refreshInterval: 30000, // 30秒自动刷新
                 enableFullscreen: true,
-                enableExport: true
+                enableExport: true,
+                onCellClick: (data) => {
+                    this.handleStockClick(data);
+                }
             });
 
-            // 设置点击事件 - 反向链接到标签广场应用
-            this.heatmap.on('cellClick', (data) => {
-                this.handleStockClick(data);
-            });
-
-            // 初始化热力图
-            await this.heatmap.init();
+            // 热力图在构造函数中已自动初始化
+            // await this.heatmap.init(); // 不需要手动调用init
             
             console.log('热力图初始化完成');
             

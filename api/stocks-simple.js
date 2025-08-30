@@ -98,7 +98,8 @@ export default async function handler(request, response) {
             if (stocks.length > 0) {
                 console.log(`✅ Successfully fetched ${stocks.length} stocks from database`);
                 response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-                return response.status(200).json(stocks);
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                return response.end(JSON.stringify(stocks));
             }
         } catch (dbError) {
             console.log('⚠️ Database unavailable, using mock data:', dbError.message);
@@ -107,7 +108,8 @@ export default async function handler(request, response) {
         // 如果数据库不可用或没有数据，使用模拟数据
         console.log(`📊 Using mock data: ${mockStockData.length} stocks`);
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120'); // 较短缓存
-        response.status(200).json(mockStockData);
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(mockStockData));
         
     } catch (error) {
         console.error('❌ API /stocks-simple.js Error:', error);
@@ -115,6 +117,7 @@ export default async function handler(request, response) {
         // 最后的后备方案：返回模拟数据
         console.log('🔄 Fallback to mock data due to error');
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-        response.status(200).json(mockStockData);
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify(mockStockData));
     }
 }
