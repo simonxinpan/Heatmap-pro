@@ -140,7 +140,7 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     box-sizing: border-box; 
     text-decoration: none; 
     padding: 1px;
-    margin: 2px;
+    margin: 4px;
     transition: transform 0.1s ease-out; 
 }
 .treemap-stock:hover { transform: scale(1.03); z-index: 10; }
