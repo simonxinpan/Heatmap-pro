@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标签云广场 - Stock Tag Explorer</title>
+    <link rel="stylesheet" href="heatmap-center.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 2rem;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        .tag-item {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .tag-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .tag-item.large {
+            font-size: 1.5rem;
+            padding: 1rem 2rem;
+        }
+        .tag-item.medium {
+            font-size: 1.2rem;
+            padding: 0.8rem 1.5rem;
+        }
+        .tag-item.small {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 全局导航栏 -->
+    <nav class="global-navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <span class="navbar-logo">📊</span>
+                <span class="navbar-title">Stock Explorer</span>
+            </a>
+            <ul class="navbar-links">
+                <li>
+                    <a href="index.html" class="global-nav-link active">
+                        <span class="nav-icon">🏷️</span>
+                        标签云广场
+                    </a>
+                </li>
+                <li>
+                    <a href="trending.html" class="global-nav-link">
+                        <span class="nav-icon">📈</span>
+                        趋势风云榜
+                    </a>
+                </li>
+                <li>
+                    <a href="heatmap-center.html" class="global-nav-link">
+                        <span class="nav-icon">🔥</span>
+                        股票热力图
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <!-- 页面标题区域 -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">🏷️ 标签云广场</h1>
+                <p class="hero-subtitle">探索热门投资主题和概念标签</p>
+            </div>
+        </section>
+
+        <!-- 标签云区域 -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title">热门投资标签</h2>
+                <div class="tag-cloud" id="tag-cloud">
+                    <a href="heatmap-center.html#tag-insights" class="tag-item large">人工智能</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">电动汽车</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item large">云计算</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">生物技术</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">金融科技</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">新能源</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item large">半导体</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">5G通信</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">区块链</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">物联网</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">虚拟现实</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item large">新材料</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">智能制造</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">清洁能源</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">医疗器械</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">航空航天</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item large">数字货币</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">智慧城市</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item small">机器人</a>
+                    <a href="heatmap-center.html#tag-insights" class="tag-item medium">大数据</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速导航 -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title">快速导航</h2>
+                <div class="quick-nav-grid">
+                    <a href="heatmap-center.html#market-overview" class="nav-card">
+                        <div class="nav-card-icon">🌍</div>
+                        <h3>市场全景</h3>
+                        <p>查看整体市场热力图</p>
+                    </a>
+                    <a href="trending.html" class="nav-card">
+                        <div class="nav-card-icon">📈</div>
+                        <h3>趋势榜单</h3>
+                        <p>查看热门股票排行</p>
+                    </a>
+                    <a href="heatmap-center.html#sector-analysis" class="nav-card">
+                        <div class="nav-card-icon">🏭</div>
+                        <h3>行业分析</h3>
+                        <p>按行业查看热力图</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Stock Tag Explorer. 专业的股票数据可视化平台.</p>
+            <div class="footer-links">
+                <a href="#">关于我们</a>
+                <a href="#">数据来源</a>
+                <a href="#">使用条款</a>
+                <a href="#">隐私政策</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 标签云交互效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const tagItems = document.querySelectorAll('.tag-item');
+            
+            tagItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.05)';
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

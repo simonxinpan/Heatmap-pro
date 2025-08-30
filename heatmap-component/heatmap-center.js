@@ -503,6 +503,27 @@ class HeatmapCenter {
         if (hash.startsWith('sector-')) {
             const sector = hash.replace('sector-', '');
             this.showFeaturedSector(sector);
+        } else if (hash) {
+            // 处理特定的导航hash
+            if (hash === 'market-overview') {
+                this.scrollToSection('market-overview');
+                this.showOverview();
+            } else if (hash === 'sector-analysis') {
+                this.scrollToSection('sector-analysis');
+                this.refreshSectorHeatmap();
+            } else if (hash === 'tag-insights') {
+                this.scrollToSection('tag-insights');
+                this.refreshTagHeatmap();
+            } else if (hash === 'trend-analysis') {
+                this.scrollToSection('trend-analysis');
+                this.refreshTrendAnalysis();
+            } else if (hash.startsWith('stock-')) {
+                // 处理从趋势榜单跳转的股票高亮
+                const stockCode = hash.replace('stock-', '');
+                this.highlightStock(stockCode);
+            } else {
+                this.scrollToSection(hash);
+            }
         } else {
             this.showOverview();
         }
@@ -847,6 +868,65 @@ function refreshTrendingHeatmap() {
         window.heatmapCenter.refreshTrendingHeatmap();
     }
 }
+
+function viewTagDetail(tagId) {
+    if (window.heatmapCenter) {
+        window.heatmapCenter.viewTagDetail(tagId);
+    }
+}
+
+function refreshTrendAnalysis() {
+    if (window.heatmapCenter) {
+        window.heatmapCenter.refreshTrendAnalysis();
+    }
+}
+
+function highlightStock(stockCode) {
+    if (window.heatmapCenter) {
+        window.heatmapCenter.highlightStock(stockCode);
+    }
+}
+
+// 在HeatmapCenter类中添加缺失的方法
+HeatmapCenter.prototype.highlightStock = function(stockCode) {
+    console.log('高亮股票:', stockCode);
+    
+    // 滚动到市场全景区域
+    this.scrollToSection('market-overview');
+    
+    // 在热力图中高亮指定股票
+    setTimeout(() => {
+        const stockElements = document.querySelectorAll('.treemap-stock');
+        stockElements.forEach(element => {
+            const elementCode = element.dataset.symbol || element.textContent;
+            if (elementCode.includes(stockCode)) {
+                element.style.border = '3px solid #ff6b35';
+                element.style.boxShadow = '0 0 20px rgba(255, 107, 53, 0.5)';
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }, 500);
+};
+
+HeatmapCenter.prototype.refreshTrendAnalysis = function() {
+    console.log('刷新趋势分析数据');
+    
+    // 模拟趋势数据刷新
+    const trendSection = document.getElementById('trend-analysis');
+    if (trendSection) {
+        const loadingIndicator = trendSection.querySelector('.loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'block';
+        }
+        
+        setTimeout(() => {
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+            console.log('趋势分析数据刷新完成');
+        }, 1000);
+    }
+};
 
 function viewTagDetail(tagId) {
     if (window.heatmapCenter) {
