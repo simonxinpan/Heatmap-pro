@@ -141,6 +141,7 @@ a.back-link { color: var(--primary-blue); text-decoration: none; font-size: 14px
     text-decoration: none; 
     padding: 1px;
     margin: 4px;
+    border: 1px solid #ffffff; /* 添加白色边框作为股票方块间的分隔线 */
     transition: transform 0.1s ease-out; 
 }
 .treemap-stock:hover { transform: scale(1.03); z-index: 10; }
