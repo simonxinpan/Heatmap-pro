@@ -1,18 +1,39 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票热力图-Pro</title>
+    <title>股票热力图 Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- 热力图组件样式 -->
+    <link rel="stylesheet" href="heatmap-component/heatmap-center.css">
+    <link rel="stylesheet" href="heatmap-component/heatmap-integration.css">
+    <link rel="stylesheet" href="heatmap-component/panoramic-heatmap.css">
+    
+    <!-- 主样式 -->
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
-    <div id="app-container"></div>
+    <div id="app-container">
+        <!-- 热力图容器 -->
+        <div id="heatmap-container" class="heatmap-wrapper">
+            <h1>股票热力图 Pro</h1>
+            <div id="stock-heatmap"></div>
+        </div>
+    </div>
+    
     <div id="tooltip" class="tooltip"></div>
-    <script src="script.js"></script>
+    
+    <!-- 热力图组件脚本 -->
+    <script src="heatmap-component/DataProcessor.js"></script>
+    <script src="heatmap-component/HeatmapRenderer.js"></script>
+    <script src="heatmap-component/StockHeatmap.js"></script>
+    
+    <!-- 主脚本 -->
+    <script src="main.js"></script>
 </body>
 </html>
