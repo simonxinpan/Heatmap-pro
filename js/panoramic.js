@@ -254,27 +254,46 @@ function handleSectorChange() {
     const selectedSector = sectorFilter.value;
     
     try {
-        let dataToRender;
-        let title;
+        // 行业名称到Vercel链接的映射表
+        const sectorLinks = {
+            '信息技术': 'https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF',
+            '工业': 'https://heatmap-pro.vercel.app/?sector=%E5%B7%A5%E4%B8%9A',
+            '金融': 'https://heatmap-pro.vercel.app/?sector=%E9%87%91%E8%9E%8D',
+            '医疗保健': 'https://heatmap-pro.vercel.app/?sector=%E5%8C%BB%E7%96%97%E4%BF%9D%E5%81%A5',
+            '非必需消费品': 'https://heatmap-pro.vercel.app/?sector=%E9%9D%9E%E5%BF%85%E9%9C%80%E6%B6%88%E8%B4%B9%E5%93%81',
+            '日常消费品': 'https://heatmap-pro.vercel.app/?sector=%E6%97%A5%E5%B8%B8%E6%B6%88%E8%B4%B9%E5%93%81',
+            '公用事业': 'https://heatmap-pro.vercel.app/?sector=%E5%85%AC%E7%94%A8%E4%BA%8B%E4%B8%9A',
+            '房地产': 'https://heatmap-pro.vercel.app/?sector=%E6%88%BF%E5%9C%B0%E4%BA%A7',
+            '原材料': 'https://heatmap-pro.vercel.app/?sector=%E5%8E%9F%E6%9D%90%E6%96%99',
+            '能源': 'https://heatmap-pro.vercel.app/?sector=%E8%83%BD%E6%BA%90',
+            '半导体': 'https://heatmap-pro.vercel.app/?sector=%E5%8D%8A%E5%AF%BC%E4%BD%93',
+            '媒体娱乐': 'https://heatmap-pro.vercel.app/?sector=%E5%AA%92%E4%BD%93%E5%A8%B1%E4%B9%90',
+            '通讯服务': 'https://heatmap-pro.vercel.app/?sector=%E9%80%9A%E8%AE%AF%E6%9C%8D%E5%8A%A1'
+        };
         
         if (selectedSector === 'all') {
-            dataToRender = allStocks;
-            title = '全市场 (S&P 500)';
+            // 如果选择"全市场"，跳转到没有参数的URL
+            window.location.href = '/panoramic-heatmap.html';
         } else {
-            // 筛选指定行业的股票
-            dataToRender = allStocks.filter(stock => stock.sector_zh === selectedSector);
-            title = `${selectedSector} 板块热力图`;
-            
-            if (dataToRender.length === 0) {
-                showErrorState(`${selectedSector} 行业暂无数据`);
-                return;
+            // 如果选择了具体行业，在新窗口打开对应的Vercel链接
+            const sectorLink = sectorLinks[selectedSector];
+            if (sectorLink) {
+                window.open(sectorLink, '_blank');
+                console.log(`✅ 打开 ${selectedSector} 分行业热力图: ${sectorLink}`);
+            } else {
+                // 回退到本地筛选逻辑
+                const dataToRender = allStocks.filter(stock => stock.sector_zh === selectedSector);
+                const title = `${selectedSector} 板块热力图`;
+                
+                if (dataToRender.length === 0) {
+                    showErrorState(`${selectedSector} 行业暂无数据`);
+                    return;
+                }
+                
+                renderHeatmap(dataToRender, title);
+                console.log(`✅ 本地切换到 ${selectedSector} 视图`);
             }
         }
-        
-        // 渲染热力图
-        renderHeatmap(dataToRender, title);
-        
-        console.log(`✅ 切换到 ${selectedSector === 'all' ? '全市场' : selectedSector} 视图`);
         
     } catch (error) {
         console.error('❌ 行业切换失败:', error);
