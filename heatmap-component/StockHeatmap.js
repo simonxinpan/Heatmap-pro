@@ -501,10 +501,6 @@ class StockHeatmap {
         }
     }
     
-    async loadInitialData() {
-        await this.loadData();
-    }
-    
     /**
      * 直接渲染提供的股票数据
      * @param {Array} stockDataArray - 股票数据数组
@@ -524,10 +520,21 @@ class StockHeatmap {
         this.showLoading();
         
         try {
-            // 转换数据格式为热力图所需的格式
-            const processedData = this.dataProcessor.processStockData(stockDataArray);
+            // 使用 DataProcessor 的静态方法处理数据
+            const processedData = DataProcessor.processDataForHeatmap(stockDataArray);
+            
+            if (!processedData) {
+                this.showError('没有可显示的数据');
+                return;
+            }
             
             this.currentData = processedData;
+            
+            // 确保渲染器已创建
+            if (!this.renderer) {
+                this.createRenderer();
+            }
+            
             this.renderer.render(processedData, this.options.metric);
             
             // 迷你模式下不更新图例和标题
@@ -553,66 +560,7 @@ class StockHeatmap {
         }
     }
 
-    async loadData() {
-        if (this.isLoading) return;
-        
-        this.showLoading();
-        this.isLoading = true;
-        
-        try {
-            let data;
-            
-            switch (this.options.category) {
-                case 'market':
-                    // 使用新的数据处理逻辑
-                    const flatStocks = await DataProcessor.getMarketData();
-                    data = DataProcessor.processDataForHeatmap(flatStocks);
-                    if (!data) {
-                        this.showError('没有可显示的数据');
-                        return;
-                    }
-                    break;
-                case 'industry':
-                    data = await this.dataProcessor.getIndustryData(this.options.timeRange);
-                    break;
-                case 'tag':
-                    data = await this.dataProcessor.getTagData(this.options.timeRange);
-                    break;
-                case 'trending':
-                    data = await this.dataProcessor.getTrendingData(this.options.timeRange);
-                    break;
-                default:
-                    // 默认也使用新的数据处理逻辑
-                    const defaultFlatStocks = await DataProcessor.getMarketData();
-                    data = DataProcessor.processDataForHeatmap(defaultFlatStocks);
-                    if (!data) {
-                        this.showError('没有可显示的数据');
-                        return;
-                    }
-            }
-            
-            this.currentData = data;
-            
-            // 确保渲染器已创建
-            if (!this.renderer) {
-                this.createRenderer();
-            }
-            
-            this.renderer.render(data, this.options.metric);
-            this.updateLegendStats(data);
-            
-            if (this.options.onDataUpdate) {
-                this.options.onDataUpdate(data);
-            }
-            
-        } catch (error) {
-            console.error('Failed to load heatmap data:', error);
-            this.showError('数据加载失败，请稍后重试');
-        } finally {
-            this.hideLoading();
-            this.isLoading = false;
-        }
-    }
+
     
     updateLegendStats(data) {
         if (!this.legendContainer) return;
@@ -679,12 +627,12 @@ class StockHeatmap {
     // 公共方法
     updateCategory(category) {
         this.options.category = category;
-        this.loadData();
+        // 数据获取现在由外部调用者负责
     }
     
     updateMetric(metric) {
         this.options.metric = metric;
-        if (this.currentData.length > 0) {
+        if (this.currentData && this.currentData.length > 0) {
             this.renderer.updateMetric(metric);
             this.updateLegendStats(this.currentData);
         }
@@ -692,11 +640,12 @@ class StockHeatmap {
     
     updateTimeRange(timeRange) {
         this.options.timeRange = timeRange;
-        this.loadData();
+        // 数据获取现在由外部调用者负责
     }
     
     refresh() {
-        this.loadData();
+        // 数据刷新现在由外部调用者负责
+        console.log('请通过外部脚本重新获取数据并调用 render 方法');
     }
     
     toggleFullscreen() {

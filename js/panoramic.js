@@ -174,7 +174,7 @@ async function loadMarketData(forceRefresh = false, sector = null) {
  */
 function initializeHeatmap() {
     try {
-        heatmapInstance = new StockHeatmap('#heatmap-container');
+        heatmapInstance = new StockHeatmap('heatmap-container');
         console.log('✅ 热力图实例创建成功');
     } catch (error) {
         console.error('❌ 热力图实例创建失败:', error);

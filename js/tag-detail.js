@@ -182,7 +182,6 @@ class TagDetailPage {
         
         // 创建热力图实例
         this.stockHeatmap = new StockHeatmap(container, {
-            data: stockData,
             colorScheme: 'RdYlGn',
             showLabels: true,
             enableTooltip: true,
@@ -191,8 +190,8 @@ class TagDetailPage {
             maxFontSize: 16
         });
         
-        // 渲染热力图
-        await this.stockHeatmap.render();
+        // 直接传递数据进行渲染
+        this.stockHeatmap.render(stockData, `标签热力图`);
     }
 
     /**
