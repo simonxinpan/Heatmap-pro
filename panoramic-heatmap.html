@@ -1,95 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全景热力图 - Panoramic Heatmap</title>
-    <link rel="stylesheet" href="/heatmap-component/heatmap-center.css">
-    <link rel="stylesheet" href="/heatmap-component/panoramic-heatmap.css">
+    <link rel="stylesheet" href="heatmap-center.css">
+    <link rel="stylesheet" href="panoramic-heatmap.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .heatmap-canvas {
-            width: 100%;
-            height: 70vh;
-            min-height: 500px;
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        
-        /* 数据统计信息样式 */
-        .heatmap-stats {
-            display: flex;
-            justify-content: space-around;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .stat-item {
-            text-align: center;
-            flex: 1;
-        }
-        
-        .stat-number {
-            display: block;
-            font-size: 2em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-        
-        /* 控制按钮样式 */
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-right: 20px;
-        }
-        
-        .fullscreen-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        
-        .fullscreen-btn:hover {
-            background: #218838;
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .heatmap-stats {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .section-controls {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .control-group {
-                margin-right: 0;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- 全局导航栏 -->
@@ -113,9 +30,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="panoramic-heatmap.html" class="global-nav-link active">
+                    <a href="heatmap-center.html" class="global-nav-link">
                         <span class="nav-icon">🔥</span>
-                        全景热力图
+                        股票热力图
                     </a>
                 </li>
                 <li>
@@ -138,19 +55,20 @@
             </div>
         </section>
 
-        <!-- 全景热力图主区域 -->
-        <section id="panoramic-heatmap" class="heatmap-section">
+        <!-- 市场概览热力图 -->
+        <section id="market-overview" class="heatmap-section">
             <div class="section-header">
                 <div class="header-content">
-                    <h2 class="section-title heatmap-title">📊 全市场热力图 (S&P 500)</h2>
-                    <p class="section-subtitle">实时展示股票市值和涨跌幅分布，支持按行业筛选</p>
+                    <h2 class="section-title">📊 市场全景热力图</h2>
+                    <p class="section-subtitle">实时展示所有股票的市值和涨跌幅分布</p>
                 </div>
                 <div class="section-controls">
                     <div class="control-group">
-                        <label for="sector-filter">按行业筛选:</label>
-                        <select id="sector-filter">
-                            <option value="all">全市场 (S&P 500)</option>
-                            <!-- 行业选项将通过JavaScript动态填充 -->
+                        <label>数据源:</label>
+                        <select id="market-data-source">
+                            <option value="realtime">实时数据</option>
+                            <option value="delayed">延时数据</option>
+                            <option value="simulation">模拟数据</option>
                         </select>
                     </div>
                     <div class="control-group">
@@ -159,46 +77,20 @@
                             <option value="1d">今日</option>
                             <option value="1w">本周</option>
                             <option value="1m">本月</option>
+                            <option value="3m">三个月</option>
                         </select>
                     </div>
-                    <div class="control-group">
-                        <button class="refresh-btn" onclick="refreshHeatmap()">🔄 刷新</button>
-                        <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ 全屏</button>
-                    </div>
+                    <button class="refresh-btn" onclick="refreshMarketHeatmap()">🔄 刷新</button>
                 </div>
             </div>
-            
-            <!-- 数据统计信息 -->
-            <div class="heatmap-stats">
-                <div class="stat-item">
-                    <span class="stat-number" id="total-stocks">-</span>
-                    <span class="stat-label">股票数量</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="avg-change">-</span>
-                    <span class="stat-label">平均涨幅</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="up-stocks">-</span>
-                    <span class="stat-label">上涨股票</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="down-stocks">-</span>
-                    <span class="stat-label">下跌股票</span>
-                </div>
-            </div>
-            
-            <!-- 热力图容器 -->
             <div class="heatmap-display">
-                <div id="heatmap-container" class="heatmap-canvas">
+                <div id="market-heatmap" class="heatmap-canvas">
                     <div class="heatmap-placeholder">
                         <div class="placeholder-icon">📊</div>
-                        <p>正在加载全市场数据...</p>
+                        <p>正在加载市场热力图...</p>
                     </div>
                 </div>
             </div>
-            
-            <!-- 图例 -->
             <div class="heatmap-legend">
                 <div class="legend-title">涨跌幅图例</div>
                 <div class="legend-scale">
@@ -213,7 +105,44 @@
             </div>
         </section>
 
-
+        <!-- 行业仪表盘 -->
+        <section id="sector-dashboard" class="dashboard-section">
+            <div class="section-header">
+                <div class="header-content">
+                    <h2 class="section-title">🏭 行业仪表盘</h2>
+                    <p class="section-subtitle">实时展示各行业关键指标和迷你热力图</p>
+                </div>
+                <div class="section-controls">
+                    <div class="control-group">
+                        <label>排序方式:</label>
+                        <select id="dashboard-sort">
+                            <option value="market_cap">按市值排序</option>
+                            <option value="performance">按表现排序</option>
+                            <option value="volume">按成交量排序</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>显示模式:</label>
+                        <select id="dashboard-display-mode">
+                            <option value="grid">网格模式</option>
+                            <option value="compact">紧凑模式</option>
+                        </select>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshDashboard()">🔄 刷新</button>
+                </div>
+            </div>
+            
+            <!-- 加载状态 -->
+            <div id="dashboard-loading" class="dashboard-loading">
+                <div class="loading-spinner"></div>
+                <p>正在加载行业数据...</p>
+            </div>
+            
+            <!-- 动态生成的行业仪表盘网格 -->
+            <div class="industry-dashboard-grid" id="dashboard-grid">
+                <!-- 行业卡片将由JavaScript动态生成 -->
+            </div>
+        </section>
 
         <!-- 特定行业焦点区域 -->
         <section id="featured-sector-section" class="featured-sector-section" style="display: none;">
@@ -296,10 +225,10 @@
     </footer>
 
     <!-- JavaScript 文件 -->
-    <script src="/heatmap-component/StockHeatmap.js"></script>
-    <script src="/heatmap-component/DataProcessor.js"></script>
-    <script src="/heatmap-component/HeatmapRenderer.js"></script>
-    <script src="/js/panoramic.js"></script>
-    <script src="/heatmap-component/js/dashboard.js"></script>
+    <script src="DataProcessor.js"></script>
+    <script src="HeatmapRenderer.js"></script>
+    <script src="StockHeatmap.js"></script>
+    <script src="panoramic-heatmap.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
