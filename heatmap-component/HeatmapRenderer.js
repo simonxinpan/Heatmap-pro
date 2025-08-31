@@ -2,6 +2,12 @@
 
 class HeatmapRenderer {
     constructor(container, options = {}) {
+        // 检查容器是否存在
+        if (!container) {
+            console.error('HeatmapRenderer: container is required but was not provided');
+            return;
+        }
+        
         this.container = container;
         this.options = {
             width: options.width || 800,
@@ -24,6 +30,12 @@ class HeatmapRenderer {
     }
     
     initializeRenderer() {
+        // 检查容器是否存在
+        if (!this.container) {
+            console.error('HeatmapRenderer: cannot initialize, container is not available');
+            return;
+        }
+        
         // 清空容器
         this.container.innerHTML = '';
         

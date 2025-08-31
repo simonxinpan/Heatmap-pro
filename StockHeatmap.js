@@ -227,24 +227,35 @@ class StockHeatmap {
     }
     
     createRenderer() {
-        const rendererOptions = {
-            width: this.options.width,
-            height: this.options.height,
-            interactive: this.options.interactive,
-            onCellClick: (data, index) => {
-                if (this.options.onCellClick) {
-                    this.options.onCellClick(data, index);
-                }
-                this.handleCellClick(data, index);
-            },
-            onCellHover: (data, index) => {
-                if (this.options.onCellHover) {
-                    this.options.onCellHover(data, index);
-                }
+        try {
+            // 确保热力图容器存在
+            if (!this.heatmapContainer) {
+                console.error('Heatmap container not found, cannot create renderer');
+                return;
             }
-        };
-        
-        this.renderer = new HeatmapRenderer(this.heatmapContainer, rendererOptions);
+            
+            const rendererOptions = {
+                width: this.options.width,
+                height: this.options.height,
+                interactive: this.options.interactive,
+                onCellClick: (data, index) => {
+                    if (this.options.onCellClick) {
+                        this.options.onCellClick(data, index);
+                    }
+                    this.handleCellClick(data, index);
+                },
+                onCellHover: (data, index) => {
+                    if (this.options.onCellHover) {
+                        this.options.onCellHover(data, index);
+                    }
+                }
+            };
+            
+            this.renderer = new HeatmapRenderer(this.heatmapContainer, rendererOptions);
+        } catch (error) {
+            console.error('Failed to create HeatmapRenderer:', error);
+            this.renderer = null;
+        }
     }
     
     bindEvents() {
@@ -536,7 +547,18 @@ class StockHeatmap {
                     data = await this.dataProcessor.getMarketData(this.options.timeRange);
             }
             
+            // 确保渲染器已创建
+            if (!this.renderer) {
+                this.createRenderer();
+            }
+            
             this.currentData = data;
+            
+            // 确保渲染器已创建
+            if (!this.renderer) {
+                this.createRenderer();
+            }
+            
             this.renderer.render(data, this.options.metric);
             this.updateLegendStats(data);
             
