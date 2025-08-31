@@ -6,7 +6,7 @@
 class TagDetailPage {
     constructor() {
         this.dataProcessor = new DataProcessor();
-        this.heatmapRenderer = new HeatmapRenderer();
+        this.heatmapRenderer = null; // 延迟初始化
         this.stockHeatmap = null;
         this.currentTagId = null;
         this.isLoading = false;

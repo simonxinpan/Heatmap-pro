@@ -37,7 +37,8 @@ class StockHeatmap {
     
     initialize() {
         this.createLayout();
-        this.createRenderer();
+        // 延迟创建渲染器，确保DOM已准备好
+        this.renderer = null;
         this.bindEvents();
         this.loadInitialData();
         
@@ -479,6 +480,11 @@ class StockHeatmap {
         this.showLoading();
         
         try {
+            // 确保渲染器已创建
+            if (!this.renderer) {
+                this.createRenderer();
+            }
+            
             // 转换数据格式为热力图所需的格式
             const processedData = this.dataProcessor.processStockData(stockDataArray);
             
