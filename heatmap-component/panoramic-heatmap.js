@@ -204,17 +204,14 @@ class PanoramicHeatmap {
             // 模拟加载数据
             const stockData = this.generateMockStockData(500);
             
-            // 清空容器
-            container.innerHTML = '';
-            
-            // 创建热力图渲染器并渲染
-            const renderer = new HeatmapRenderer(container, {
+            // 创建 StockHeatmap 实例并渲染
+            const heatmap = new StockHeatmap(container, {
                 width: container.offsetWidth,
                 height: 600,
                 showLabels: true,
                 colorScheme: 'RdYlGn'
             });
-            renderer.render(stockData, 'change_percent');
+            heatmap.render(stockData, '市场热力图');
             
         } catch (error) {
             console.error('加载市场热力图失败:', error);
@@ -255,11 +252,8 @@ class PanoramicHeatmap {
             // 生成该行业的模拟数据（增加数量以获得更好的视觉效果）
             const sectorStocks = this.generateSectorMockData(sector, false, true);
             
-            // 清空容器
-            container.innerHTML = '';
-            
-            // 创建小热力图渲染器并渲染
-            const renderer = new HeatmapRenderer(container, {
+            // 创建 StockHeatmap 实例并渲染
+            const heatmap = new StockHeatmap(container, {
                 width: container.offsetWidth,
                 height: 180,
                 showLabels: false,
@@ -268,7 +262,7 @@ class PanoramicHeatmap {
                 padding: 1,
                 cornerRadius: 2
             });
-            renderer.render(sectorStocks, 'change_percent');
+            heatmap.render(sectorStocks, `${sector}行业热力图`);
             
         } catch (error) {
             console.error(`加载${sector}行业热力图失败:`, error);
@@ -384,18 +378,15 @@ class PanoramicHeatmap {
             // 生成该行业的详细数据
             const sectorStocks = this.generateSectorMockData(sector, true);
             
-            // 清空容器
-            container.innerHTML = '';
-            
-            // 创建详细热力图渲染器并渲染
-            const renderer = new HeatmapRenderer(container, {
+            // 创建 StockHeatmap 实例并渲染
+            const heatmap = new StockHeatmap(container, {
                 width: container.offsetWidth,
                 height: 500,
                 showLabels: true,
                 colorScheme: 'RdYlGn',
                 fontSize: 12
             });
-            renderer.render(sectorStocks, 'change_percent');
+            heatmap.render(sectorStocks, `${sector}行业详细热力图`);
             
         } catch (error) {
             console.error(`加载${sector}行业详细热力图失败:`, error);

@@ -39,7 +39,7 @@ class StockHeatmap {
         this.createLayout();
         this.createRenderer();
         this.bindEvents();
-        this.loadInitialData();
+        // 移除 loadInitialData 调用 - 数据获取现在由外部负责
         
         if (this.options.autoRefresh) {
             this.startAutoRefresh();
@@ -520,26 +520,19 @@ class StockHeatmap {
         this.showLoading();
         
         try {
-            // 使用 DataProcessor 的静态方法处理数据
-            const processedData = DataProcessor.processDataForHeatmap(stockDataArray);
-            
-            if (!processedData) {
-                this.showError('没有可显示的数据');
-                return;
-            }
-            
-            this.currentData = processedData;
+            // 直接使用原始数组数据进行渲染
+            this.currentData = stockDataArray;
             
             // 确保渲染器已创建
             if (!this.renderer) {
                 this.createRenderer();
             }
             
-            this.renderer.render(processedData, this.options.metric);
+            this.renderer.render(stockDataArray, this.options.metric);
             
             // 迷你模式下不更新图例和标题
             if (!isMini) {
-                this.updateLegendStats(processedData);
+                this.updateLegendStats(stockDataArray);
                 
                 // 更新标题
                 const titleElement = this.container.querySelector('.heatmap-title');
@@ -549,7 +542,7 @@ class StockHeatmap {
             }
             
             if (this.options.onDataUpdate) {
-                this.options.onDataUpdate(processedData);
+                this.options.onDataUpdate(stockDataArray);
             }
             
         } catch (error) {
