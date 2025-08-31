@@ -155,35 +155,64 @@ class SectorDashboard {
         if (!heatmapContainer) return;
 
         try {
-            // 获取该行业的股票数据
-            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sectorZh)}`);
-            const result = await response.json();
+            // 创建iframe来嵌入真实的Vercel热力图
+            const iframe = document.createElement('iframe');
             
-            if (result.success && result.data.length > 0) {
-                // 清空加载状态
-                heatmapContainer.innerHTML = '';
-                
-                // 创建迷你热力图实例
-                const miniHeatmap = new StockHeatmap(heatmapContainer, {
-                    width: 280,
-                    height: 160,
-                    margin: { top: 5, right: 5, bottom: 5, left: 5 },
-                    showLabels: false,
-                    showTooltip: true,
-                    animation: true
-                });
-                
-                // 渲染热力图
-                miniHeatmap.render(result.data);
-            } else {
-                // 显示无数据状态
+            // 根据行业名称构建对应的Vercel URL
+            let vercelUrl = 'https://heatmap-luutyw2ks-simon-pans-projects.vercel.app/';
+            if (sectorZh !== '全部') {
+                vercelUrl += `?sector=${encodeURIComponent(sectorZh)}`;
+            }
+            
+            iframe.src = vercelUrl;
+            iframe.style.width = '100%';
+            iframe.style.height = '120px';
+            iframe.style.border = 'none';
+            iframe.style.borderRadius = '4px';
+            iframe.style.pointerEvents = 'none'; // 禁用iframe内的交互
+            iframe.loading = 'lazy';
+            
+            // 清空容器并添加iframe
+            heatmapContainer.innerHTML = '';
+            heatmapContainer.appendChild(iframe);
+            
+            // 添加点击事件到容器
+            heatmapContainer.style.cursor = 'pointer';
+            heatmapContainer.addEventListener('click', () => {
+                // 在新窗口打开完整的热力图
+                window.open(vercelUrl, '_blank');
+            });
+            
+            // 添加加载状态
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'mini-loading';
+            loadingDiv.textContent = '加载中...';
+            loadingDiv.style.position = 'absolute';
+            loadingDiv.style.top = '50%';
+            loadingDiv.style.left = '50%';
+            loadingDiv.style.transform = 'translate(-50%, -50%)';
+            loadingDiv.style.fontSize = '12px';
+            loadingDiv.style.color = '#666';
+            
+            heatmapContainer.style.position = 'relative';
+            heatmapContainer.appendChild(loadingDiv);
+            
+            // iframe加载完成后移除加载提示
+            iframe.onload = () => {
+                if (loadingDiv.parentNode) {
+                    loadingDiv.remove();
+                }
+            };
+            
+            // 处理加载错误
+            iframe.onerror = () => {
                 heatmapContainer.innerHTML = `
-                    <div class="mini-heatmap-empty">
-                        <span>📊</span>
-                        <p>暂无数据</p>
+                    <div class="mini-heatmap-error">
+                        <span>⚠️</span>
+                        <p>加载失败</p>
                     </div>
                 `;
-            }
+            };
         } catch (error) {
             console.error(`Mini heatmap loading error for ${sectorZh}:`, error);
             heatmapContainer.innerHTML = `
