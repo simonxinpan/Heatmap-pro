@@ -4,7 +4,6 @@ import path from 'path';
 import url from 'url';
 import dotenv from 'dotenv';
 import stocksHandler from './api/stocks.js';
-import stocksSimpleHandler from './api/stocks-simple.js';
 import testEnvHandler from './api/test-env.js';
 
 // 加载环境变量
@@ -48,12 +47,6 @@ const server = http.createServer(async (req, res) => {
             // 处理股票API请求
             if (pathname === '/api/stocks') {
                 await stocksHandler(req, res);
-                return;
-            }
-            
-            // 处理简化股票API请求
-            if (pathname === '/api/stocks-simple') {
-                await stocksSimpleHandler(req, res);
                 return;
             }
             

@@ -1,4 +1,4 @@
-// 数据处理器 - 热力图数据处理核心组件
+﻿// 数据处理器 - 热力图数据处理核心组件
 
 class DataProcessor {
     constructor() {

@@ -76,86 +76,38 @@ const mockStockData = [
 
 export default async function handler(request, response) {
     try {
-        // 从URL参数中获取sector筛选条件
-        const url = new URL(request.url, `http://${request.headers.host}`);
-        const sector = url.searchParams.get('sector');
-        
-        console.log(`🔄 Fetching simplified stock data for heatmap${sector ? ` (sector: ${sector})` : ' (all sectors)'}...`);
-        
-        // 设置强缓存头，提升性能
-        response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600'); // 5分钟缓存，10分钟过期重新验证
-        response.setHeader('CDN-Cache-Control', 'max-age=300'); // CDN缓存5分钟
-        response.setHeader('Vary', 'Accept-Encoding'); // 支持压缩缓存
+        console.log('🔄 Fetching simplified stock data for heatmap...');
         
         // 尝试从数据库获取数据
         try {
-            let query = `
+            const { rows: stocks } = await pool.query(`
                 SELECT 
                     ticker,
                     name_zh,
                     sector_zh,
                     market_cap,
-                    change_percent,
-                    volume,
-                    last_updated
+                    change_percent
                 FROM stocks
                 WHERE 
                     sector_zh IS NOT NULL AND sector_zh != '' AND
                     market_cap IS NOT NULL AND market_cap > 0 AND
                     change_percent IS NOT NULL
-            `;
-            
-            let queryParams = [];
-            
-            // 如果提供了sector参数，添加筛选条件
-            if (sector) {
-                query += ` AND sector_zh = $1`;
-                queryParams.push(sector);
-            }
-            
-            query += ` ORDER BY market_cap DESC LIMIT 502`;
-            
-            const { rows: stocks } = await pool.query(query, queryParams);
+                ORDER BY market_cap DESC
+            `);
             
             if (stocks.length > 0) {
                 console.log(`✅ Successfully fetched ${stocks.length} stocks from database`);
-                
-                // 添加数据时间戳
-                const responseData = {
-                    data: stocks,
-                    timestamp: new Date().toISOString(),
-                    count: stocks.length,
-                    source: 'database'
-                };
-                
-                response.writeHead(200, { 'Content-Type': 'application/json' });
-                return response.end(JSON.stringify(responseData));
+                response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+                return response.status(200).json(stocks);
             }
         } catch (dbError) {
             console.log('⚠️ Database unavailable, using mock data:', dbError.message);
         }
         
         // 如果数据库不可用或没有数据，使用模拟数据
-        let filteredMockData = mockStockData;
-        
-        // 如果提供了sector参数，筛选模拟数据
-        if (sector) {
-            filteredMockData = mockStockData.filter(stock => stock.sector_zh === sector);
-        }
-        
-        console.log(`📊 Using mock data: ${filteredMockData.length} stocks${sector ? ` (sector: ${sector})` : ''}`);
+        console.log(`📊 Using mock data: ${mockStockData.length} stocks`);
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120'); // 较短缓存
-        
-        const responseData = {
-            data: filteredMockData,
-            timestamp: new Date().toISOString(),
-            count: filteredMockData.length,
-            source: 'mock',
-            sector: sector || 'all'
-        };
-        
-        response.writeHead(200, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify(responseData));
+        response.status(200).json(mockStockData);
         
     } catch (error) {
         console.error('❌ API /stocks-simple.js Error:', error);
@@ -163,24 +115,6 @@ export default async function handler(request, response) {
         // 最后的后备方案：返回模拟数据
         console.log('🔄 Fallback to mock data due to error');
         response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-        
-        let fallbackMockData = mockStockData;
-        
-        // 如果提供了sector参数，筛选模拟数据
-        if (sector) {
-            fallbackMockData = mockStockData.filter(stock => stock.sector_zh === sector);
-        }
-        
-        const responseData = {
-            data: fallbackMockData,
-            timestamp: new Date().toISOString(),
-            count: fallbackMockData.length,
-            source: 'mock',
-            sector: sector || 'all',
-            error: 'Database connection failed'
-        };
-        
-        response.writeHead(200, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify(responseData));
+        response.status(200).json(mockStockData);
     }
 }

@@ -1,4 +1,4 @@
-// 股票热力图组件 - 整合数据处理和渲染功能
+﻿// 股票热力图组件 - 整合数据处理和渲染功能
 
 class StockHeatmap {
     constructor(container, options = {}) {
