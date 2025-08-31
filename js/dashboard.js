@@ -81,8 +81,7 @@ class SectorDashboard {
             const cardElement = this.createSectorCard(sector, index);
             dashboardGrid.appendChild(cardElement);
             
-            // 异步加载迷你热力图
-            this.loadMiniHeatmap(sector.sector_zh, sector.sector_key);
+            // 注意：迷你热力图现在通过iframe嵌入，无需额外加载
         });
     }
 
@@ -109,16 +108,21 @@ class SectorDashboard {
                         </div>
                     </div>
                 </div>
-                <button class="industry-expand-btn" onclick="expandSector('${sector.sector_zh}')">
+                <button class="industry-expand-btn" onclick="viewSectorDetail('${sector.sector_zh}', '${sector.sector_key}')">
                     <span>🔍</span>
+                    <span class="expand-text">查看详情</span>
                 </button>
             </div>
             
             <div class="industry-mini-heatmap" id="heatmap-${sector.sector_zh}">
-                <div class="mini-heatmap-loading">
-                    <div class="loading-dots"></div>
-                    <p>加载热力图...</p>
-                </div>
+                <iframe 
+                    src="tag-detail.html?tagId=sector_${sector.sector_key}&embed=true" 
+                    frameborder="0" 
+                    scrolling="no" 
+                    style="width: 100%; height: 200px; border: none; border-radius: 8px;"
+                    loading="lazy"
+                    title="${sector.sector_zh}行业热力图">
+                </iframe>
             </div>
             
             <div class="industry-stats">
@@ -177,12 +181,13 @@ class SectorDashboard {
                     height: 160,
                     margin: { top: 5, right: 5, bottom: 5, left: 5 },
                     showLabels: false,
-                    showTooltip: true,
-                    animation: true
+                    showTooltip: false,
+                    animation: false,
+                    interactive: false
                 });
                 
-                // 渲染热力图
-                miniHeatmap.render(result.data);
+                // 渲染迷你热力图（只显示色块，无文字标签）
+                miniHeatmap.render(result.data, sectorZh, true);
                 
                 // 添加点击事件 - 导航到完整热力图页面
                 heatmapContainer.style.cursor = 'pointer';
@@ -307,6 +312,13 @@ function refreshDashboard() {
     if (window.sectorDashboard) {
         window.sectorDashboard.refresh();
     }
+}
+
+// 全局函数：查看行业详情（新的实现）
+function viewSectorDetail(sectorZh, sectorKey) {
+    // 打开标签详情页面，不带embed参数，在新标签页中打开
+    const detailUrl = `tag-detail.html?tagId=sector_${sectorKey}`;
+    window.open(detailUrl, '_blank');
 }
 
 // 全局函数：展开行业（兼容现有代码）

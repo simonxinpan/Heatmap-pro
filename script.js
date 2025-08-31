@@ -70,6 +70,12 @@ async function router() {
     const page = params.get('page');
     const symbol = params.get('symbol');
     const sector = params.get('sector');
+    const embed = params.get('embed');
+    
+    // 检查嵌入模式
+    if (embed === 'true') {
+        setupEmbedMode();
+    }
 
     if (page === 'stock' && symbol) {
         await renderStockDetailPage(symbol);
@@ -81,6 +87,55 @@ async function router() {
         document.title = '股票热力图 - 全景';
         await renderHomePage();
     }
+}
+
+// 设置嵌入模式 - 隐藏导航栏、页头、侧边栏和页脚
+function setupEmbedMode() {
+    console.log('🔧 启用嵌入模式，隐藏页面装饰元素...');
+    
+    // 添加嵌入模式的CSS样式
+    const embedStyle = document.createElement('style');
+    embedStyle.id = 'embed-mode-style';
+    embedStyle.textContent = `
+        /* 嵌入模式样式 - 隐藏页面装饰元素 */
+        nav, header, aside, footer,
+        .header, .footer, .legend,
+        .global-nav, .navigation,
+        .sidebar, .side-panel {
+            display: none !important;
+        }
+        
+        /* 调整主内容区域以充满整个视口 */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        #app-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh !important;
+        }
+        
+        .heatmap-container-final {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh !important;
+        }
+        
+        /* 确保热力图充满整个容器 */
+        .treemap-container {
+            height: 100vh !important;
+        }
+    `;
+    
+    // 将样式添加到页面头部
+    document.head.appendChild(embedStyle);
+    
+    // 设置页面标题为嵌入模式
+    document.title = '股票热力图 - 嵌入模式';
+    
+    console.log('✅ 嵌入模式设置完成');
 }
 
 // 显示加载动画

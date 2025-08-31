@@ -589,6 +589,14 @@ function expandSector(sector) {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 检查是否为嵌入模式
+    const urlParams = new URLSearchParams(window.location.search);
+    const isEmbedMode = urlParams.get('embed') === 'true';
+    
+    if (isEmbedMode) {
+        setupEmbedMode();
+    }
+    
     window.panoramicHeatmap = new PanoramicHeatmap();
 });
 
@@ -598,3 +606,74 @@ window.addEventListener('beforeunload', function() {
         window.panoramicHeatmap.stopAutoRefresh();
     }
 });
+
+/**
+ * 设置嵌入模式
+ * 隐藏导航栏、页头、页脚等装饰元素，优化嵌入显示
+ */
+function setupEmbedMode() {
+    // 创建嵌入模式样式
+    const embedStyle = document.createElement('style');
+    embedStyle.textContent = `
+        /* 隐藏全局导航栏 */
+        .global-navbar {
+            display: none !important;
+        }
+        
+        /* 隐藏页面标题区域 */
+        .hero-section {
+            display: none !important;
+        }
+        
+        /* 隐藏页脚 */
+        .footer {
+            display: none !important;
+        }
+        
+        /* 隐藏导航卡片区域 */
+        .navigation-section {
+            display: none !important;
+        }
+        
+        /* 调整主内容区域 */
+        .main-content {
+            padding: 0 !important;
+            margin: 0 !important;
+            min-height: 100vh !important;
+        }
+        
+        /* 调整body样式 */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* 优化热力图区域显示 */
+        .heatmap-section {
+            margin: 0 !important;
+            padding: 20px !important;
+        }
+        
+        .dashboard-section {
+            margin: 0 !important;
+            padding: 20px !important;
+        }
+        
+        /* 调整区域标题 */
+        .section-title {
+            font-size: 1.5rem !important;
+            margin-bottom: 10px !important;
+        }
+        
+        .section-subtitle {
+            font-size: 0.9rem !important;
+            margin-bottom: 15px !important;
+        }
+    `;
+    
+    document.head.appendChild(embedStyle);
+    
+    // 设置页面标题
+    document.title = '全景热力图 - 嵌入模式';
+}

@@ -93,6 +93,35 @@ class StockHeatmap {
         this.addStyles();
     }
     
+    setupMiniMode() {
+        // 迷你模式配置：隐藏所有UI元素，只显示纯色块
+        this.options.showControls = false;
+        this.options.showLegend = false;
+        this.options.showTooltip = false;
+        this.options.interactive = false;
+        
+        // 更新渲染器选项
+        if (this.renderer) {
+            this.renderer.options.showLabels = false;
+            this.renderer.options.showTooltip = false;
+            this.renderer.options.interactive = false;
+        }
+        
+        // 隐藏控制面板和图例
+        if (this.controlsContainer) {
+            this.controlsContainer.style.display = 'none';
+        }
+        if (this.legendContainer) {
+            this.legendContainer.style.display = 'none';
+        }
+        
+        // 简化容器样式
+        if (this.heatmapContainer) {
+            this.heatmapContainer.style.border = 'none';
+            this.heatmapContainer.style.borderRadius = '4px';
+        }
+    }
+    
     createControls() {
         this.controlsContainer.innerHTML = `
             <div class="heatmap-controls-row">
@@ -470,10 +499,15 @@ class StockHeatmap {
      * @param {Array} stockDataArray - 股票数据数组
      * @param {string} title - 热力图标题
      */
-    render(stockDataArray, title = '股票热力图') {
+    render(stockDataArray, title = '股票热力图', isMini = false) {
         if (!Array.isArray(stockDataArray) || stockDataArray.length === 0) {
             this.showError('没有可显示的数据');
             return;
+        }
+        
+        // 如果是迷你模式，重新配置渲染器选项
+        if (isMini) {
+            this.setupMiniMode();
         }
         
         this.showLoading();
@@ -484,12 +518,16 @@ class StockHeatmap {
             
             this.currentData = processedData;
             this.renderer.render(processedData, this.options.metric);
-            this.updateLegendStats(processedData);
             
-            // 更新标题
-            const titleElement = this.container.querySelector('.heatmap-title');
-            if (titleElement) {
-                titleElement.textContent = title;
+            // 迷你模式下不更新图例和标题
+            if (!isMini) {
+                this.updateLegendStats(processedData);
+                
+                // 更新标题
+                const titleElement = this.container.querySelector('.heatmap-title');
+                if (titleElement) {
+                    titleElement.textContent = title;
+                }
             }
             
             if (this.options.onDataUpdate) {
