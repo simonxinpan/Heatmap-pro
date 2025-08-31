@@ -782,15 +782,17 @@ class HeatmapCenter {
      * 查看趋势榜单页面
      */
     viewTrendingPage() {
-        window.open('trending.html', '_blank');
+        // window.open('trending.html', '_blank'); // 已注释：净化外部链接
+        console.log('趋势榜单功能已禁用 - 应用独立运行模式');
     }
 
     /**
      * 查看趋势详情
      */
     viewTrendingDetail(card) {
-        const trendingType = card.querySelector('h3').textContent;
-        window.open(`trending.html?type=${trendingType}`, '_blank');
+        // const trendingType = card.querySelector('h3').textContent;
+        // window.open(`trending.html?type=${trendingType}`, '_blank'); // 已注释：净化外部链接
+        console.log('趋势详情功能已禁用 - 应用独立运行模式');
     }
 
     /**
