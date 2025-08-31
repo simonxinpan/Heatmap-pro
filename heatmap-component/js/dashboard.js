@@ -155,64 +155,45 @@ class SectorDashboard {
         if (!heatmapContainer) return;
 
         try {
-            // 创建iframe来嵌入真实的Vercel热力图
-            const iframe = document.createElement('iframe');
+            // 显示加载状态
+            heatmapContainer.innerHTML = '<div class="mini-loading">正在加载热力图...</div>';
             
-            // 根据行业名称构建对应的Vercel URL
-            let vercelUrl = 'https://heatmap-luutyw2ks-simon-pans-projects.vercel.app/';
-            if (sectorZh !== '全部') {
-                vercelUrl += `?sector=${encodeURIComponent(sectorZh)}`;
-            }
+            // 获取该行业的股票数据
+            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sectorZh)}`);
+            const result = await response.json();
             
-            iframe.src = vercelUrl;
-            iframe.style.width = '100%';
-            iframe.style.height = '120px';
-            iframe.style.border = 'none';
-            iframe.style.borderRadius = '4px';
-            iframe.style.pointerEvents = 'none'; // 禁用iframe内的交互
-            iframe.loading = 'lazy';
-            
-            // 清空容器并添加iframe
-            heatmapContainer.innerHTML = '';
-            heatmapContainer.appendChild(iframe);
-            
-            // 添加点击事件到容器
-            heatmapContainer.style.cursor = 'pointer';
-            heatmapContainer.addEventListener('click', () => {
-                // 在新窗口打开完整的热力图
-                window.open(vercelUrl, '_blank');
-            });
-            
-            // 添加加载状态
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'mini-loading';
-            loadingDiv.textContent = '加载中...';
-            loadingDiv.style.position = 'absolute';
-            loadingDiv.style.top = '50%';
-            loadingDiv.style.left = '50%';
-            loadingDiv.style.transform = 'translate(-50%, -50%)';
-            loadingDiv.style.fontSize = '12px';
-            loadingDiv.style.color = '#666';
-            
-            heatmapContainer.style.position = 'relative';
-            heatmapContainer.appendChild(loadingDiv);
-            
-            // iframe加载完成后移除加载提示
-            iframe.onload = () => {
-                if (loadingDiv.parentNode) {
-                    loadingDiv.remove();
-                }
-            };
-            
-            // 处理加载错误
-            iframe.onerror = () => {
+            if (result.success && result.data.length > 0) {
+                // 清空加载状态
+                heatmapContainer.innerHTML = '';
+                
+                // 创建迷你热力图实例
+                const miniHeatmap = new StockHeatmap(heatmapContainer, {
+                    width: 280,
+                    height: 160,
+                    margin: { top: 5, right: 5, bottom: 5, left: 5 },
+                    showLabels: false,
+                    showTooltip: true,
+                    animation: true
+                });
+                
+                // 渲染热力图
+                miniHeatmap.render(result.data);
+                
+                // 添加点击事件 - 导航到完整热力图页面
+                heatmapContainer.style.cursor = 'pointer';
+                heatmapContainer.addEventListener('click', () => {
+                    this.navigateToSector(sectorZh);
+                });
+                
+            } else {
+                // 显示无数据状态
                 heatmapContainer.innerHTML = `
-                    <div class="mini-heatmap-error">
-                        <span>⚠️</span>
-                        <p>加载失败</p>
+                    <div class="mini-heatmap-empty">
+                        <span>📊</span>
+                        <p>暂无数据</p>
                     </div>
                 `;
-            };
+            }
         } catch (error) {
             console.error(`Mini heatmap loading error for ${sectorZh}:`, error);
             heatmapContainer.innerHTML = `
@@ -259,8 +240,34 @@ class SectorDashboard {
     }
 
     navigateToSector(sectorZh) {
-        // 导航到特定行业页面
-        window.location.href = `panoramic-heatmap.html?sector=${encodeURIComponent(sectorZh)}`;
+        // 行业名称到Vercel热力图链接的映射表
+        const sectorUrlMap = {
+            '信息技术': 'https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF',
+            '工业': 'https://heatmap-pro.vercel.app/?sector=%E5%B7%A5%E4%B8%9A',
+            '金融': 'https://heatmap-pro.vercel.app/?sector=%E9%87%91%E8%9E%8D',
+            '医疗保健': 'https://heatmap-pro.vercel.app/?sector=%E5%8C%BB%E7%96%97%E4%BF%9D%E5%81%A5',
+            '非必需消费品': 'https://heatmap-pro.vercel.app/?sector=%E9%9D%9E%E5%BF%85%E9%9C%80%E6%B6%88%E8%B4%B9%E5%93%81',
+            '日常消费品': 'https://heatmap-pro.vercel.app/?sector=%E6%97%A5%E5%B8%B8%E6%B6%88%E8%B4%B9%E5%93%81',
+            '公用事业': 'https://heatmap-pro.vercel.app/?sector=%E5%85%AC%E7%94%A8%E4%BA%8B%E4%B8%9A',
+            '房地产': 'https://heatmap-pro.vercel.app/?sector=%E6%88%BF%E5%9C%B0%E4%BA%A7',
+            '原材料': 'https://heatmap-pro.vercel.app/?sector=%E5%8E%9F%E6%9D%90%E6%96%99',
+            '能源': 'https://heatmap-pro.vercel.app/?sector=%E8%83%BD%E6%BA%90',
+            '半导体': 'https://heatmap-pro.vercel.app/?sector=%E5%8D%8A%E5%AF%BC%E4%BD%93',
+            '媒体娱乐': 'https://heatmap-pro.vercel.app/?sector=%E5%AA%92%E4%BD%93%E5%A8%B1%E4%B9%90',
+            '通讯服务': 'https://heatmap-pro.vercel.app/?sector=%E9%80%9A%E8%AE%AF%E6%9C%8D%E5%8A%A1'
+        };
+        
+        // 获取对应的Vercel链接
+        const vercelUrl = sectorUrlMap[sectorZh];
+        
+        if (vercelUrl) {
+            // 在新窗口打开Vercel热力图页面
+            window.open(vercelUrl, '_blank');
+        } else {
+            // 如果没有找到对应链接，回退到本地页面
+            console.warn(`未找到行业 "${sectorZh}" 的Vercel链接，回退到本地页面`);
+            window.location.href = `panoramic-heatmap.html?sector=${encodeURIComponent(sectorZh)}`;
+        }
     }
 
     showLoading(show) {
@@ -299,7 +306,34 @@ function refreshDashboard() {
 
 // 全局函数：展开行业（兼容现有代码）
 function expandSector(sector) {
-    window.location.href = `panoramic-heatmap.html?sector=${encodeURIComponent(sector)}`;
+    // 行业名称到Vercel热力图链接的映射表
+    const sectorUrlMap = {
+        '信息技术': 'https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF',
+        '工业': 'https://heatmap-pro.vercel.app/?sector=%E5%B7%A5%E4%B8%9A',
+        '金融': 'https://heatmap-pro.vercel.app/?sector=%E9%87%91%E8%9E%8D',
+        '医疗保健': 'https://heatmap-pro.vercel.app/?sector=%E5%8C%BB%E7%96%97%E4%BF%9D%E5%81%A5',
+        '非必需消费品': 'https://heatmap-pro.vercel.app/?sector=%E9%9D%9E%E5%BF%85%E9%9C%80%E6%B6%88%E8%B4%B9%E5%93%81',
+        '日常消费品': 'https://heatmap-pro.vercel.app/?sector=%E6%97%A5%E5%B8%B8%E6%B6%88%E8%B4%B9%E5%93%81',
+        '公用事业': 'https://heatmap-pro.vercel.app/?sector=%E5%85%AC%E7%94%A8%E4%BA%8B%E4%B8%9A',
+        '房地产': 'https://heatmap-pro.vercel.app/?sector=%E6%88%BF%E5%9C%B0%E4%BA%A7',
+        '原材料': 'https://heatmap-pro.vercel.app/?sector=%E5%8E%9F%E6%9D%90%E6%96%99',
+        '能源': 'https://heatmap-pro.vercel.app/?sector=%E8%83%BD%E6%BA%90',
+        '半导体': 'https://heatmap-pro.vercel.app/?sector=%E5%8D%8A%E5%AF%BC%E4%BD%93',
+        '媒体娱乐': 'https://heatmap-pro.vercel.app/?sector=%E5%AA%92%E4%BD%93%E5%A8%B1%E4%B9%90',
+        '通讯服务': 'https://heatmap-pro.vercel.app/?sector=%E9%80%9A%E8%AE%AF%E6%9C%8D%E5%8A%A1'
+    };
+    
+    // 获取对应的Vercel链接
+    const vercelUrl = sectorUrlMap[sector];
+    
+    if (vercelUrl) {
+        // 在新窗口打开Vercel热力图页面
+        window.open(vercelUrl, '_blank');
+    } else {
+        // 如果没有找到对应链接，回退到本地页面
+        console.warn(`未找到行业 "${sector}" 的Vercel链接，回退到本地页面`);
+        window.location.href = `panoramic-heatmap.html?sector=${encodeURIComponent(sector)}`;
+    }
 }
 
 // 页面加载完成后初始化仪表盘

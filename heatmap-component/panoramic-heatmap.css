@@ -562,6 +562,58 @@
     text-align: center;
 }
 
+.mini-heatmap-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 0.75rem;
+    height: 100%;
+    background: #f9fafb;
+    border-radius: 4px;
+}
+
+.mini-heatmap-empty span {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.6;
+}
+
+.mini-heatmap-empty p {
+    margin: 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+.mini-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    font-size: 0.75rem;
+    background: #f9fafb;
+    border-radius: 4px;
+    position: relative;
+}
+
+.mini-loading::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* 全屏模态框样式 */
 .fullscreen-modal {
     position: fixed;
