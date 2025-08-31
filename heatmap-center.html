@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>股票热力图中心 - Stock Tag Explorer</title>
-    <link rel="stylesheet" href="/heatmap-component/heatmap-center.css">
+    <link rel="stylesheet" href="heatmap-center.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- 图标库 -->
     <script>
         // 加载图标库
-        fetch('/heatmap-component/assets/icons.svg')
+        fetch('./assets/icons.svg')
             .then(response => response.text())
             .then(data => {
                 const div = document.createElement('div');
@@ -238,16 +238,12 @@
                     <button class="refresh-btn" onclick="refreshSectorHeatmap()">🔄 刷新</button>
                 </div>
             </div>
-            <div class="sector-grid">
-                <!-- 行业热力图网格 -->
-                <div class="sector-card" data-sector="technology">
-                    <div class="sector-header">
-                        <h3>💻 信息技术</h3>
-                        <span class="sector-change positive">+2.3%</span>
-                    </div>
-                    <div id="tech-heatmap" class="mini-heatmap">
-                        <div class="heatmap-placeholder mini">
-                            <p>加载中...</p>
+            <div class="sector-grid" id="sector-grid">
+                <!-- 行业热力图网格将动态生成 -->
+                <div class="sector-loading">
+                    <div class="loading-spinner"></div>
+                    <p>正在加载行业数据...</p>
+                </div>
                         </div>
                     </div>
                     <div class="sector-stats">
@@ -621,9 +617,9 @@
     </footer>
 
     <!-- JavaScript -->
-    <script src="/heatmap-component/DataProcessor.js"></script>
-    <script src="/heatmap-component/HeatmapRenderer.js"></script>
-    <script src="/heatmap-component/StockHeatmap.js"></script>
-    <script src="/heatmap-component/heatmap-center.js"></script>
+    <script src="DataProcessor.js"></script>
+    <script src="HeatmapRenderer.js"></script>
+    <script src="StockHeatmap.js"></script>
+    <script src="heatmap-center.js"></script>
 </body>
 </html>
