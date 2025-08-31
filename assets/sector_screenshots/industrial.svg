@@ -1,0 +1,92 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .stock-rect { stroke: #fff; stroke-width: 1; }
+      .stock-text { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+      .stock-text-white { font-family: Arial, sans-serif; font-size: 12px; fill: #fff; }
+      .sector-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
+      .positive { fill: #4CAF50; }
+      .negative { fill: #F44336; }
+      .neutral { fill: #FFC107; }
+    </style>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="800" height="400" fill="#f5f5f5"/>
+  
+  <!-- 标题 -->
+  <text x="20" y="30" class="sector-title">工业</text>
+  <text x="720" y="30" class="stock-text">- 返回全景图</text>
+  
+  <!-- 波音 -->
+  <rect x="20" y="50" width="200" height="300" class="stock-rect positive"/>
+  <text x="30" y="80" class="stock-text">波音</text>
+  <text x="30" y="100" class="stock-text">BA</text>
+  <text x="30" y="120" class="stock-text">+2.15%</text>
+  
+  <!-- 通用电气 -->
+  <rect x="240" y="50" width="160" height="200" class="stock-rect positive"/>
+  <text x="250" y="80" class="stock-text">通用电气</text>
+  <text x="250" y="100" class="stock-text">GE</text>
+  <text x="250" y="120" class="stock-text">+1.85%</text>
+  
+  <!-- 卡特彼勒 -->
+  <rect x="420" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="430" y="80" class="stock-text">卡特彼勒</text>
+  <text x="430" y="100" class="stock-text">CAT</text>
+  <text x="430" y="120" class="stock-text">+1.42%</text>
+  
+  <!-- 联合太平洋 -->
+  <rect x="560" y="50" width="100" height="120" class="stock-rect positive"/>
+  <text x="570" y="80" class="stock-text">联合太平洋</text>
+  <text x="570" y="100" class="stock-text">UNP</text>
+  <text x="570" y="120" class="stock-text">+1.18%</text>
+  
+  <!-- 联邦快递 -->
+  <rect x="680" y="50" width="100" height="120" class="stock-rect positive"/>
+  <text x="690" y="80" class="stock-text">联邦快递</text>
+  <text x="690" y="100" class="stock-text">FDX</text>
+  <text x="690" y="120" class="stock-text">+0.95%</text>
+  
+  <!-- 洛克希德马丁 -->
+  <rect x="420" y="190" width="120" height="80" class="stock-rect positive"/>
+  <text x="430" y="210" class="stock-text">洛克希德马丁</text>
+  <text x="430" y="230" class="stock-text">LMT</text>
+  <text x="430" y="250" class="stock-text">+0.78%</text>
+  
+  <!-- 雷神技术 -->
+  <rect x="560" y="190" width="100" height="80" class="stock-rect positive"/>
+  <text x="570" y="210" class="stock-text">雷神技术</text>
+  <text x="570" y="230" class="stock-text">RTX</text>
+  <text x="570" y="250" class="stock-text">+0.65%</text>
+  
+  <!-- 霍尼韦尔 -->
+  <rect x="680" y="190" width="100" height="80" class="stock-rect positive"/>
+  <text x="690" y="210" class="stock-text">霍尼韦尔</text>
+  <text x="690" y="230" class="stock-text">HON</text>
+  <text x="690" y="250" class="stock-text">+0.52%</text>
+  
+  <!-- 3M公司 -->
+  <rect x="420" y="290" width="120" height="60" class="stock-rect positive"/>
+  <text x="430" y="310" class="stock-text">3M公司</text>
+  <text x="430" y="330" class="stock-text">MMM</text>
+  <text x="430" y="345" class="stock-text">+0.38%</text>
+  
+  <!-- 迪尔公司 -->
+  <rect x="560" y="290" width="100" height="60" class="stock-rect positive"/>
+  <text x="570" y="310" class="stock-text">迪尔公司</text>
+  <text x="570" y="330" class="stock-text">DE</text>
+  <text x="570" y="345" class="stock-text">+0.45%</text>
+  
+  <!-- 联合包裹 -->
+  <rect x="680" y="290" width="100" height="60" class="stock-rect positive"/>
+  <text x="690" y="310" class="stock-text">联合包裹</text>
+  <text x="690" y="330" class="stock-text">UPS</text>
+  <text x="690" y="345" class="stock-text">+0.32%</text>
+  
+  <!-- 伊顿公司 -->
+  <rect x="240" y="270" width="160" height="80" class="stock-rect positive"/>
+  <text x="250" y="290" class="stock-text">伊顿公司</text>
+  <text x="250" y="310" class="stock-text">ETN</text>
+  <text x="250" y="330" class="stock-text">+0.68%</text>
+</svg>

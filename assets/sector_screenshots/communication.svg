@@ -1,0 +1,82 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .stock-rect { stroke: #fff; stroke-width: 1; }
+      .stock-text { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+      .stock-text-white { font-family: Arial, sans-serif; font-size: 12px; fill: #fff; }
+      .sector-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
+      .positive { fill: #4CAF50; }
+      .negative { fill: #F44336; }
+      .neutral { fill: #FFC107; }
+    </style>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="800" height="400" fill="#f5f5f5"/>
+  
+  <!-- 标题 -->
+  <text x="20" y="30" class="sector-title">通讯服务</text>
+  <text x="720" y="30" class="stock-text">- 返回全景图</text>
+  
+  <!-- T-Mobile US -->
+  <rect x="20" y="50" width="160" height="300" class="stock-rect positive"/>
+  <text x="30" y="80" class="stock-text">T-Mobile US</text>
+  <text x="30" y="100" class="stock-text">TMUS</text>
+  <text x="30" y="280" class="stock-text">W</text>
+  
+  <!-- Cisco Systems Inc -->
+  <rect x="200" y="50" width="200" height="200" class="stock-rect negative"/>
+  <text x="210" y="80" class="stock-text-white">Cisco Systems Inc</text>
+  <text x="210" y="100" class="stock-text-white">CSCO</text>
+  <text x="210" y="120" class="stock-text-white">-0.61%</text>
+  
+  <!-- AT&T -->
+  <rect x="420" y="50" width="200" height="200" class="stock-rect positive"/>
+  <text x="430" y="80" class="stock-text">AT&T</text>
+  <text x="430" y="100" class="stock-text">T</text>
+  <text x="430" y="120" class="stock-text">+1.09%</text>
+  
+  <!-- 阿里斯塔网络 -->
+  <rect x="640" y="50" width="140" height="120" class="stock-rect negative"/>
+  <text x="650" y="80" class="stock-text-white">阿里斯塔网络</text>
+  <text x="650" y="100" class="stock-text-white">ANET</text>
+  <text x="650" y="120" class="stock-text-white">-0.25%</text>
+  
+  <!-- 康卡斯特 -->
+  <rect x="640" y="190" width="140" height="100" class="stock-rect positive"/>
+  <text x="650" y="210" class="stock-text">康卡斯特</text>
+  <text x="650" y="230" class="stock-text">CMCSA</text>
+  <text x="650" y="250" class="stock-text">+0.86%</text>
+  
+  <!-- Electronic Arts Inc -->
+  <rect x="640" y="310" width="140" height="40" class="stock-rect positive"/>
+  <text x="650" y="330" class="stock-text">Electronic Arts Inc</text>
+  <text x="650" y="345" class="stock-text">EA</text>
+  
+  <!-- 特许通讯 -->
+  <rect x="560" y="310" width="60" height="40" class="stock-rect negative"/>
+  <text x="570" y="330" class="stock-text-white">特许通讯</text>
+  <text x="570" y="345" class="stock-text-white">CHTR</text>
+  
+  <!-- Fox Corp -->
+  <rect x="720" y="310" width="60" height="40" class="stock-rect negative"/>
+  <text x="730" y="330" class="stock-text-white">Fox Corp</text>
+  <text x="730" y="345" class="stock-text-white">FOXA</text>
+  
+  <!-- Fox Corp -->
+  <rect x="720" y="350" width="60" height="40" class="stock-rect negative"/>
+  <text x="730" y="370" class="stock-text-white">Fox Corp</text>
+  <text x="730" y="385" class="stock-text-white">FOX</text>
+  
+  <!-- Walt Disney Co -->
+  <rect x="200" y="270" width="200" height="80" class="stock-rect positive"/>
+  <text x="210" y="290" class="stock-text">Walt Disney Co</text>
+  <text x="210" y="310" class="stock-text">DIS</text>
+  <text x="210" y="330" class="stock-text">+0.48%</text>
+  
+  <!-- 威瑞森 -->
+  <rect x="420" y="270" width="120" height="80" class="stock-rect positive"/>
+  <text x="430" y="290" class="stock-text">威瑞森</text>
+  <text x="430" y="310" class="stock-text">VZ</text>
+  <text x="430" y="330" class="stock-text">+0.51%</text>
+</svg>

@@ -1,0 +1,106 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .stock-rect { stroke: #fff; stroke-width: 1; }
+      .stock-text { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+      .stock-text-white { font-family: Arial, sans-serif; font-size: 12px; fill: #fff; }
+      .sector-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
+      .positive { fill: #4CAF50; }
+      .negative { fill: #F44336; }
+      .neutral { fill: #FFC107; }
+    </style>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="800" height="400" fill="#f5f5f5"/>
+  
+  <!-- 标题 -->
+  <text x="20" y="30" class="sector-title">信息技术</text>
+  <text x="720" y="30" class="stock-text">- 返回全景图</text>
+  
+  <!-- 苹果公司 -->
+  <rect x="20" y="50" width="200" height="200" class="stock-rect negative"/>
+  <text x="30" y="80" class="stock-text-white">苹果公司</text>
+  <text x="30" y="100" class="stock-text-white">AAPL</text>
+  <text x="30" y="120" class="stock-text-white">-0.11%</text>
+  
+  <!-- 微软 -->
+  <rect x="20" y="270" width="80" height="80" class="stock-rect negative"/>
+  <text x="30" y="290" class="stock-text-white">微软</text>
+  <text x="30" y="310" class="stock-text-white">MSFT</text>
+  <text x="30" y="330" class="stock-text-white">W</text>
+  
+  <!-- 谷歌C -->
+  <rect x="120" y="270" width="100" height="80" class="stock-rect positive"/>
+  <text x="130" y="290" class="stock-text">谷歌C</text>
+  <text x="130" y="310" class="stock-text">GOOGL</text>
+  <text x="130" y="330" class="stock-text">+0.71%</text>
+  
+  <!-- Meta Platforms -->
+  <rect x="240" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="250" y="80" class="stock-text">Meta Platforms</text>
+  <text x="250" y="100" class="stock-text">META</text>
+  <text x="250" y="120" class="stock-text">-1.95%</text>
+  
+  <!-- 博通 -->
+  <rect x="240" y="190" width="120" height="160" class="stock-rect negative"/>
+  <text x="250" y="210" class="stock-text-white">博通</text>
+  <text x="250" y="230" class="stock-text-white">AVGO</text>
+  <text x="250" y="250" class="stock-text-white">-3.95%</text>
+  
+  <!-- 谷歌A -->
+  <rect x="380" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="390" y="80" class="stock-text">谷歌A</text>
+  <text x="390" y="100" class="stock-text">GOOGL</text>
+  <text x="390" y="120" class="stock-text">+0.70%</text>
+  
+  <!-- Visa -->
+  <rect x="520" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="530" y="80" class="stock-text">Visa</text>
+  <text x="530" y="100" class="stock-text">V</text>
+  <text x="530" y="120" class="stock-text">-0.62%</text>
+  
+  <!-- 万事达 -->
+  <rect x="660" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="670" y="80" class="stock-text">万事达</text>
+  <text x="670" y="100" class="stock-text">MA</text>
+  <text x="670" y="120" class="stock-text">+0.73%</text>
+  
+  <!-- 超微半导体 -->
+  <rect x="660" y="190" width="120" height="60" class="stock-rect negative"/>
+  <text x="670" y="210" class="stock-text-white">超微半导体</text>
+  <text x="670" y="230" class="stock-text-white">AMD</text>
+  
+  <!-- 甲骨文 -->
+  <rect x="520" y="190" width="120" height="60" class="stock-rect negative"/>
+  <text x="530" y="210" class="stock-text-white">甲骨文</text>
+  <text x="530" y="230" class="stock-text-white">ORCL</text>
+  <text x="530" y="245" class="stock-text-white">-6.15%</text>
+  
+  <!-- Salesforce Inc -->
+  <rect x="660" y="270" width="60" height="80" class="stock-rect positive"/>
+  <text x="670" y="290" class="stock-text">Salesforce Inc</text>
+  <text x="670" y="310" class="stock-text">CRM</text>
+  
+  <!-- IBM -->
+  <rect x="740" y="270" width="40" height="80" class="stock-rect positive"/>
+  <text x="750" y="290" class="stock-text">IBM</text>
+  <text x="750" y="310" class="stock-text">IBM</text>
+  
+  <!-- ServiceNow -->
+  <rect x="520" y="270" width="60" height="80" class="stock-rect positive"/>
+  <text x="530" y="290" class="stock-text">ServiceNow</text>
+  <text x="530" y="310" class="stock-text">NOW</text>
+  
+  <!-- 英伟达 -->
+  <rect x="380" y="190" width="120" height="160" class="stock-rect positive"/>
+  <text x="390" y="210" class="stock-text">英伟达</text>
+  <text x="390" y="230" class="stock-text">NVDA</text>
+  <text x="390" y="250" class="stock-text">财捷</text>
+  <text x="390" y="270" class="stock-text">INTU</text>
+  
+  <!-- 其他小型股票 -->
+  <rect x="600" y="270" width="40" height="40" class="stock-rect positive"/>
+  <text x="610" y="290" class="stock-text">应用材料</text>
+  <text x="610" y="305" class="stock-text">AMAT</text>
+</svg>

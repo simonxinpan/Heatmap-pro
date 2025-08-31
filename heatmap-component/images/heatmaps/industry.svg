@@ -1,0 +1,36 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="industryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#607D8B;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#78909C;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#90A4AE;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#B0BEC5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#CFD8DC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="400" height="300" fill="#f8f9fa"/>
+  
+  <!-- 模拟热力图方块 -->
+  <rect x="20" y="20" width="95" height="85" fill="#607D8B" rx="4"/>
+  <rect x="125" y="20" width="105" height="85" fill="#78909C" rx="4"/>
+  <rect x="240" y="20" width="140" height="85" fill="#90A4AE" rx="4"/>
+  
+  <rect x="20" y="115" width="75" height="75" fill="#B0BEC5" rx="4"/>
+  <rect x="105" y="115" width="125" height="75" fill="#CFD8DC" rx="4"/>
+  <rect x="240" y="115" width="140" height="75" fill="#607D8B" rx="4"/>
+  
+  <rect x="20" y="200" width="140" height="80" fill="#78909C" rx="4"/>
+  <rect x="170" y="200" width="90" height="80" fill="#90A4AE" rx="4"/>
+  <rect x="270" y="200" width="110" height="80" fill="#B0BEC5" rx="4"/>
+  
+  <!-- 标题 -->
+  <text x="200" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#333">工业</text>
+  <text x="200" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">Industrial Sector</text>
+  
+  <!-- 图标 -->
+  <text x="30" y="60" font-family="Arial, sans-serif" font-size="20" fill="white">🏭</text>
+  <text x="135" y="60" font-family="Arial, sans-serif" font-size="16" fill="white">BA</text>
+  <text x="250" y="60" font-family="Arial, sans-serif" font-size="16" fill="white">CAT</text>
+</svg>

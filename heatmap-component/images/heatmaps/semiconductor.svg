@@ -1,0 +1,36 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="semiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9C27B0;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#BA68C8;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#CE93D8;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#E1BEE7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3E5F5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="400" height="300" fill="#f8f9fa"/>
+  
+  <!-- 模拟热力图方块 -->
+  <rect x="20" y="20" width="110" height="85" fill="#9C27B0" rx="4"/>
+  <rect x="140" y="20" width="100" height="85" fill="#BA68C8" rx="4"/>
+  <rect x="250" y="20" width="130" height="85" fill="#CE93D8" rx="4"/>
+  
+  <rect x="20" y="115" width="85" height="80" fill="#E1BEE7" rx="4"/>
+  <rect x="115" y="115" width="135" height="80" fill="#F3E5F5" rx="4"/>
+  <rect x="260" y="115" width="120" height="80" fill="#9C27B0" rx="4"/>
+  
+  <rect x="20" y="205" width="130" height="75" fill="#BA68C8" rx="4"/>
+  <rect x="160" y="205" width="90" height="75" fill="#CE93D8" rx="4"/>
+  <rect x="260" y="205" width="120" height="75" fill="#E1BEE7" rx="4"/>
+  
+  <!-- 标题 -->
+  <text x="200" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#333">半导体</text>
+  <text x="200" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">Semiconductor Sector</text>
+  
+  <!-- 图标 -->
+  <text x="30" y="60" font-family="Arial, sans-serif" font-size="20" fill="white">🔬</text>
+  <text x="150" y="60" font-family="Arial, sans-serif" font-size="16" fill="white">NVDA</text>
+  <text x="260" y="60" font-family="Arial, sans-serif" font-size="16" fill="white">AMD</text>
+</svg>

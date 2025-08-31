@@ -1,0 +1,103 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .stock-rect { stroke: #fff; stroke-width: 1; }
+      .stock-text { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+      .stock-text-white { font-family: Arial, sans-serif; font-size: 12px; fill: #fff; }
+      .sector-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
+      .positive { fill: #4CAF50; }
+      .negative { fill: #F44336; }
+      .neutral { fill: #FFC107; }
+    </style>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="800" height="400" fill="#f5f5f5"/>
+  
+  <!-- 标题 -->
+  <text x="20" y="30" class="sector-title">原料</text>
+  <text x="750" y="30" class="stock-text">- 返回全景图</text>
+  
+  <!-- 大型股票区块 -->
+  <!-- 材料 -->
+  <rect x="20" y="50" width="200" height="300" class="stock-rect negative"/>
+  <text x="30" y="80" class="stock-text-white">材料</text>
+  <text x="30" y="100" class="stock-text-white">W</text>
+  
+  <!-- 宣伟 -->
+  <rect x="240" y="50" width="180" height="200" class="stock-rect negative"/>
+  <text x="250" y="80" class="stock-text-white">宣伟</text>
+  <text x="250" y="100" class="stock-text-white">SHW</text>
+  <text x="250" y="120" class="stock-text-white">-0.28%</text>
+  
+  <!-- 拉蒙特 -->
+  <rect x="440" y="50" width="200" height="120" class="stock-rect positive"/>
+  <text x="450" y="80" class="stock-text">拉蒙特</text>
+  <text x="450" y="100" class="stock-text">NEW</text>
+  <text x="450" y="120" class="stock-text">+1.85%</text>
+  
+  <!-- 纽柯 -->
+  <rect x="660" y="50" width="120" height="120" class="stock-rect negative"/>
+  <text x="670" y="80" class="stock-text-white">纽柯</text>
+  <text x="670" y="100" class="stock-text-white">NUE</text>
+  <text x="670" y="120" class="stock-text-white">-0.90%</text>
+  
+  <!-- PPG工业 -->
+  <rect x="660" y="190" width="120" height="80" class="stock-rect negative"/>
+  <text x="670" y="210" class="stock-text-white">PPG工业</text>
+  <text x="670" y="230" class="stock-text-white">PPG</text>
+  <text x="670" y="250" class="stock-text-white">-0.19%</text>
+  
+  <!-- 国际纸业 -->
+  <rect x="660" y="290" width="120" height="60" class="stock-rect positive"/>
+  <text x="670" y="310" class="stock-text">国际纸业</text>
+  <text x="670" y="330" class="stock-text">IP</text>
+  <text x="670" y="345" class="stock-text">+1.29%</text>
+  
+  <!-- 利安德巴塞尔 -->
+  <rect x="540" y="290" width="100" height="60" class="stock-rect positive"/>
+  <text x="550" y="310" class="stock-text">利安德巴塞尔</text>
+  <text x="550" y="330" class="stock-text">LYB</text>
+  <text x="550" y="345" class="stock-text">-0.64%</text>
+  
+  <!-- 国际香料香精 -->
+  <rect x="440" y="290" width="80" height="60" class="stock-rect positive"/>
+  <text x="450" y="310" class="stock-text">国际香料香精</text>
+  <text x="450" y="330" class="stock-text">IFF</text>
+  <text x="450" y="345" class="stock-text">+0.01%</text>
+  
+  <!-- 美国包装 -->
+  <rect x="360" y="290" width="60" height="60" class="stock-rect positive"/>
+  <text x="370" y="310" class="stock-text">美国包装</text>
+  <text x="370" y="330" class="stock-text">PKG</text>
+  <text x="370" y="345" class="stock-text">+0.51%</text>
+  
+  <!-- 美盛 -->
+  <rect x="300" y="270" width="60" height="80" class="stock-rect negative"/>
+  <text x="310" y="290" class="stock-text-white">美盛</text>
+  <text x="310" y="310" class="stock-text-white">MOS</text>
+  <text x="310" y="330" class="stock-text-white">-2.02%</text>
+  
+  <!-- 希悦尔 -->
+  <rect x="240" y="270" width="40" height="80" class="stock-rect negative"/>
+  <text x="250" y="290" class="stock-text-white">希悦尔</text>
+  <text x="250" y="310" class="stock-text-white">SEE</text>
+  
+  <!-- 火神材料 -->
+  <rect x="240" y="270" width="80" height="40" class="stock-rect negative"/>
+  <text x="250" y="290" class="stock-text-white">火神材料</text>
+  <text x="250" y="305" class="stock-text-white">VMC</text>
+  <text x="250" y="320" class="stock-text-white">-0.18%</text>
+  
+  <!-- 马丁玛丽埃塔 -->
+  <rect x="440" y="190" width="100" height="80" class="stock-rect positive"/>
+  <text x="450" y="210" class="stock-text">马丁玛丽埃塔</text>
+  <text x="450" y="230" class="stock-text">MLM</text>
+  <text x="450" y="250" class="stock-text">+0.18%</text>
+  
+  <!-- Steel Dynamics -->
+  <rect x="560" y="190" width="80" height="80" class="stock-rect negative"/>
+  <text x="570" y="210" class="stock-text-white">Steel Dynamics</text>
+  <text x="570" y="230" class="stock-text-white">STLD</text>
+  <text x="570" y="250" class="stock-text-white">-0.66%</text>
+</svg>

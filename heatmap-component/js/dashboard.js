@@ -154,50 +154,113 @@ class SectorDashboard {
         const heatmapContainer = document.getElementById(`heatmap-${sectorZh}`);
         if (!heatmapContainer) return;
 
+        // 行业名称到图片文件名的映射
+        const sectorImageMap = {
+            '信息技术': 'tech.svg',
+            '工业': 'industry.svg', 
+            '金融': 'finance.svg',
+            '医疗保健': 'healthcare.svg',
+            '非必需消费品': 'consumer-discretionary.svg',
+            '日常消费品': 'consumer-staples.svg',
+            '公用事业': 'utilities.svg',
+            '房地产': 'real-estate.svg',
+            '原材料': 'materials.svg',
+            '能源': 'energy.svg',
+            '半导体': 'semiconductor.svg',
+            '媒体娱乐': 'media.svg',
+            '通讯服务': 'telecom.svg',
+            '科技': 'tech.svg'
+        };
+
         try {
             // 显示加载状态
             heatmapContainer.innerHTML = '<div class="mini-loading">正在加载热力图...</div>';
             
-            // 获取该行业的股票数据
-            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sectorZh)}`);
-            const result = await response.json();
+            // 获取对应的图片文件名，优先使用PNG，回退到SVG
+            const baseName = sectorImageMap[sectorZh]?.replace('.svg', '') || 'default';
+            const imageFileName = `${baseName}.png`; // 优先尝试PNG格式
             
-            if (result.success && result.data.length > 0) {
-                // 清空加载状态
+            // 创建图片元素
+            const img = document.createElement('img');
+            img.src = `images/heatmaps/${imageFileName}`;
+            img.alt = `${sectorZh}行业热力图`;
+            img.style.cssText = `
+                width: 100%;
+                height: 160px;
+                object-fit: cover;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            `;
+            
+            // 图片加载完成后替换加载状态
+            img.onload = () => {
                 heatmapContainer.innerHTML = '';
+                heatmapContainer.appendChild(img);
                 
-                // 创建迷你热力图实例
-                const miniHeatmap = new StockHeatmap(heatmapContainer, {
-                    width: 280,
-                    height: 160,
-                    margin: { top: 5, right: 5, bottom: 5, left: 5 },
-                    showLabels: false,
-                    showTooltip: true,
-                    animation: true
+                // 添加悬停效果
+                img.addEventListener('mouseenter', () => {
+                    img.style.transform = 'scale(1.02)';
                 });
-                
-                // 渲染热力图
-                miniHeatmap.render(result.data);
+                img.addEventListener('mouseleave', () => {
+                    img.style.transform = 'scale(1)';
+                });
                 
                 // 添加点击事件 - 导航到完整热力图页面
-                heatmapContainer.style.cursor = 'pointer';
-                heatmapContainer.addEventListener('click', () => {
+                img.addEventListener('click', () => {
                     this.navigateToSector(sectorZh);
                 });
-                
-            } else {
-                // 显示无数据状态
-                heatmapContainer.innerHTML = `
-                    <div class="mini-heatmap-empty">
-                        <span>📊</span>
-                        <p>暂无数据</p>
-                    </div>
-                `;
-            }
+            };
+            
+            // 图片加载失败时尝试SVG格式
+             img.onerror = () => {
+                 const svgFileName = `${baseName}.svg`;
+                 const svgImg = document.createElement('img');
+                 svgImg.src = `images/heatmaps/${svgFileName}`;
+                 svgImg.alt = `${sectorZh}行业热力图`;
+                 svgImg.style.cssText = img.style.cssText;
+                 
+                 svgImg.onload = () => {
+                     heatmapContainer.innerHTML = '';
+                     heatmapContainer.appendChild(svgImg);
+                     
+                     // 添加相同的事件监听器
+                     svgImg.addEventListener('mouseenter', () => {
+                         svgImg.style.transform = 'scale(1.02)';
+                     });
+                     svgImg.addEventListener('mouseleave', () => {
+                         svgImg.style.transform = 'scale(1)';
+                     });
+                     svgImg.addEventListener('click', () => {
+                         this.navigateToSector(sectorZh);
+                     });
+                 };
+                 
+                 // SVG也加载失败时显示占位符
+                 svgImg.onerror = () => {
+                     heatmapContainer.innerHTML = `
+                         <div class="mini-heatmap-empty" style="
+                             display: flex;
+                             flex-direction: column;
+                             align-items: center;
+                             justify-content: center;
+                             height: 160px;
+                             background: #f8f9fa;
+                             border-radius: 8px;
+                             color: #6c757d;
+                             cursor: pointer;
+                         " onclick="sectorDashboard.navigateToSector('${sectorZh}')">
+                             <span style="font-size: 2rem; margin-bottom: 0.5rem;">📊</span>
+                             <p style="margin: 0; font-size: 0.875rem;">${sectorZh}</p>
+                         </div>
+                     `;
+                 };
+             };
+            
         } catch (error) {
             console.error(`Mini heatmap loading error for ${sectorZh}:`, error);
             heatmapContainer.innerHTML = `
-                <div class="mini-heatmap-error">
+                <div class="mini-heatmap-error"
                     <span>⚠️</span>
                     <p>加载失败</p>
                 </div>

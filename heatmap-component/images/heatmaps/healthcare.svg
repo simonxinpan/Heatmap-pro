@@ -1,0 +1,36 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E91E63;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#F06292;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FF9800;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#FFC107;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFEB3B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="400" height="300" fill="#f8f9fa"/>
+  
+  <!-- 模拟热力图方块 -->
+  <rect x="20" y="20" width="90" height="80" fill="#E91E63" rx="4"/>
+  <rect x="120" y="20" width="110" height="80" fill="#F06292" rx="4"/>
+  <rect x="240" y="20" width="140" height="80" fill="#FF9800" rx="4"/>
+  
+  <rect x="20" y="110" width="80" height="70" fill="#FFC107" rx="4"/>
+  <rect x="110" y="110" width="130" height="70" fill="#FFEB3B" rx="4"/>
+  <rect x="250" y="110" width="130" height="70" fill="#CDDC39" rx="4"/>
+  
+  <rect x="20" y="190" width="120" height="90" fill="#E91E63" rx="4"/>
+  <rect x="150" y="190" width="100" height="90" fill="#F06292" rx="4"/>
+  <rect x="260" y="190" width="120" height="90" fill="#FF9800" rx="4"/>
+  
+  <!-- 标题 -->
+  <text x="200" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#333">医疗保健</text>
+  <text x="200" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">Healthcare Sector</text>
+  
+  <!-- 图标 -->
+  <text x="30" y="55" font-family="Arial, sans-serif" font-size="20" fill="white">🏥</text>
+  <text x="130" y="55" font-family="Arial, sans-serif" font-size="16" fill="white">JNJ</text>
+  <text x="250" y="55" font-family="Arial, sans-serif" font-size="16" fill="white">PFE</text>
+</svg>

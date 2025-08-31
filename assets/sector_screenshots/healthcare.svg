@@ -1,0 +1,134 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .stock-rect { stroke: #fff; stroke-width: 1; }
+      .stock-text { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+      .stock-text-white { font-family: Arial, sans-serif; font-size: 12px; fill: #fff; }
+      .sector-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
+      .positive { fill: #4CAF50; }
+      .negative { fill: #F44336; }
+      .neutral { fill: #FFC107; }
+    </style>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="800" height="400" fill="#f5f5f5"/>
+  
+  <!-- 标题 -->
+  <text x="20" y="30" class="sector-title">医疗保健</text>
+  <text x="720" y="30" class="stock-text">- 返回全景图</text>
+  
+  <!-- 礼来 -->
+  <rect x="20" y="50" width="160" height="200" class="stock-rect negative"/>
+  <text x="30" y="80" class="stock-text-white">礼来</text>
+  <text x="30" y="100" class="stock-text-white">LLY</text>
+  <text x="30" y="120" class="stock-text-white">-0.30%</text>
+  <text x="30" y="230" class="stock-text-white">W</text>
+  
+  <!-- 强生 -->
+  <rect x="20" y="270" width="80" height="80" class="stock-rect positive"/>
+  <text x="30" y="290" class="stock-text">强生</text>
+  <text x="30" y="310" class="stock-text">JNJ</text>
+  <text x="30" y="330" class="stock-text">+0.96%</text>
+  
+  <!-- 艾伯维 -->
+  <rect x="200" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="210" y="80" class="stock-text">艾伯维</text>
+  <text x="210" y="100" class="stock-text">ABBV</text>
+  <text x="210" y="120" class="stock-text">+1.33%</text>
+  
+  <!-- 联合健康 -->
+  <rect x="340" y="50" width="120" height="120" class="stock-rect positive"/>
+  <text x="350" y="80" class="stock-text">联合健康</text>
+  <text x="350" y="100" class="stock-text">UNH</text>
+  <text x="350" y="120" class="stock-text">+2.21%</text>
+  
+  <!-- 直觉外科 -->
+  <rect x="480" y="50" width="80" height="80" class="stock-rect negative"/>
+  <text x="490" y="80" class="stock-text-white">直觉外科</text>
+  <text x="490" y="100" class="stock-text-white">ISRG</text>
+  <text x="490" y="120" class="stock-text-white">-0.42%</text>
+  
+  <!-- 波士顿科学 -->
+  <rect x="580" y="50" width="80" height="80" class="stock-rect negative"/>
+  <text x="590" y="80" class="stock-text-white">波士顿科学</text>
+  <text x="590" y="100" class="stock-text-white">BSX</text>
+  <text x="590" y="120" class="stock-text-white">-0.43%</text>
+  
+  <!-- CVS Health Corp -->
+  <rect x="680" y="50" width="100" height="80" class="stock-rect positive"/>
+  <text x="690" y="80" class="stock-text">CVS Health Corp</text>
+  <text x="690" y="100" class="stock-text">CVS</text>
+  <text x="690" y="120" class="stock-text">+1.23%</text>
+  
+  <!-- 美克森 -->
+  <rect x="680" y="150" width="100" height="60" class="stock-rect positive"/>
+  <text x="690" y="170" class="stock-text">美克森</text>
+  <text x="690" y="190" class="stock-text">MCK</text>
+  <text x="690" y="205" class="stock-text">+0.72%</text>
+  
+  <!-- 硕腾 -->
+  <rect x="720" y="230" width="60" height="60" class="stock-text positive"/>
+  <text x="730" y="250" class="stock-text">硕腾</text>
+  <text x="730" y="270" class="stock-text">ZTS</text>
+  <text x="730" y="285" class="stock-text">+0.75%</text>
+  
+  <!-- Elevance Health Inc -->
+  <rect x="680" y="230" width="60" height="60" class="stock-rect positive"/>
+  <text x="690" y="250" class="stock-text">Elevance Health Inc</text>
+  <text x="690" y="270" class="stock-text">ELV</text>
+  <text x="690" y="285" class="stock-text">-2.22%</text>
+  
+  <!-- 安进 -->
+  <rect x="480" y="150" width="80" height="80" class="stock-rect positive"/>
+  <text x="490" y="170" class="stock-text">安进</text>
+  <text x="490" y="190" class="stock-text">AMGN</text>
+  <text x="490" y="210" class="stock-text">+0.57%</text>
+  
+  <!-- 史赛克 -->
+  <rect x="580" y="150" width="80" height="80" class="stock-rect positive"/>
+  <text x="590" y="170" class="stock-text">史赛克</text>
+  <text x="590" y="190" class="stock-text">SYK</text>
+  <text x="590" y="210" class="stock-text">+0.33%</text>
+  
+  <!-- 信诺 -->
+  <rect x="580" y="250" width="80" height="40" class="stock-rect positive"/>
+  <text x="590" y="270" class="stock-text">信诺</text>
+  <text x="590" y="285" class="stock-text">CI</text>
+  
+  <!-- 默沙东 -->
+  <rect x="200" y="190" width="120" height="80" class="stock-rect positive"/>
+  <text x="210" y="210" class="stock-text">默沙东</text>
+  <text x="210" y="230" class="stock-text">MRK</text>
+  <text x="210" y="250" class="stock-text">+0.88%</text>
+  
+  <!-- 吉利德科学 -->
+  <rect x="340" y="190" width="120" height="80" class="stock-rect positive"/>
+  <text x="350" y="210" class="stock-text">吉利德科学</text>
+  <text x="350" y="230" class="stock-text">GILD</text>
+  <text x="350" y="250" class="stock-text">+0.24%</text>
+  
+  <!-- 赛默飞世尔 -->
+  <rect x="340" y="290" width="80" height="60" class="stock-rect positive"/>
+  <text x="350" y="310" class="stock-text">赛默飞世尔</text>
+  <text x="350" y="330" class="stock-text">TMO</text>
+  <text x="350" y="345" class="stock-text">+0.50%</text>
+  
+  <!-- 辉瑞 -->
+  <rect x="480" y="250" width="80" height="100" class="stock-rect positive"/>
+  <text x="490" y="270" class="stock-text">辉瑞</text>
+  <text x="490" y="290" class="stock-text">PFE</text>
+  <text x="490" y="310" class="stock-text">+0.55%</text>
+  
+  <!-- 美敦力 -->
+  <rect x="200" y="290" width="120" height="60" class="stock-rect negative"/>
+  <text x="210" y="310" class="stock-text-white">美敦力</text>
+  <text x="210" y="330" class="stock-text-white">MDT</text>
+  <text x="210" y="345" class="stock-text-white">-0.77%</text>
+  
+  <!-- HCA医疗 -->
+  <rect x="120" y="290" width="60" height="60" class="stock-rect negative"/>
+  <text x="130" y="310" class="stock-text-white">HCA医疗</text>
+  <text x="130" y="330" class="stock-text-white">HCA</text>
+  <text x="130" y="345" class="stock-text-white">-1.12%</text>
+</svg>
