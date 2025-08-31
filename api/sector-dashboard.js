@@ -74,19 +74,21 @@ export default function handler(req, res) {
         // 设置缓存头 - 5分钟缓存
         res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
         
-        res.status(200).json({
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
             success: true,
             data: dashboardData,
             timestamp: new Date().toISOString(),
             total_sectors: dashboardData.length
-        });
+        }));
         
     } catch (error) {
         console.error('Sector Dashboard API Error:', error);
-        res.status(500).json({
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
             success: false,
             error: 'Internal server error',
             message: error.message
-        });
+        }));
     }
 };

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import stocksHandler from './api/stocks.js';
 import stocksSimpleHandler from './api/stocks-simple.js';
 import testEnvHandler from './api/test-env.js';
+import sectorDashboardHandler from './api/sector-dashboard.js';
 
 // 加载环境变量
 dotenv.config();
@@ -63,7 +64,13 @@ const server = http.createServer(async (req, res) => {
                 await testEnvHandler(req, res);
                 return;
             }
-            
+
+            // 处理行业仪表盘API请求
+            if (pathname === '/api/sector-dashboard') {
+                await sectorDashboardHandler(req, res);
+                return;
+            }
+
             // API路由不存在
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'API endpoint not found' }));
