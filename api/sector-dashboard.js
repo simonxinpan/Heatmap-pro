@@ -1,8 +1,8 @@
 // api/sector-dashboard.js
 // 行业仪表盘API - 聚合所有行业的关键指标数据
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // 模拟数据库查询 - 在实际项目中这里应该连接真实数据库
 function generateSectorDashboardData() {
@@ -51,7 +51,7 @@ function generateSectorDashboardData() {
     return dashboardData.sort((a, b) => b.total_market_cap - a.total_market_cap);
 }
 
-module.exports = (req, res) => {
+export default function handler(req, res) {
     try {
         // 设置CORS头
         res.setHeader('Access-Control-Allow-Origin', '*');
