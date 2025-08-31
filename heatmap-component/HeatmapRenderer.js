@@ -231,13 +231,36 @@ class HeatmapRenderer {
     
     renderCells(layout, metric) {
         layout.forEach((item, index) => {
+            // 严格验证所有必需的数值属性，包括NaN和undefined检查
+            if (!this.isValidNumber(item.x) || !this.isValidNumber(item.y) || 
+                !this.isValidNumber(item.width) || !this.isValidNumber(item.height) ||
+                item.x === undefined || item.y === undefined || 
+                item.width === undefined || item.height === undefined ||
+                item.width <= 0 || item.height <= 0) {
+                console.warn(`跳过无效的布局项 ${index}:`, item);
+                return; // 跳过这个无效的项目
+            }
+            
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             group.setAttribute('class', 'heatmap-group');
             
             // 创建矩形
             const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             const value = this.getValue(item, metric);
+            
+            // 验证value是否为有效数字，包括NaN和undefined检查
+            if (!this.isValidNumber(value) || value === undefined) {
+                console.warn(`跳过无效值的项目 ${index}, value:`, value);
+                return;
+            }
+            
             const sizeScale = this.scales.size(item.market_cap || item.volume || item.size || 1);
+            
+            // 验证sizeScale，包括NaN和undefined检查
+            if (!this.isValidNumber(sizeScale) || sizeScale === undefined || sizeScale <= 0) {
+                console.warn(`跳过无效sizeScale的项目 ${index}, sizeScale:`, sizeScale);
+                return;
+            }
             
             // 计算实际大小
             const actualWidth = item.width * sizeScale;
@@ -245,10 +268,30 @@ class HeatmapRenderer {
             const offsetX = (item.width - actualWidth) / 2;
             const offsetY = (item.height - actualHeight) / 2;
             
-            rect.setAttribute('x', item.x + offsetX);
-            rect.setAttribute('y', item.y + offsetY);
-            rect.setAttribute('width', actualWidth);
-            rect.setAttribute('height', actualHeight);
+            // 再次验证计算结果，包括NaN和undefined检查
+            if (!this.isValidNumber(actualWidth) || !this.isValidNumber(actualHeight) ||
+                !this.isValidNumber(offsetX) || !this.isValidNumber(offsetY) ||
+                actualWidth === undefined || actualHeight === undefined ||
+                offsetX === undefined || offsetY === undefined ||
+                actualWidth <= 0 || actualHeight <= 0) {
+                console.warn(`跳过计算结果无效的项目 ${index}`);
+                return;
+            }
+            
+            const finalX = item.x + offsetX;
+            const finalY = item.y + offsetY;
+            
+            // 验证最终坐标，包括NaN和undefined检查
+            if (!this.isValidNumber(finalX) || !this.isValidNumber(finalY) ||
+                finalX === undefined || finalY === undefined) {
+                console.warn(`跳过最终坐标无效的项目 ${index}`);
+                return;
+            }
+            
+            rect.setAttribute('x', this.safeNumber(finalX));
+            rect.setAttribute('y', this.safeNumber(finalY));
+            rect.setAttribute('width', this.safeNumber(actualWidth));
+            rect.setAttribute('height', this.safeNumber(actualHeight));
             rect.setAttribute('fill', this.scales.color(value));
             rect.setAttribute('class', 'heatmap-cell');
             rect.setAttribute('data-index', index);
@@ -257,21 +300,30 @@ class HeatmapRenderer {
             
             // 添加标签
             if (this.options.showLabels && actualWidth > 40 && actualHeight > 20) {
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', item.x + item.width / 2);
-                text.setAttribute('y', item.y + item.height / 2 - 5);
-                text.setAttribute('class', 'heatmap-label');
-                text.textContent = item.symbol || item.name || '';
+                const textX = item.x + item.width / 2;
+                const textY1 = item.y + item.height / 2 - 5;
+                const textY2 = item.y + item.height / 2 + 8;
                 
-                const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                valueText.setAttribute('x', item.x + item.width / 2);
-                valueText.setAttribute('y', item.y + item.height / 2 + 8);
-                valueText.setAttribute('class', 'heatmap-label');
-                valueText.style.fontSize = '10px';
-                valueText.textContent = this.formatValue(value, metric);
-                
-                group.appendChild(text);
-                group.appendChild(valueText);
+                // 验证文本坐标，包括NaN和undefined检查
+                if (this.isValidNumber(textX) && this.isValidNumber(textY1) && this.isValidNumber(textY2) &&
+                    textX !== undefined && textY1 !== undefined && textY2 !== undefined) {
+                    
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', this.safeNumber(textX));
+                    text.setAttribute('y', this.safeNumber(textY1));
+                    text.setAttribute('class', 'heatmap-label');
+                    text.textContent = item.symbol || item.name || '';
+                    
+                    const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    valueText.setAttribute('x', this.safeNumber(textX));
+                    valueText.setAttribute('y', this.safeNumber(textY2));
+                    valueText.setAttribute('class', 'heatmap-label');
+                    valueText.style.fontSize = '10px';
+                    valueText.textContent = this.formatValue(value, metric);
+                    
+                    group.appendChild(text);
+                    group.appendChild(valueText);
+                }
             }
             
             // 添加交互事件
@@ -490,6 +542,20 @@ class HeatmapRenderer {
         if (this.container) {
             this.container.innerHTML = '';
         }
+    }
+    
+    // 辅助方法：验证数字是否有效
+    isValidNumber(value) {
+        return typeof value === 'number' && !isNaN(value) && isFinite(value);
+    }
+    
+    // 辅助方法：确保数字安全用于SVG属性
+    safeNumber(value) {
+        if (this.isValidNumber(value)) {
+            return value.toString();
+        }
+        console.warn('Invalid number detected, using fallback value 0:', value);
+        return '0';
     }
 }
 

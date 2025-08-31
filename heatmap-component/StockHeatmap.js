@@ -564,7 +564,13 @@ class StockHeatmap {
             
             switch (this.options.category) {
                 case 'market':
-                    data = await this.dataProcessor.getMarketData(this.options.timeRange);
+                    // 使用新的数据处理逻辑
+                    const flatStocks = await DataProcessor.getMarketData();
+                    data = DataProcessor.processDataForHeatmap(flatStocks);
+                    if (!data) {
+                        this.showError('没有可显示的数据');
+                        return;
+                    }
                     break;
                 case 'industry':
                     data = await this.dataProcessor.getIndustryData(this.options.timeRange);
@@ -576,7 +582,13 @@ class StockHeatmap {
                     data = await this.dataProcessor.getTrendingData(this.options.timeRange);
                     break;
                 default:
-                    data = await this.dataProcessor.getMarketData(this.options.timeRange);
+                    // 默认也使用新的数据处理逻辑
+                    const defaultFlatStocks = await DataProcessor.getMarketData();
+                    data = DataProcessor.processDataForHeatmap(defaultFlatStocks);
+                    if (!data) {
+                        this.showError('没有可显示的数据');
+                        return;
+                    }
             }
             
             this.currentData = data;

@@ -40,6 +40,73 @@ class DataProcessor {
             return this.generateMockMarketData();
         }
     }
+
+    // 静态方法：获取原始市场数据（用于热力图）
+    static async getMarketData() {
+        try {
+            const response = await fetch('/api/stocks-simple');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('获取市场数据失败:', error);
+            throw error; // 将错误向上抛出
+        }
+    }
+
+    // 静态方法：处理热力图数据（严格的数据清洗与验证）
+    static processDataForHeatmap(flatStocks) {
+        if (!Array.isArray(flatStocks) || flatStocks.length === 0) {
+            console.warn("输入的股票数据为空或无效");
+            return null; // 返回 null 表示没有可处理的数据
+        }
+
+        // --- 核心修正：严格的数据清洗与验证 ---
+        const cleanedData = flatStocks
+            .map(stock => {
+                const market_cap = parseFloat(stock.market_cap);
+                const change_percent = parseFloat(stock.change_percent);
+
+                // 必须确保市值和涨跌幅都是有效的数字
+                if (isNaN(market_cap) || isNaN(change_percent) || market_cap <= 0) {
+                    return null; // 如果数据无效，返回 null
+                }
+
+                return {
+                    ...stock,
+                    market_cap, // 覆盖为数字类型
+                    change_percent, // 覆盖为数字类型
+                    sector_zh: stock.sector_zh || '其他'
+                };
+            })
+            .filter(stock => stock !== null); // 过滤掉所有无效的条目
+
+        if (cleanedData.length === 0) {
+            console.warn("数据清洗后，没有剩余的有效股票数据");
+            return null;
+        }
+
+        // --- 构建层级结构 (这部分逻辑不变) ---
+        const root = {
+            name: "S&P 500",
+            children: []
+        };
+        const sectors = {};
+
+        cleanedData.forEach(stock => {
+            if (!sectors[stock.sector_zh]) {
+                sectors[stock.sector_zh] = { name: stock.sector_zh, children: [] };
+            }
+            sectors[stock.sector_zh].children.push({
+                name: stock.ticker,
+                value: stock.market_cap,
+                performance: stock.change_percent,
+                data: stock // 保存原始数据以供 tooltip 使用
+            });
+        });
+        
+        root.children = Object.values(sectors);
+        return root;
+    }
     
     // 获取行业数据
     async getIndustryData(options = {}) {
@@ -137,24 +204,124 @@ class DataProcessor {
     
     // 处理股票数据
     processStockData(stocks) {
-        return stocks.map(stock => {
-            const processedStock = {
-                symbol: stock.ticker || stock.symbol,
-                name: stock.name_zh || stock.name || stock.ticker || stock.symbol,
-                price: parseFloat(stock.price) || 0,
-                change_percent: parseFloat(stock.change_percent) || 0,
-                volume: parseInt(stock.volume) || 0,
-                market_cap: parseInt(stock.market_cap) || 0,
-                industry: stock.sector_zh || stock.industry || stock.sector || '其他',
-                sector: stock.sector_zh || stock.sector || '其他',
-                tags: stock.tags || [],
-                // 计算热力图所需的额外字段
-                size: this.calculateSize(stock),
-                color: this.calculateColor(stock.change_percent),
-                category: this.categorizeStock(stock)
-            };
-            return processedStock;
+        if (!Array.isArray(stocks)) {
+            console.warn('processStockData: 输入数据不是数组');
+            return [];
+        }
+
+        return stocks
+            .map(stock => {
+                // 严格的数据验证和清洗
+                const market_cap = this.validateNumber(stock.market_cap);
+                const change_percent = this.validateNumber(stock.change_percent);
+                const price = this.validateNumber(stock.price);
+                const volume = this.validateNumber(stock.volume);
+
+                // 如果关键字段无效，跳过这个股票
+                if (market_cap === null || change_percent === null || market_cap <= 0) {
+                    console.warn(`跳过无效股票数据: ${stock.ticker || 'unknown'}, market_cap: ${stock.market_cap}, change_percent: ${stock.change_percent}`);
+                    return null;
+                }
+
+                const processedStock = {
+                    symbol: stock.ticker || stock.symbol || 'UNKNOWN',
+                    name: stock.name_zh || stock.name || stock.ticker || stock.symbol || 'Unknown',
+                    price: price || 0,
+                    change_percent: change_percent,
+                    volume: volume || 0,
+                    market_cap: market_cap,
+                    industry: stock.sector_zh || stock.industry || stock.sector || '其他',
+                    sector: stock.sector_zh || stock.sector || '其他',
+                    tags: stock.tags || [],
+                    // 计算热力图所需的额外字段
+                    size: this.calculateSize({ market_cap, change_percent }),
+                    color: this.calculateColor(change_percent),
+                    category: this.categorizeStock({ market_cap, change_percent })
+                };
+                return processedStock;
+            })
+            .filter(stock => stock !== null); // 过滤掉无效的股票
+    }
+
+    // 新增：数字验证辅助方法
+    validateNumber(value) {
+        if (value === null || value === undefined || value === '') {
+            return null;
+        }
+        
+        const num = parseFloat(value);
+        if (isNaN(num) || !isFinite(num)) {
+            return null;
+        }
+        
+        return num;
+    }
+
+    // 新增：专门为热力图处理数据的方法
+    static processDataForHeatmap(flatStocks) {
+        if (!Array.isArray(flatStocks) || flatStocks.length === 0) {
+            console.warn("输入的股票数据为空或无效");
+            return null;
+        }
+
+        // 严格的数据清洗与验证
+        const cleanedData = flatStocks
+            .map(stock => {
+                const market_cap = parseFloat(stock.market_cap);
+                const change_percent = parseFloat(stock.change_percent);
+
+                // 必须确保市值和涨跌幅都是有效的数字
+                if (isNaN(market_cap) || isNaN(change_percent) || market_cap <= 0) {
+                    return null; // 如果数据无效，返回 null
+                }
+
+                return {
+                    ...stock,
+                    market_cap, // 覆盖为数字类型
+                    change_percent, // 覆盖为数字类型
+                    sector_zh: stock.sector_zh || '其他'
+                };
+            })
+            .filter(stock => stock !== null); // 过滤掉所有无效的条目
+
+        if (cleanedData.length === 0) {
+            console.warn("数据清洗后，没有剩余的有效股票数据");
+            return null;
+        }
+
+        // 构建层级结构
+        const root = {
+            name: "S&P 500",
+            children: []
+        };
+        const sectors = {};
+
+        cleanedData.forEach(stock => {
+            if (!sectors[stock.sector_zh]) {
+                sectors[stock.sector_zh] = { name: stock.sector_zh, children: [] };
+            }
+            sectors[stock.sector_zh].children.push({
+                name: stock.ticker,
+                value: stock.market_cap,
+                performance: stock.change_percent,
+                data: stock // 保存原始数据以供 tooltip 使用
+            });
         });
+        
+        root.children = Object.values(sectors);
+        return root;
+    }
+
+    // 新增：静态方法获取市场数据
+    static async getMarketData() {
+        try {
+            const response = await fetch('/api/stocks-simple');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('获取市场数据失败:', error);
+            throw error;
+        }
     }
     
     // 按行业分组
