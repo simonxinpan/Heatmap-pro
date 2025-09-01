@@ -8,22 +8,22 @@ class SectorDashboard {
         this.displayMode = 'grid';
         this.isLoading = false;
         
-        // 行业图片映射
+        // 行业中文名到图片文件名的映射
         this.sectorImageMap = {
-            '信息技术': '信息技术.png',
-            '工业': '工业.png',
-            '金融': '金融.png',
-            '医疗保健': '医疗保健.png',
-            '非必需消费品': '非必需消费品.png',
-            '日常消费品': '日常消费品.png',
-            '公用事业': '公用事业.png',
-            '房地产': '房地产.png',
-            '原材料': '原材料.png',
-            '能源': '能源.png',
-            '半导体': '半导体.png',
-            '媒体娱乐': '媒体娱乐.png',
-            '通讯服务': '通讯服务.png',
-            '金融服务': '金融服务.png'
+            '信息技术': 'technology.png',
+            '医疗保健': 'healthcare.png', 
+            '金融': 'financial.png',
+            '工业': 'industrial.png',
+            '非必需消费品': 'consumer_discretionary.png',
+            '日常消费品': 'consumer_staples.png',
+            '通讯服务': 'communication.png',
+            '能源': 'energy.png',
+            '原材料': 'materials.png',
+            '公用事业': 'utilities.png',
+            '房地产': 'real_estate.png',
+            '半导体': 'semiconductors.png',
+            '媒体娱乐': 'media_entertainment.png',
+            '航空航天': 'aerospace.png'
         };
         
         this.init();

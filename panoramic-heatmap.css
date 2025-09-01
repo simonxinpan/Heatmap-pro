@@ -856,6 +856,62 @@
     overflow: hidden;
 }
 
+/* 缩略图容器样式 */
+.mini-heatmap-container {
+    height: 160px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.mini-heatmap-container:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+}
+
+.mini-heatmap-container a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+}
+
+/* 热力图预览图片样式 */
+.heatmap-preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 11px; /* 比容器小1px，避免边框重叠 */
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.heatmap-preview-image:hover {
+    transform: scale(1.02);
+}
+
+/* 图片加载状态 */
+.heatmap-preview-image[src=""],
+.heatmap-preview-image:not([src]) {
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.heatmap-preview-image[src=""]::before,
+.heatmap-preview-image:not([src])::before {
+    content: "📊";
+    font-size: 2rem;
+    color: #94a3b8;
+}
+
 .mini-heatmap-loading,
 .mini-heatmap-empty,
 .mini-heatmap-error {

@@ -41,9 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             '半导体': '半导体.png',
             '媒体娱乐': '媒体娱乐.png',
             '通讯服务': '通讯服务.png',
-
-            // 你可能需要为“金融服务”等别名也添加映射
-            '金融服务': '金融.png' // 假设它和“金融”用同一张图
+            '金融服务': '金融服务.png'
         };
 
         // --- 3. 循环创建卡片，并直接嵌入 <img> 标签 ---
@@ -57,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const detailLink = `/panoramic-heatmap.html?sector=${encodeURIComponent(sector.sector_zh)}`;
             
             // 从映射中获取对应的图片文件名，如果找不到则使用一个默认的占位图
-            const previewImageFile = sectorImageMap[sector.sector_zh] || 'default.png';
+            const previewImageFile = sectorImageMap[sector.sector_zh] || 'default_placeholder.png';
 
             card.innerHTML = `
                 <div class="card-header">

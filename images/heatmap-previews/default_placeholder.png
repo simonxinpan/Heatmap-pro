@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="200" viewBox="0 0 280 200">
+  <rect width="280" height="200" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="140" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#6c757d">行业热力图</text>
+  <text x="140" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#adb5bd">暂无预览</text>
+  <text x="140" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#ced4da">请稍后重试</text>
+  <rect x="60" y="140" width="160" height="30" fill="#e9ecef" rx="4"/>
+  <rect x="70" y="150" width="20" height="10" fill="#dc3545" rx="2"/>
+  <rect x="100" y="150" width="20" height="10" fill="#fd7e14" rx="2"/>
+  <rect x="130" y="150" width="20" height="10" fill="#ffc107" rx="2"/>
+  <rect x="160" y="150" width="20" height="10" fill="#28a745" rx="2"/>
+  <rect x="190" y="150" width="20" height="10" fill="#007bff" rx="2"/>
+</svg>
