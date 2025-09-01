@@ -8,6 +8,24 @@ class SectorDashboard {
         this.displayMode = 'grid';
         this.isLoading = false;
         
+        // 行业图片映射
+        this.sectorImageMap = {
+            '信息技术': '信息技术.png',
+            '工业': '工业.png',
+            '金融': '金融.png',
+            '医疗保健': '医疗保健.png',
+            '非必需消费品': '非必需消费品.png',
+            '日常消费品': '日常消费品.png',
+            '公用事业': '公用事业.png',
+            '房地产': '房地产.png',
+            '原材料': '原材料.png',
+            '能源': '能源.png',
+            '半导体': '半导体.png',
+            '媒体娱乐': '媒体娱乐.png',
+            '通讯服务': '通讯服务.png',
+            '金融服务': '金融服务.png'
+        };
+        
         this.init();
     }
 
@@ -114,15 +132,10 @@ class SectorDashboard {
                 </button>
             </div>
             
-            <div class="industry-mini-heatmap" id="heatmap-${sector.sector_zh}">
-                <iframe 
-                    src="tag-detail.html?tagId=sector_${sector.sector_key}&embed=true" 
-                    frameborder="0" 
-                    scrolling="no" 
-                    style="width: 100%; height: 200px; border: none; border-radius: 8px;"
-                    loading="lazy"
-                    title="${sector.sector_zh}行业热力图">
-                </iframe>
+            <div class="mini-heatmap-container">
+                <a href="/panoramic-heatmap.html?sector=${encodeURIComponent(sector.sector_zh)}" target="_blank">
+                    <img src="/images/heatmap-previews/${this.getSectorImageFile(sector.sector_zh)}" alt="${sector.sector_zh} 热力图预览" class="heatmap-preview-image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                </a>
             </div>
             
             <div class="industry-stats">
@@ -159,61 +172,7 @@ class SectorDashboard {
         return card;
     }
 
-    async loadMiniHeatmap(sectorZh, sectorKey) {
-        const heatmapContainer = document.getElementById(`heatmap-${sectorZh}`);
-        if (!heatmapContainer) return;
 
-        try {
-            // 显示加载状态
-            heatmapContainer.innerHTML = '<div class="mini-loading">正在加载热力图...</div>';
-            
-            // 获取该行业的股票数据
-            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sectorZh)}`);
-            const result = await response.json();
-            
-            if (result.success && result.data.length > 0) {
-                // 清空加载状态
-                heatmapContainer.innerHTML = '';
-                
-                // 创建迷你热力图实例
-                const miniHeatmap = new StockHeatmap(heatmapContainer, {
-                    width: 280,
-                    height: 160,
-                    margin: { top: 5, right: 5, bottom: 5, left: 5 },
-                    showLabels: false,
-                    showTooltip: false,
-                    animation: false,
-                    interactive: false
-                });
-                
-                // 渲染迷你热力图（只显示色块，无文字标签）
-                miniHeatmap.render(result.data, sectorZh, true);
-                
-                // 添加点击事件 - 导航到完整热力图页面
-                heatmapContainer.style.cursor = 'pointer';
-                heatmapContainer.addEventListener('click', () => {
-                    this.navigateToSector(sectorZh);
-                });
-                
-            } else {
-                // 显示无数据状态
-                heatmapContainer.innerHTML = `
-                    <div class="mini-heatmap-empty">
-                        <span>📊</span>
-                        <p>暂无数据</p>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            console.error(`Mini heatmap loading error for ${sectorZh}:`, error);
-            heatmapContainer.innerHTML = `
-                <div class="mini-heatmap-error">
-                    <span>⚠️</span>
-                    <p>加载失败</p>
-                </div>
-            `;
-        }
-    }
 
     sortDashboardData(data, sortBy) {
         const sortedData = [...data];
@@ -304,6 +263,10 @@ class SectorDashboard {
     // 公共方法：刷新仪表盘
     refresh() {
         this.loadDashboardData();
+    }
+    
+    getSectorImageFile(sectorZh) {
+        return this.sectorImageMap[sectorZh] || 'default.png';
     }
 }
 

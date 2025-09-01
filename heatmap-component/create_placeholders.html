@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>生成行业热力图占位符</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .placeholder { 
+            width: 400px; 
+            height: 300px; 
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            border: 2px dashed #999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            border-radius: 8px;
+        }
+        .sector-name { font-size: 24px; font-weight: bold; color: #333; }
+        .instruction { font-size: 14px; color: #666; margin-top: 10px; text-align: center; }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <h1>行业热力图占位符生成器</h1>
+    <p>点击下面的按钮为每个行业生成占位符PNG图片：</p>
+    
+    <div id="sectors"></div>
+    <canvas id="canvas" width="400" height="300"></canvas>
+    
+    <script>
+        const sectors = [
+            { name: '信息技术', filename: 'tech.png' },
+            { name: '工业', filename: 'industry.png' },
+            { name: '金融', filename: 'finance.png' },
+            { name: '医疗保健', filename: 'healthcare.png' },
+            { name: '非必需消费品', filename: 'consumer-discretionary.png' },
+            { name: '日常消费品', filename: 'consumer-staples.png' },
+            { name: '公用事业', filename: 'utilities.png' },
+            { name: '房地产', filename: 'real-estate.png' },
+            { name: '原材料', filename: 'materials.png' },
+            { name: '能源', filename: 'energy.png' },
+            { name: '半导体', filename: 'semiconductor.png' },
+            { name: '媒体娱乐', filename: 'media.png' },
+            { name: '通讯服务', filename: 'telecom.png' }
+        ];
+        
+        function generatePlaceholder(sectorName, filename) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 清空画布
+            ctx.clearRect(0, 0, 400, 300);
+            
+            // 绘制渐变背景
+            const gradient = ctx.createLinearGradient(0, 0, 400, 300);
+            gradient.addColorStop(0, '#f0f0f0');
+            gradient.addColorStop(1, '#e0e0e0');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 400, 300);
+            
+            // 绘制虚线边框
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.strokeRect(10, 10, 380, 280);
+            
+            // 绘制文字
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(sectorName, 200, 130);
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '14px Arial';
+            ctx.fillText('请替换为真实的热力图截图', 200, 160);
+            ctx.fillText(`文件名: ${filename}`, 200, 180);
+            
+            // 下载图片
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+        
+        // 创建界面
+        const sectorsDiv = document.getElementById('sectors');
+        sectors.forEach(sector => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <div class="placeholder">
+                    <div class="sector-name">${sector.name}</div>
+                    <div class="instruction">请替换为真实的热力图截图<br>文件名: ${sector.filename}</div>
+                    <button onclick="generatePlaceholder('${sector.name}', '${sector.filename}')" style="margin-top: 10px; padding: 5px 10px;">生成占位符</button>
+                </div>
+            `;
+            sectorsDiv.appendChild(div);
+        });
+        
+        // 生成所有占位符的按钮
+        const generateAllBtn = document.createElement('button');
+        generateAllBtn.textContent = '生成所有占位符';
+        generateAllBtn.style.cssText = 'padding: 10px 20px; font-size: 16px; margin: 20px 0; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;';
+        generateAllBtn.onclick = () => {
+            sectors.forEach((sector, index) => {
+                setTimeout(() => {
+                    generatePlaceholder(sector.name, sector.filename);
+                }, index * 500); // 延迟生成，避免浏览器阻塞
+            });
+        };
+        document.body.insertBefore(generateAllBtn, sectorsDiv);
+    </script>
+</body>
+</html>

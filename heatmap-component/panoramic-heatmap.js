@@ -244,25 +244,69 @@ class PanoramicHeatmap {
             'industrial': 'industrial-mini-heatmap'
         };
         
+        // 映射sector名称到图片文件名
+        const sectorImageMap = {
+            'technology': 'tech.png',
+            'healthcare': 'healthcare.png', 
+            'financial': 'finance.png',
+            'consumer': 'consumer-discretionary.png',
+            'energy': 'energy.png',
+            'industrial': 'industry.png'
+        };
+        
         const containerId = sectorIdMap[sector];
         const container = document.getElementById(containerId);
         if (!container) return;
 
         try {
-            // 生成该行业的模拟数据（增加数量以获得更好的视觉效果）
-            const sectorStocks = this.generateSectorMockData(sector, false, true);
+            // 获取对应的图片文件名
+            const imageFileName = sectorImageMap[sector] || 'default.png';
             
-            // 创建 StockHeatmap 实例并渲染
-            const heatmap = new StockHeatmap(container, {
-                width: container.offsetWidth,
-                height: 180,
-                showLabels: false,
-                colorScheme: 'RdYlGn',
-                fontSize: 8,
-                padding: 1,
-                cornerRadius: 2
+            // 创建图片元素直接显示静态截图
+            const img = document.createElement('img');
+            img.src = `images/heatmaps/${imageFileName}`;
+            img.alt = `${sector}行业热力图`;
+            img.style.cssText = `
+                width: 100%;
+                height: 180px;
+                object-fit: cover;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            `;
+            
+            // 清空容器并添加图片
+            container.innerHTML = '';
+            container.appendChild(img);
+            
+            // 添加悬停效果
+            img.addEventListener('mouseenter', () => {
+                img.style.transform = 'scale(1.02)';
             });
-            heatmap.render(sectorStocks, `${sector}行业热力图`);
+            img.addEventListener('mouseleave', () => {
+                img.style.transform = 'scale(1)';
+            });
+            
+            // 图片加载失败时显示占位符
+            img.onerror = () => {
+                container.innerHTML = `
+                    <div class="mini-heatmap-placeholder" style="
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 180px;
+                        background: #f8f9fa;
+                        border-radius: 8px;
+                        color: #6c757d;
+                        cursor: pointer;
+                    ">
+                        <span style="font-size: 2rem; margin-bottom: 0.5rem;">📊</span>
+                        <p style="margin: 0; font-size: 0.875rem;">${sector}</p>
+                        <p style="margin: 0; font-size: 0.75rem; color: #999;">请添加${imageFileName}</p>
+                    </div>
+                `;
+            };
             
         } catch (error) {
             console.error(`加载${sector}行业热力图失败:`, error);
