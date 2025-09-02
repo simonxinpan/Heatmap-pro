@@ -75,9 +75,6 @@ class SectorDashboard {
         sortedData.forEach((sector, index) => {
             const cardElement = this.createSectorCard(sector, index);
             dashboardGrid.appendChild(cardElement);
-            
-            // 异步加载迷你热力图
-            this.loadMiniHeatmap(sector.sector_zh, sector.sector_key);
         });
     }
 
