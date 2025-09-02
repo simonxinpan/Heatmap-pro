@@ -86,9 +86,12 @@ class SectorDashboard {
         card.className = 'industry-card';
         card.setAttribute('data-sector', sector.sector_key);
         
-        // 计算涨跌幅样式类
+        // 计算涨跌幅样式
         const changeClass = sector.weighted_avg_change >= 0 ? 'positive' : 'negative';
-        const changeSign = sector.weighted_avg_change >= 0 ? '+' : '';
+        const changeSymbol = sector.weighted_avg_change >= 0 ? '+' : '';
+        
+        // 获取行业对应的英文key用于URL参数
+        const sectorKey = this.getSectorKey(sector.sector_zh);
         
         card.innerHTML = `
             <div class="industry-card-header">
@@ -98,33 +101,33 @@ class SectorDashboard {
                         <h3 class="industry-name">${sector.sector_zh}</h3>
                         <div class="industry-metrics">
                             <span class="industry-change ${changeClass}">
-                                ${changeSign}${sector.weighted_avg_change}%
+                                ${changeSymbol}${sector.weighted_avg_change.toFixed(2)}%
                             </span>
-                            <span class="industry-count">${sector.stock_count}只股票</span>
+                            <span class="industry-count">${sector.stock_count} 只股票</span>
                         </div>
                     </div>
                 </div>
                 <button class="industry-expand-btn" onclick="expandSector('${sector.sector_zh}')">
-                    <span>🔍</span>
+                    <i class="fas fa-external-link-alt"></i>
                 </button>
             </div>
             
-            <div class="industry-mini-heatmap" id="heatmap-${sector.sector_zh}">
+            <div class="industry-mini-heatmap" id="mini-heatmap-${index}">
                 <div class="mini-heatmap-loading">
                     <div class="loading-dots"></div>
-                    <p>加载热力图...</p>
+                    <span>正在加载热力图...</span>
                 </div>
             </div>
             
             <div class="industry-stats">
                 <div class="stat-row">
                     <div class="stat-item">
-                        <span class="stat-value">¥${this.formatMarketCap(sector.total_market_cap)}</span>
+                        <span class="stat-value">${this.formatMarketCap(sector.total_market_cap)}</span>
                         <span class="stat-label">总市值</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value">${sector.leading_ticker}</span>
-                        <span class="stat-label">领涨股</span>
+                        <span class="stat-value">${sector.volume}B</span>
+                        <span class="stat-label">成交量</span>
                     </div>
                 </div>
                 <div class="stat-row">
@@ -140,68 +143,81 @@ class SectorDashboard {
             </div>
         `;
         
-        // 添加点击事件
-        card.addEventListener('click', (e) => {
-            if (!e.target.closest('.industry-expand-btn')) {
-                this.navigateToSector(sector.sector_zh);
-            }
-        });
+        // 异步加载iframe热力图（第二层加载）
+        setTimeout(() => {
+            this.loadSectorIframe(sector.sector_zh, sectorKey, index);
+        }, index * 200); // 延迟加载，避免同时请求过多
         
         return card;
     }
 
-    async loadMiniHeatmap(sectorZh, sectorKey) {
-        const heatmapContainer = document.getElementById(`heatmap-${sectorZh}`);
-        if (!heatmapContainer) return;
+    // 获取行业中文名对应的英文key
+    getSectorKey(sectorZh) {
+        const sectorMap = {
+            '科技': 'technology',
+            '金融': 'finance',
+            '医疗': 'healthcare',
+            '消费': 'consumer',
+            '工业': 'industrial',
+            '能源': 'energy',
+            '材料': 'materials',
+            '房地产': 'real_estate',
+            '公用事业': 'utilities',
+            '通信': 'communication'
+        };
+        return sectorMap[sectorZh] || sectorZh.toLowerCase();
+    }
 
+    // 加载行业iframe热力图
+    async loadSectorIframe(sectorZh, sectorKey, index) {
         try {
-            // 显示加载状态
-            heatmapContainer.innerHTML = '<div class="mini-loading">正在加载热力图...</div>';
-            
-            // 获取该行业的股票数据
-            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sectorZh)}`);
-            const result = await response.json();
-            
-            if (result.success && result.data.length > 0) {
-                // 清空加载状态
-                heatmapContainer.innerHTML = '';
-                
-                // 创建迷你热力图实例
-                const miniHeatmap = new StockHeatmap(heatmapContainer, {
-                    width: 280,
-                    height: 160,
-                    margin: { top: 5, right: 5, bottom: 5, left: 5 },
-                    showLabels: false,
-                    showTooltip: true,
-                    animation: true
-                });
-                
-                // 渲染热力图
-                miniHeatmap.render(result.data);
-                
-                // 添加点击事件 - 导航到完整热力图页面
-                heatmapContainer.style.cursor = 'pointer';
-                heatmapContainer.addEventListener('click', () => {
-                    this.navigateToSector(sectorZh);
-                });
-                
-            } else {
-                // 显示无数据状态
-                heatmapContainer.innerHTML = `
-                    <div class="mini-heatmap-empty">
-                        <span>📊</span>
-                        <p>暂无数据</p>
+            const container = document.getElementById(`mini-heatmap-${index}`);
+            if (!container) return;
+
+            // 创建iframe元素
+            const iframe = document.createElement('iframe');
+            iframe.src = `/panoramic-heatmap.html?sector=${encodeURIComponent(sectorKey)}&embed=true`;
+            iframe.style.width = '100%';
+            iframe.style.height = '200px';
+            iframe.style.border = 'none';
+            iframe.style.borderRadius = '8px';
+            iframe.loading = 'lazy';
+            iframe.title = `${sectorZh}行业热力图`;
+
+            // 添加加载事件监听
+            iframe.onload = () => {
+                container.innerHTML = '';
+                container.appendChild(iframe);
+            };
+
+            iframe.onerror = () => {
+                container.innerHTML = `
+                    <div class="mini-heatmap-error">
+                        <span>热力图加载失败</span>
+                        <button onclick="window.open('/panoramic-heatmap.html?sector=${encodeURIComponent(sectorKey)}', '_blank')">
+                            在新窗口打开
+                        </button>
+                    </div>
+                `;
+            };
+
+            // 设置超时处理
+            setTimeout(() => {
+                if (iframe.src && !iframe.contentDocument) {
+                    iframe.onerror();
+                }
+            }, 10000); // 10秒超时
+
+        } catch (error) {
+            console.error('加载iframe热力图失败:', error);
+            const container = document.getElementById(`mini-heatmap-${index}`);
+            if (container) {
+                container.innerHTML = `
+                    <div class="mini-heatmap-error">
+                        <span>加载失败</span>
                     </div>
                 `;
             }
-        } catch (error) {
-            console.error(`Mini heatmap loading error for ${sectorZh}:`, error);
-            heatmapContainer.innerHTML = `
-                <div class="mini-heatmap-error">
-                    <span>⚠️</span>
-                    <p>加载失败</p>
-                </div>
-            `;
         }
     }
 

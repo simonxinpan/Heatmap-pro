@@ -3,6 +3,70 @@
  * 负责数据加载、行业筛选和热力图交互功能
  */
 
+// 嵌入模式检测 - 当URL包含?embed=true时隐藏外壳元素
+function detectEmbedMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isEmbedMode = urlParams.get('embed') === 'true';
+    
+    if (isEmbedMode) {
+        console.log('🔗 Embed mode detected - hiding shell elements');
+        
+        // 隐藏导航栏、页头、页脚等外壳元素
+        const elementsToHide = [
+            'nav', 'header', 'footer', '.navbar', '.header', '.footer',
+            '.navigation', '.top-bar', '.breadcrumb', '.page-header',
+            '.panoramic-header', '.panoramic-controls'
+        ];
+        
+        elementsToHide.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                el.style.display = 'none';
+            });
+        });
+        
+        // 调整主容器样式以适应嵌入模式
+        const mainContainer = document.querySelector('.main-container, main, .container');
+        if (mainContainer) {
+            mainContainer.style.padding = '0';
+            mainContainer.style.margin = '0';
+        }
+        
+        // 调整热力图容器样式
+        const heatmapContainer = document.querySelector('#heatmap-container, .heatmap-container');
+        if (heatmapContainer) {
+            heatmapContainer.style.margin = '0';
+            heatmapContainer.style.padding = '10px';
+            heatmapContainer.style.height = 'calc(100vh - 20px)';
+        }
+        
+        // 添加嵌入模式样式
+        const style = document.createElement('style');
+        style.textContent = `
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden;
+            }
+            .embed-mode {
+                width: 100% !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // 为body添加嵌入模式类
+        document.body.classList.add('embed-mode');
+    }
+    
+    return isEmbedMode;
+}
+
+// 在页面加载时立即执行嵌入模式检测
+detectEmbedMode();
+
 // 全局变量
 let allStocks = []; // 缓存全市场数据
 let heatmapInstance = null; // 热力图实例
