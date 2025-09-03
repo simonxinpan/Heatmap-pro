@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <!-- 信息技术行业热力图预览 -->
+  <rect width="400" height="300" fill="#f0f8ff"/>
+  
+  <!-- 模拟热力图布局 -->
+  <rect x="20" y="40" width="180" height="120" fill="#ffb3ba" stroke="#fff" stroke-width="2"/>
+  <text x="110" y="90" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">苹果公司</text>
+  <text x="110" y="105" text-anchor="middle" font-family="Arial" font-size="10" fill="#666">AAPL -0.11%</text>
+  
+  <rect x="210" y="40" width="80" height="60" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="250" y="65" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">谷歌A</text>
+  <text x="250" y="78" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">GOOGL +0.70%</text>
+  
+  <rect x="210" y="110" width="80" height="50" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="250" y="130" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">谷歌C</text>
+  <text x="250" y="143" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">GOOGL +0.71%</text>
+  
+  <rect x="300" y="40" width="80" height="40" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="340" y="58" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">Visa</text>
+  <text x="340" y="70" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">V -0.62%</text>
+  
+  <rect x="300" y="90" width="80" height="35" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="340" y="105" text-anchor="middle" font-family="Arial" font-size="9" fill="#333">万事达</text>
+  <text x="340" y="115" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">MA +0.73%</text>
+  
+  <rect x="20" y="170" width="120" height="80" fill="#ff6b6b" stroke="#fff" stroke-width="2"/>
+  <text x="80" y="200" text-anchor="middle" font-family="Arial" font-size="11" fill="#fff">Meta Platforms</text>
+  <text x="80" y="215" text-anchor="middle" font-family="Arial" font-size="10" fill="#fff">META -1.95%</text>
+  
+  <rect x="150" y="170" width="100" height="80" fill="#ff6b6b" stroke="#fff" stroke-width="2"/>
+  <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="11" fill="#fff">博通</text>
+  <text x="200" y="215" text-anchor="middle" font-family="Arial" font-size="10" fill="#fff">AVGO -3.95%</text>
+  
+  <text x="200" y="20" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#333">信息技术</text>
+  <text x="200" y="280" text-anchor="middle" font-family="Arial" font-size="12" fill="#666">Technology Sector Heatmap</text>
+</svg>

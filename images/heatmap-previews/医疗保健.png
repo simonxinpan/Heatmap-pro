@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <!-- 医疗保健行业热力图预览 -->
+  <rect width="400" height="300" fill="#f5f5f5"/>
+  
+  <!-- 模拟热力图布局 -->
+  <rect x="20" y="40" width="120" height="80" fill="#ffb3ba" stroke="#fff" stroke-width="2"/>
+  <text x="80" y="70" text-anchor="middle" font-family="Arial" font-size="11" fill="#333">礼来</text>
+  <text x="80" y="85" text-anchor="middle" font-family="Arial" font-size="10" fill="#666">LLY -0.30%</text>
+  
+  <rect x="150" y="40" width="100" height="80" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="200" y="70" text-anchor="middle" font-family="Arial" font-size="11" fill="#333">艾伯维</text>
+  <text x="200" y="85" text-anchor="middle" font-family="Arial" font-size="10" fill="#666">ABBV +1.33%</text>
+  
+  <rect x="260" y="40" width="120" height="80" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="320" y="70" text-anchor="middle" font-family="Arial" font-size="11" fill="#333">联合健康</text>
+  <text x="320" y="85" text-anchor="middle" font-family="Arial" font-size="10" fill="#666">UNH +2.21%</text>
+  
+  <rect x="20" y="130" width="80" height="60" fill="#ffb3ba" stroke="#fff" stroke-width="2"/>
+  <text x="60" y="155" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">直觉外科</text>
+  <text x="60" y="168" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">ISRG -0.42%</text>
+  
+  <rect x="110" y="130" width="80" height="60" fill="#ffb3ba" stroke="#fff" stroke-width="2"/>
+  <text x="150" y="155" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">波士顿科学</text>
+  <text x="150" y="168" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">BSX -0.43%</text>
+  
+  <rect x="200" y="130" width="90" height="60" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="245" y="155" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">安进</text>
+  <text x="245" y="168" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">AMGN +0.57%</text>
+  
+  <rect x="300" y="130" width="80" height="60" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="340" y="155" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">史赛克</text>
+  <text x="340" y="168" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">SYK +0.33%</text>
+  
+  <rect x="20" y="200" width="120" height="50" fill="#90ee90" stroke="#fff" stroke-width="2"/>
+  <text x="80" y="220" text-anchor="middle" font-family="Arial" font-size="10" fill="#333">信诺</text>
+  <text x="80" y="233" text-anchor="middle" font-family="Arial" font-size="9" fill="#666">ELV +0.63%</text>
+  
+  <text x="200" y="20" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#333">医疗保健</text>
+  <text x="200" y="280" text-anchor="middle" font-family="Arial" font-size="12" fill="#666">Healthcare Sector Heatmap</text>
+</svg>

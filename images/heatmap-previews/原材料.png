@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <!-- 原材料行业热力图预览 -->
+  <rect width="400" height="300" fill="#f8f9fa"/>
+  <text x="200" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666">原材料行业热力图预览</text>
+  <text x="200" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#999">Materials Sector Heatmap</text>
+</svg>
