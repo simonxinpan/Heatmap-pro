@@ -43,18 +43,37 @@ class SectorDashboard {
         this.showLoading(true);
 
         try {
+            // 发起API请求
             const response = await fetch('/api/sector-dashboard');
+            
+            // 检查HTTP响应状态
+            if (!response.ok) {
+                throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+            }
+            
+            // 解析JSON响应
             const result = await response.json();
             
+            // 检查业务逻辑响应
             if (result.success) {
                 this.dashboardData = result.data;
                 this.renderDashboard();
             } else {
-                throw new Error(result.error || '加载仪表盘数据失败');
+                throw new Error(result.error || '服务器返回错误响应');
             }
+            
         } catch (error) {
-            console.error('Dashboard loading error:', error);
-            this.showError('加载行业数据失败，请稍后重试');
+            // 详细的错误日志记录
+            console.error('仪表盘数据加载失败:', {
+                message: error.message,
+                stack: error.stack,
+                timestamp: new Date().toISOString(),
+                url: '/api/sector-dashboard'
+            });
+            
+            // 向用户显示友好的错误信息
+            this.showError('数据加载失败，请刷新重试');
+            
         } finally {
             this.isLoading = false;
             this.showLoading(false);
