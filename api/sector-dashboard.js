@@ -1,8 +1,8 @@
 // api/sector-dashboard.js
 // 行业仪表盘API - 聚合所有行业的关键指标数据
 
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 // 模拟数据库查询 - 在实际项目中这里应该连接真实数据库
 function generateSectorDashboardData() {
@@ -51,7 +51,7 @@ function generateSectorDashboardData() {
     return dashboardData.sort((a, b) => b.total_market_cap - a.total_market_cap);
 }
 
-export default function handler(req, res) {
+module.exports = (req, res) => {
     try {
         // 设置CORS头
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -74,21 +74,19 @@ export default function handler(req, res) {
         // 设置缓存头 - 5分钟缓存
         res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
         
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        res.status(200).json({
             success: true,
             data: dashboardData,
             timestamp: new Date().toISOString(),
             total_sectors: dashboardData.length
-        }));
+        });
         
     } catch (error) {
         console.error('Sector Dashboard API Error:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        res.status(500).json({
             success: false,
             error: 'Internal server error',
             message: error.message
-        }));
+        });
     }
 };

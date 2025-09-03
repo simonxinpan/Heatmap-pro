@@ -44,11 +44,6 @@ class SectorDashboard {
 
         try {
             const response = await fetch('/api/sector-dashboard');
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
             const result = await response.json();
             
             if (result.success) {
