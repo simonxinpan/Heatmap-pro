@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="200" viewBox="0 0 280 200">
+  <rect width="280" height="200" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="140" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">热力图预览</text>
+  <text x="140" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#999">图片加载中...</text>
+  <rect x="40" y="130" width="200" height="40" fill="#e8e8e8" rx="4"/>
+  <rect x="50" y="140" width="30" height="20" fill="#ff6b6b" rx="2"/>
+  <rect x="90" y="140" width="30" height="20" fill="#4ecdc4" rx="2"/>
+  <rect x="130" y="140" width="30" height="20" fill="#45b7d1" rx="2"/>
+  <rect x="170" y="140" width="30" height="20" fill="#96ceb4" rx="2"/>
+  <rect x="210" y="140" width="30" height="20" fill="#feca57" rx="2"/>
+</svg>
