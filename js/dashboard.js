@@ -27,6 +27,7 @@ class SectorDashboard {
         };
         
         this.init();
+        this.addMiniHeatmapStyles();
     }
 
     init() {
@@ -133,9 +134,14 @@ class SectorDashboard {
             </div>
             
             <div class="mini-heatmap-container">
-                <a href="/panoramic-heatmap.html?sector=${encodeURIComponent(sector.sector_zh)}" target="_blank">
-                    <img src="/images/heatmap-previews/${this.getSectorImageFile(sector.sector_zh)}" alt="${sector.sector_zh} 热力图预览" class="heatmap-preview-image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                </a>
+                <div id="mini-heatmap-${sector.sector_key}" class="mini-heatmap-canvas" style="width: 100%; height: 150px; border-radius: 8px; background: #f8f9fa; position: relative; cursor: pointer;" onclick="window.open('/panoramic-heatmap.html?sector=${encodeURIComponent(sector.sector_zh)}', '_blank')">
+                    <div class="mini-heatmap-loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 16px; height: 16px; border: 2px solid #ddd; border-top: 2px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            加载中...
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="industry-stats">
@@ -164,10 +170,15 @@ class SectorDashboard {
         
         // 添加点击事件
         card.addEventListener('click', (e) => {
-            if (!e.target.closest('.industry-expand-btn')) {
+            if (!e.target.closest('.industry-expand-btn') && !e.target.closest('.mini-heatmap-container')) {
                 this.navigateToSector(sector.sector_zh);
             }
         });
+        
+        // 异步加载迷你热力图
+        setTimeout(() => {
+            this.loadAndRenderMiniHeatmap(sector.sector_key, sector.sector_zh);
+        }, 100 * index); // 错开加载时间，避免同时请求过多
         
         return card;
     }
@@ -267,6 +278,103 @@ class SectorDashboard {
     
     getSectorImageFile(sectorZh) {
         return this.sectorImageMap[sectorZh] || 'default.png';
+    }
+
+    /**
+     * 异步加载并渲染迷你热力图
+     * @param {string} sectorKey - 行业英文键名
+     * @param {string} sectorName - 行业中文名称
+     */
+    async loadAndRenderMiniHeatmap(sectorKey, sectorName) {
+        try {
+            // 1. 获取该行业的股票数据
+            const response = await fetch(`/api/stocks-simple?sector=${encodeURIComponent(sectorName)}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const stockData = await response.json();
+            
+            if (!stockData || !Array.isArray(stockData) || stockData.length === 0) {
+                this.showMiniHeatmapError(sectorKey, '暂无数据');
+                return;
+            }
+            
+            // 2. 找到对应的迷你热力图容器
+            const containerElement = document.getElementById(`mini-heatmap-${sectorKey}`);
+            if (!containerElement) {
+                console.warn(`Mini heatmap container not found for sector: ${sectorKey}`);
+                return;
+            }
+            
+            // 3. 清除加载状态
+            containerElement.innerHTML = '';
+            
+            // 4. 创建迷你热力图配置
+            const miniHeatmapOptions = {
+                width: containerElement.offsetWidth || 300,
+                height: 150,
+                showControls: false,
+                showLegend: false,
+                showTooltip: false,
+                interactive: false,
+                metric: 'change_percent'
+            };
+            
+            // 5. 实例化热力图组件
+            const miniHeatmap = new StockHeatmap(containerElement, miniHeatmapOptions);
+            
+            // 6. 渲染迷你热力图（传入isMini=true）
+            miniHeatmap.render(stockData, sectorName, true);
+            
+        } catch (error) {
+            console.error(`Failed to load mini heatmap for ${sectorName}:`, error);
+            this.showMiniHeatmapError(sectorKey, '加载失败');
+        }
+    }
+
+    /**
+     * 显示迷你热力图错误状态
+     * @param {string} sectorKey - 行业键名
+     * @param {string} message - 错误信息
+     */
+    showMiniHeatmapError(sectorKey, message) {
+        const containerElement = document.getElementById(`mini-heatmap-${sectorKey}`);
+        if (containerElement) {
+            containerElement.innerHTML = `
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 14px; text-align: center;">
+                    <div style="margin-bottom: 4px;">⚠️</div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * 添加迷你热力图相关样式
+     */
+    addMiniHeatmapStyles() {
+        if (document.querySelector('#mini-heatmap-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'mini-heatmap-styles';
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .mini-heatmap-canvas {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            
+            .mini-heatmap-canvas:hover {
+                transform: scale(1.02);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+        `;
+        document.head.appendChild(style);
     }
 }
 
