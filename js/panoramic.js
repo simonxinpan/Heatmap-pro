@@ -17,6 +17,8 @@ let totalStocksEl, avgChangeEl, upStocksEl, downStocksEl;
  */
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        console.log('1. DOMContentLoaded - 事件触发');
+        
         // 获取DOM元素引用
         initializeElements();
         
@@ -29,9 +31,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // 根据URL参数加载对应数据
         await loadMarketData(false, sector);
+        console.log('3. 从 API 获取到的原始股票数据:', allStocks);
         
         // 初始化热力图
         initializeHeatmap();
+        console.log('5. 渲染器实例已创建');
         
         // 填充行业筛选下拉菜单（如果是全市场视图）
         if (!sector) {
@@ -44,17 +48,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 渲染热力图
         const title = sector ? `${sector} 板块热力图` : '全市场 (S&P 500)';
         renderHeatmap(allStocks, title);
+        console.log('6. Renderer.render() 方法已被调用');
         
         // 更新页面标题
         if (heatmapTitle) {
             heatmapTitle.textContent = title;
         }
         
-        console.log(`✅ ${title}初始化完成`);
+        console.log('✅ 页面初始化完成');
         
     } catch (error) {
-        console.error('❌ 初始化失败:', error);
-        showErrorState('数据加载失败，请刷新重试');
+        console.error('在初始化过程中捕获到错误:', error);
+        showErrorState('页面初始化失败');
     }
 });
 
@@ -113,10 +118,12 @@ async function loadMarketData(forceRefresh = false, sector = null) {
             }
         });
         
+        console.log('2. API 响应状态:', response.status);
+
         if (!response.ok) {
             throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
         }
-        
+
         const responseData = await response.json();
         
         // 处理新的API响应格式
@@ -292,13 +299,19 @@ function renderHeatmap(stockData, title) {
     }
     
     try {
+        console.log('4. 转换后的树状数据:', stockData);
+        
         // 更新标题
         if (heatmapTitle) {
             heatmapTitle.textContent = `📊 ${title}`;
         }
         
+        console.log('5. 渲染器实例已创建');
+        
         // 渲染热力图
         heatmapInstance.render(stockData, title);
+        
+        console.log('6. Renderer.render() 方法已被调用');
         
         // 更新统计信息
         updateStatistics(stockData);
