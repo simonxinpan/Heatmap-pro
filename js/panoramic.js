@@ -1,532 +1,900 @@
 /**
- * 全景热力图主逻辑文件
- * 负责数据加载、行业筛选和热力图交互功能
+ * 全景热力图应用 - V7.2现代化版本
+ * 基于V5.2 Treemap引擎，适配V7.2架构
+ * 支持嵌入模式和模块化设计
  */
 
-// 全局变量
-let allStocks = []; // 缓存全市场数据
-let heatmapInstance = null; // 热力图实例
-let isLoading = false; // 加载状态
-
-// DOM 元素引用
-let sectorFilter, heatmapContainer, heatmapTitle;
-let totalStocksEl, avgChangeEl, upStocksEl, downStocksEl;
-
-/**
- * 页面初始化
- */
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        console.log('1. DOMContentLoaded - 事件触发');
+class HeatmapApp {
+    constructor() {
+        this.appContainer = null;
+        this.tooltip = null;
+        this.fullMarketData = null;
+        this.dataRefreshInterval = null;
+        this.isEmbedMode = false;
         
-        // 获取DOM元素引用
-        initializeElements();
-        
-        // 从URL参数中获取sector筛选条件
+        // 绑定方法到实例
+        this.router = this.router.bind(this);
+        this.handlePopState = this.handlePopState.bind(this);
+    }
+    
+    /**
+     * 初始化应用
+     */
+    init() {
+        // 检查嵌入模式
         const urlParams = new URLSearchParams(window.location.search);
-        const sector = urlParams.get('sector');
+        this.isEmbedMode = urlParams.get('embed') === 'true';
         
-        // 显示加载状态
-        showLoadingState();
-        
-        // 根据URL参数加载对应数据
-        await loadMarketData(false, sector);
-        console.log('3. 从 API 获取到的原始股票数据:', allStocks);
-        
-        // 初始化热力图
-        initializeHeatmap();
-        console.log('5. 渲染器实例已创建');
-        
-        // 填充行业筛选下拉菜单（如果是全市场视图）
-        if (!sector) {
-            populateSectorFilter();
+        if (this.isEmbedMode) {
+            this.setupEmbedMode();
         }
+        
+        // 获取DOM元素
+        this.appContainer = document.getElementById('app-container');
+        this.tooltip = document.getElementById('tooltip');
+        this.tooltipEventDelegated = false;
         
         // 绑定事件监听器
-        bindEventListeners();
+        this.bindEventListeners();
         
-        // 渲染热力图
-        const title = sector ? `${sector} 板块热力图` : '全市场 (S&P 500)';
-        renderHeatmap(allStocks, title);
-        console.log('6. Renderer.render() 方法已被调用');
+        // 启动路由
+        this.router();
+    }
+    
+    /**
+     * 绑定事件监听器
+     */
+    bindEventListeners() {
+        window.addEventListener('popstate', this.handlePopState);
         
-        // 更新页面标题
-        if (heatmapTitle) {
-            heatmapTitle.textContent = title;
+        // 使用防抖技术优化resize事件
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => this.rerenderCurrentView(), 250);
+        });
+    }
+    
+    /**
+     * 处理浏览器后退/前进事件
+     */
+    handlePopState() {
+        this.router();
+    }
+
+    /**
+     * 启动数据自动刷新机制（每5分钟）
+     */
+    startDataRefresh() {
+        // 清除现有定时器
+        if (this.dataRefreshInterval) {
+            clearInterval(this.dataRefreshInterval);
         }
         
-        console.log('✅ 页面初始化完成');
+        // 设置每5分钟刷新一次数据
+        this.dataRefreshInterval = setInterval(async () => {
+            console.log('🔄 自动刷新股票数据...');
+            try {
+                const res = await fetch('/api/stocks-simple');
+                if (res.ok) {
+                    const result = await res.json();
+                    const newData = result.data || result; // 兼容新旧格式
+                    this.fullMarketData = newData;
+                    
+                    // 显示缓存状态信息
+                    if (result.meta) {
+                        this.updateCacheStatus(result.meta);
+                    }
+                    
+                    // 如果当前在主页，重新渲染
+                    const currentPath = window.location.pathname;
+                    if (currentPath === '/' || currentPath.startsWith('/sector/')) {
+                        const sectorName = currentPath.startsWith('/sector/') ? 
+                            decodeURIComponent(currentPath.split('/sector/')[1]) : null;
+                        await this.renderHomePage(sectorName);
+                        console.log('✅ 数据刷新完成');
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ 数据刷新失败:', error.message);
+            }
+        }, 5 * 60 * 1000); // 5分钟 = 5 * 60 * 1000毫秒
         
-    } catch (error) {
-        console.error('在初始化过程中捕获到错误:', error);
-        showErrorState('页面初始化失败');
+        console.log('🚀 数据自动刷新已启动（每5分钟）');
     }
+    
+    /**
+     * 停止数据刷新
+     */
+    stopDataRefresh() {
+        if (this.dataRefreshInterval) {
+            clearInterval(this.dataRefreshInterval);
+            this.dataRefreshInterval = null;
+            console.log('⏹️ 数据自动刷新已停止');
+        }
+    }
+
+// 使用防抖技术优化resize事件，避免频繁重绘
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(rerenderCurrentView, 250);
 });
 
-/**
- * 初始化DOM元素引用
- */
-function initializeElements() {
-    sectorFilter = document.getElementById('sector-filter');
-    heatmapContainer = document.getElementById('heatmap-container');
-    heatmapTitle = document.querySelector('.heatmap-title');
-    
-    // 统计信息元素
-    totalStocksEl = document.getElementById('total-stocks');
-    avgChangeEl = document.getElementById('avg-change');
-    upStocksEl = document.getElementById('up-stocks');
-    downStocksEl = document.getElementById('down-stocks');
-    
-    if (!sectorFilter || !heatmapContainer) {
-        throw new Error('关键DOM元素未找到');
+    /**
+     * 主路由函数，根据URL参数决定渲染哪个页面
+     */
+    async router() {
+        this.showLoading();
+        const params = new URLSearchParams(window.location.search);
+        const page = params.get('page');
+        const symbol = params.get('symbol');
+        const sector = params.get('sector');
+
+        if (page === 'stock' && symbol) {
+            await this.renderStockDetailPage(symbol);
+        } else if (sector) {
+            // 如果有sector参数，则渲染行业详情页
+            await this.renderHomePage(decodeURIComponent(sector));
+        } else {
+            // 默认渲染全景热力图
+            document.title = '股票热力图 - 全景';
+            await this.renderHomePage();
+        }
     }
-}
+    
+    /**
+     * 显示加载动画
+     */
+    showLoading() {
+        this.appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>数据加载中...</p></div>`;
+    }
 
-/**
- * 加载股票数据（支持本地缓存和sector筛选）
- */
-async function loadMarketData(forceRefresh = false, sector = null) {
-    if (isLoading) return;
-    
-    isLoading = true;
-    
+    /**
+     * 渲染主页（全景或行业详情）
+     */
+    async renderHomePage(sectorName = null) {
+        // 启动数据自动刷新（仅在主页时）
+        if (!sectorName) {
+            this.startDataRefresh();
+        }
     try {
-        const dataType = sector ? `${sector}板块` : '全市场';
-        console.log(`🔄 开始加载${dataType}数据...`);
-        
-        // 构建API URL
-        let apiUrl = '/api/stocks-simple';
-        if (sector) {
-            apiUrl += `?sector=${encodeURIComponent(sector)}`;
-        }
-        
-        // 检查本地缓存（sector特定的缓存key）
-        const cacheKey = sector ? `stocks_${sector}` : 'stocks_all';
-        if (!forceRefresh) {
-            const cachedData = getCachedData(false, cacheKey);
-            if (cachedData) {
-                allStocks = cachedData.data;
-                console.log(`✅ 从本地缓存加载 ${allStocks.length} 只${dataType}股票数据`);
-                return;
+        // 尝试获取市场数据，如果失败则使用模拟数据
+        let marketData;
+        try {
+            console.log('🔄 正在获取股票数据...');
+            const res = await fetch('/api/stocks-simple');
+            if (!res.ok) {
+                throw new Error('API不可用');
             }
-        }
-        
-        const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'Cache-Control': forceRefresh ? 'no-cache' : 'max-age=300' // 强制刷新时不使用缓存
-            }
-        });
-        
-        console.log('2. API 响应状态:', response.status);
-
-        if (!response.ok) {
-            throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
-        }
-
-        const responseData = await response.json();
-        
-        // 处理新的API响应格式
-        let stocksData;
-        if (responseData.data && Array.isArray(responseData.data)) {
-            // 新格式：包含data、timestamp等字段
-            stocksData = responseData.data;
-            console.log(`📊 数据来源: ${responseData.source}, 时间戳: ${responseData.timestamp}`);
-            if (responseData.error) {
-                console.warn(`⚠️ API警告: ${responseData.error}`);
+            const result = await res.json();
+            
+            // 新的 API 直接返回股票数组
+            if (Array.isArray(result)) {
+                marketData = result;
+                console.log(`✅ 获取到 ${marketData.length} 只股票数据`);
+            } else {
+                // 兼容旧格式
+                marketData = result.data || result;
+                
+                // 显示缓存状态信息
+                if (result.meta) {
+                    const { total, cached, updated, marketStatus, cacheMinutes, processingTime } = result.meta;
+                    console.log(`📊 股票数据获取完成:`);
+                    console.log(`   总数: ${total} | 缓存命中: ${cached} | API更新: ${updated}`);
+                    console.log(`   市场状态: ${marketStatus} | 缓存策略: ${cacheMinutes}分钟`);
+                    console.log(`   处理时间: ${processingTime}ms`);
+                    
+                    // 在页面上显示缓存状态
+                    this.updateCacheStatus(result.meta);
+                } else {
+                    console.log(`✅ 获取到 ${marketData.length} 只股票数据`);
+                }
             }
             
-            // 缓存完整响应数据
-            setCachedData(responseData, cacheKey);
-        } else if (Array.isArray(responseData)) {
-            // 旧格式：直接返回数组
-            stocksData = responseData;
-            // 为旧格式创建缓存结构
-            setCachedData({
-                data: stocksData,
-                timestamp: new Date().toISOString(),
-                source: 'api'
-            }, cacheKey);
-        } else {
-            throw new Error('API返回数据格式错误');
-        }
-        
-        if (!stocksData || stocksData.length === 0) {
-            throw new Error('API返回数据为空');
-        }
-        
-        allStocks = stocksData;
-        console.log(`✅ 成功加载 ${allStocks.length} 只股票数据`);
-        
-    } catch (error) {
-        console.error('❌ 数据加载失败:', error);
-        
-        // 尝试使用过期的缓存数据
-        const expiredCache = getCachedData(true, cacheKey);
-        if (expiredCache) {
-            allStocks = expiredCache.data;
-            console.log('⚠️ 使用过期缓存数据作为回退');
-        } else {
-            // 使用模拟数据作为最后回退
-            allStocks = generateMockData();
-            console.log('⚠️ 使用模拟数据作为回退');
-        }
-    } finally {
-        isLoading = false;
-    }
-}
-
-/**
- * 初始化热力图实例
- */
-function initializeHeatmap() {
-    try {
-        heatmapInstance = new StockHeatmap('heatmap-container');
-        console.log('✅ 热力图实例创建成功');
-    } catch (error) {
-        console.error('❌ 热力图实例创建失败:', error);
-        throw error;
-    }
-}
-
-/**
- * 填充行业筛选下拉菜单
- */
-function populateSectorFilter() {
-    if (!allStocks || allStocks.length === 0) {
-        console.warn('⚠️ 无股票数据，跳过行业筛选菜单填充');
-        return;
-    }
-    
-    try {
-        // 获取所有唯一的行业名称
-        const sectors = [...new Set(allStocks
-            .map(stock => stock.sector_zh)
-            .filter(sector => sector && sector.trim() !== '')
-        )];
-        
-        sectors.sort(); // 按字母排序
-        
-        // 清除现有选项（保留"全市场"选项）
-        const defaultOption = sectorFilter.querySelector('option[value="all"]');
-        sectorFilter.innerHTML = '';
-        sectorFilter.appendChild(defaultOption);
-        
-        // 添加行业选项
-        sectors.forEach(sector => {
-            const option = document.createElement('option');
-            option.value = sector;
-            option.textContent = `${sector} (${getStockCountBySector(sector)}只)`;
-            sectorFilter.appendChild(option);
-        });
-        
-        console.log(`✅ 成功填充 ${sectors.length} 个行业选项`);
-        
-    } catch (error) {
-        console.error('❌ 填充行业筛选菜单失败:', error);
-    }
-}
-
-/**
- * 获取指定行业的股票数量
- */
-function getStockCountBySector(sector) {
-    return allStocks.filter(stock => stock.sector_zh === sector).length;
-}
-
-/**
- * 绑定事件监听器
- */
-function bindEventListeners() {
-    // 行业筛选下拉菜单变化事件
-    sectorFilter.addEventListener('change', handleSectorChange);
-    
-    // 刷新按钮事件
-    const refreshBtn = document.querySelector('.refresh-btn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', handleRefresh);
-    }
-    
-    // 全屏按钮事件
-    const fullscreenBtn = document.querySelector('.fullscreen-btn');
-    if (fullscreenBtn) {
-        fullscreenBtn.addEventListener('click', handleFullscreen);
-    }
-}
-
-/**
- * 处理行业筛选变化
- */
-function handleSectorChange() {
-    const selectedSector = sectorFilter.value;
-    
-    try {
-        let dataToRender;
-        let title;
-        
-        if (selectedSector === 'all') {
-            dataToRender = allStocks;
-            title = '全市场 (S&P 500)';
-        } else {
-            // 筛选指定行业的股票
-            dataToRender = allStocks.filter(stock => stock.sector_zh === selectedSector);
-            title = `${selectedSector} 板块热力图`;
+            // 🔍 调试日志：检查原始数据的sector_zh字段
+            console.log('🔍 开始分析原始股票数据的行业字段...');
+            const sectorAnalysis = {};
+            let validStocks = 0;
+            let invalidStocks = 0;
             
-            if (dataToRender.length === 0) {
-                showErrorState(`${selectedSector} 行业暂无数据`);
+            marketData.forEach((stock, index) => {
+                const sector = stock.sector_zh;
+                const sectorType = typeof sector;
+                const sectorValue = sector === null ? 'null' : sector === undefined ? 'undefined' : `'${sector}'`;
+                
+                if (index < 10) { // 只打印前10只股票的详细信息
+                    console.log(`股票 ${index + 1}: ${stock.ticker} | 行业: ${sectorValue} (${sectorType})`);
+                }
+                
+                if (sector && typeof sector === 'string' && sector.trim() !== '') {
+                    const cleanSector = sector.trim();
+                    sectorAnalysis[cleanSector] = (sectorAnalysis[cleanSector] || 0) + 1;
+                    validStocks++;
+                } else {
+                    invalidStocks++;
+                    if (invalidStocks <= 5) { // 只打印前5个无效的股票
+                        console.warn(`⚠️ 无效行业数据: ${stock.ticker} | sector_zh: ${sectorValue}`);
+                    }
+                }
+            });
+            
+            console.log(`📊 行业数据分析结果:`);
+            console.log(`   有效股票: ${validStocks} 只`);
+            console.log(`   无效股票: ${invalidStocks} 只`);
+            console.log(`   发现的行业数量: ${Object.keys(sectorAnalysis).length}`);
+            console.log(`   各行业股票数量:`, sectorAnalysis);
+            
+            // 🔧 关键修复：数据类型转换，解决NaN问题
+            console.log('🔧 开始数据类型转换...');
+            let originalCount = marketData.length;
+            marketData = marketData.map(stock => ({
+                ...stock,
+                market_cap: parseFloat(stock.market_cap) || 0, // 将市值字符串转为浮点数
+                change_percent: parseFloat(stock.change_percent) || 0 // 将涨跌幅字符串转为浮点数
+            })).filter(stock => 
+                !isNaN(stock.market_cap) && stock.market_cap > 0 // 过滤掉转换失败或市值为0的股票
+            );
+            
+            console.log(`✅ 数据类型转换完成:`);
+            console.log(`   原始股票数: ${originalCount}`);
+            console.log(`   有效股票数: ${marketData.length}`);
+            console.log(`   过滤掉的股票: ${originalCount - marketData.length}`);
+            
+            // 验证转换结果
+            if (marketData.length > 0) {
+                const sample = marketData[0];
+                console.log(`📋 数据样本检查:`);
+                console.log(`   ${sample.ticker}: market_cap=${sample.market_cap} (${typeof sample.market_cap}), change_percent=${sample.change_percent} (${typeof sample.change_percent})`);
+            }
+        } catch (apiError) {
+            console.log('API不可用，使用模拟数据进行演示');
+            // 使用标普500主要股票的模拟数据
+            marketData = [
+                // 科技股
+                { ticker: 'AAPL', name_zh: '苹果公司', sector_zh: '科技', market_cap: 2450000, change_percent: 1.69, logo: 'https://logo.clearbit.com/apple.com' },
+                { ticker: 'MSFT', name_zh: '微软', sector_zh: '科技', market_cap: 2200000, change_percent: 0.85, logo: 'https://logo.clearbit.com/microsoft.com' },
+                { ticker: 'GOOGL', name_zh: '谷歌', sector_zh: '科技', market_cap: 1500000, change_percent: -0.42, logo: 'https://logo.clearbit.com/google.com' },
+                { ticker: 'NVDA', name_zh: '英伟达', sector_zh: '科技', market_cap: 900000, change_percent: 3.45, logo: 'https://logo.clearbit.com/nvidia.com' },
+                { ticker: 'META', name_zh: 'Meta平台', sector_zh: '科技', market_cap: 750000, change_percent: 1.87, logo: 'https://logo.clearbit.com/meta.com' },
+                { ticker: 'NFLX', name_zh: '奈飞', sector_zh: '科技', market_cap: 180000, change_percent: 2.34, logo: 'https://logo.clearbit.com/netflix.com' },
+                { ticker: 'ADBE', name_zh: '奥多比', sector_zh: '科技', market_cap: 220000, change_percent: 1.12, logo: 'https://logo.clearbit.com/adobe.com' },
+                { ticker: 'CRM', name_zh: '赛富时', sector_zh: '科技', market_cap: 190000, change_percent: 0.78, logo: 'https://logo.clearbit.com/salesforce.com' },
+                
+                // 消费股
+                { ticker: 'AMZN', name_zh: '亚马逊', sector_zh: '消费', market_cap: 1200000, change_percent: 2.15, logo: 'https://logo.clearbit.com/amazon.com' },
+                { ticker: 'TSLA', name_zh: '特斯拉', sector_zh: '消费', market_cap: 800000, change_percent: -1.23, logo: 'https://logo.clearbit.com/tesla.com' },
+                { ticker: 'HD', name_zh: '家得宝', sector_zh: '消费', market_cap: 320000, change_percent: 1.45, logo: 'https://logo.clearbit.com/homedepot.com' },
+                { ticker: 'MCD', name_zh: '麦当劳', sector_zh: '消费', market_cap: 210000, change_percent: 0.67, logo: 'https://logo.clearbit.com/mcdonalds.com' },
+                { ticker: 'NKE', name_zh: '耐克', sector_zh: '消费', market_cap: 160000, change_percent: -0.89, logo: 'https://logo.clearbit.com/nike.com' },
+                { ticker: 'SBUX', name_zh: '星巴克', sector_zh: '消费', market_cap: 110000, change_percent: 1.23, logo: 'https://logo.clearbit.com/starbucks.com' },
+                
+                // 金融股
+                { ticker: 'BRK.B', name_zh: '伯克希尔', sector_zh: '金融', market_cap: 700000, change_percent: 0.45, logo: 'https://logo.clearbit.com/berkshirehathaway.com' },
+                { ticker: 'JPM', name_zh: '摩根大通', sector_zh: '金融', market_cap: 450000, change_percent: 1.34, logo: 'https://logo.clearbit.com/jpmorganchase.com' },
+                { ticker: 'BAC', name_zh: '美国银行', sector_zh: '金融', market_cap: 280000, change_percent: 0.89, logo: 'https://logo.clearbit.com/bankofamerica.com' },
+                { ticker: 'WFC', name_zh: '富国银行', sector_zh: '金融', market_cap: 180000, change_percent: 1.12, logo: 'https://logo.clearbit.com/wellsfargo.com' },
+                { ticker: 'GS', name_zh: '高盛', sector_zh: '金融', market_cap: 120000, change_percent: 0.56, logo: 'https://logo.clearbit.com/goldmansachs.com' },
+                
+                // 医疗股
+                { ticker: 'UNH', name_zh: '联合健康', sector_zh: '医疗', market_cap: 450000, change_percent: 1.23, logo: 'https://logo.clearbit.com/unitedhealthgroup.com' },
+                { ticker: 'JNJ', name_zh: '强生', sector_zh: '医疗', market_cap: 420000, change_percent: 0.67, logo: 'https://logo.clearbit.com/jnj.com' },
+                { ticker: 'PFE', name_zh: '辉瑞', sector_zh: '医疗', market_cap: 180000, change_percent: -0.45, logo: 'https://logo.clearbit.com/pfizer.com' },
+                { ticker: 'ABBV', name_zh: '艾伯维', sector_zh: '医疗', market_cap: 280000, change_percent: 1.78, logo: 'https://logo.clearbit.com/abbvie.com' },
+                { ticker: 'TMO', name_zh: '赛默飞', sector_zh: '医疗', market_cap: 200000, change_percent: 0.89, logo: 'https://logo.clearbit.com/thermofisher.com' },
+                
+                // 工业股
+                { ticker: 'BA', name_zh: '波音', sector_zh: '工业', market_cap: 130000, change_percent: -2.34, logo: 'https://logo.clearbit.com/boeing.com' },
+                { ticker: 'CAT', name_zh: '卡特彼勒', sector_zh: '工业', market_cap: 140000, change_percent: 1.45, logo: 'https://logo.clearbit.com/caterpillar.com' },
+                { ticker: 'GE', name_zh: '通用电气', sector_zh: '工业', market_cap: 120000, change_percent: 2.12, logo: 'https://logo.clearbit.com/ge.com' },
+                { ticker: 'MMM', name_zh: '3M公司', sector_zh: '工业', market_cap: 90000, change_percent: 0.34, logo: 'https://logo.clearbit.com/3m.com' },
+                
+                // 能源股
+                { ticker: 'XOM', name_zh: '埃克森美孚', sector_zh: '能源', market_cap: 420000, change_percent: 2.67, logo: 'https://logo.clearbit.com/exxonmobil.com' },
+                { ticker: 'CVX', name_zh: '雪佛龙', sector_zh: '能源', market_cap: 280000, change_percent: 1.89, logo: 'https://logo.clearbit.com/chevron.com' },
+                { ticker: 'COP', name_zh: '康菲石油', sector_zh: '能源', market_cap: 140000, change_percent: 3.12, logo: 'https://logo.clearbit.com/conocophillips.com' },
+                
+                // 通信股
+                { ticker: 'VZ', name_zh: '威瑞森', sector_zh: '通信', market_cap: 170000, change_percent: 0.45, logo: 'https://logo.clearbit.com/verizon.com' },
+                { ticker: 'T', name_zh: 'AT&T', sector_zh: '通信', market_cap: 130000, change_percent: -0.23, logo: 'https://logo.clearbit.com/att.com' },
+                { ticker: 'CMCSA', name_zh: '康卡斯特', sector_zh: '通信', market_cap: 160000, change_percent: 1.12, logo: 'https://logo.clearbit.com/comcast.com' },
+                
+                // 公用事业
+                { ticker: 'NEE', name_zh: '新纪元能源', sector_zh: '公用事业', market_cap: 150000, change_percent: 0.78, logo: 'https://logo.clearbit.com/nexteraenergy.com' },
+                { ticker: 'DUK', name_zh: '杜克能源', sector_zh: '公用事业', market_cap: 80000, change_percent: 0.34, logo: 'https://logo.clearbit.com/duke-energy.com' },
+                
+                // 房地产
+                { ticker: 'AMT', name_zh: '美国电塔', sector_zh: '房地产', market_cap: 90000, change_percent: 1.23, logo: 'https://logo.clearbit.com/americantower.com' },
+                { ticker: 'PLD', name_zh: '普洛斯', sector_zh: '房地产', market_cap: 110000, change_percent: 0.89, logo: 'https://logo.clearbit.com/prologis.com' }
+            ];
+        }
+        this.fullMarketData = marketData; // 更新全局数据缓存
+
+        let dataToRender = this.fullMarketData;
+        let headerHtml;
+
+        if (sectorName) {
+            // 过滤出特定行业的数据
+            dataToRender = fullMarketData.filter(stock => stock.sector_zh === sectorName);
+            document.title = `${sectorName} - 行业热力图`;
+            headerHtml = `<header class="header"><h1>${sectorName}</h1><a href="/" class="back-link" onclick="navigate(event, '/')">← 返回全景图</a></header>`;
+        } else {
+            // 全景图的标题
+            headerHtml = `
+                <header class="header">
+                    <div class="header-content">
+                        <div class="header-main">
+                            <h1>股票热力图</h1>
+                            <div class="data-source">美股市场 (BETA)</div>
+                        </div>
+                        <div class="header-actions">
+                            <a href="/cache-admin.html" class="admin-link" title="缓存管理">
+                                <span class="admin-icon">⚙️</span>
+                                <span class="admin-text">缓存管理</span>
+                            </a>
+                        </div>
+                    </div>
+                </header>
+            `;
+        }
+        
+        if (!dataToRender || dataToRender.length === 0) {
+            this.appContainer.innerHTML = `<div class="loading-indicator">没有找到数据，后台可能正在更新，请稍后刷新...</div>`;
+            return;
+        }
+
+        // 渲染页面骨架
+        appContainer.innerHTML = `
+            ${headerHtml}
+            <div id="cache-status" class="cache-status" style="display: none;"></div>
+            <main id="heatmap-container-final" class="heatmap-container-final"></main>
+            <footer class="legend">
+                <span>-3%</span>
+                <div class="legend-item"><div class="legend-color-box loss-5"></div></div>
+                <div class="legend-item"><div class="legend-color-box loss-3"></div></div>
+                <div class="legend-item"><div class="legend-color-box loss-1"></div></div>
+                <div class="legend-item"><div class="legend-color-box flat"></div></div>
+                <div class="legend-item"><div class="legend-color-box gain-1"></div></div>
+                <div class="legend-item"><div class="legend-color-box gain-3"></div></div>
+                <div class="legend-item"><div class="legend-color-box gain-5"></div></div>
+                <span>+3%</span>
+            </footer>
+        `;
+        
+        // 行业视图下不显示图例
+        if (sectorName) {
+            appContainer.querySelector('.legend').style.display = 'none';
+        }
+
+        // 使用 requestAnimationFrame 确保在DOM渲染后执行treemap计算
+        requestAnimationFrame(() => {
+            const container = document.getElementById('heatmap-container-final');
+            if (container) {
+                this.generateTreemap(dataToRender, container, !sectorName);
+            }
+        });
+    } catch (error) {
+        console.error("Render HomePage Error:", error);
+        this.appContainer.innerHTML = `<div class="loading-indicator">加载失败: ${error.message}</div>`;
+    }
+    }
+
+    /**
+     * 生成Treemap布局的核心函数（性能优化版）
+     */
+    generateTreemap(data, container, groupIntoSectors = true) {
+        console.log('🎨 开始生成热力图...');
+        console.log(`输入数据: ${data ? data.length : 0} 只股票`);
+        console.log(`分组模式: ${groupIntoSectors ? '按行业分组' : '扁平显示'}`);
+        
+        container.innerHTML = '';
+        const { clientWidth: totalWidth, clientHeight: totalHeight } = container;
+        if (totalWidth === 0 || totalHeight === 0 || !data || data.length === 0) {
+            console.warn('⚠️ 容器尺寸为0或数据为空，跳过渲染');
+            return;
+        }
+
+        // 性能优化：使用DocumentFragment减少DOM操作
+        const fragment = document.createDocumentFragment();
+        const elementsToRender = [];
+        
+        let itemsToLayout;
+        let totalStocksToRender = 0;
+        
+        if (groupIntoSectors) {
+            const stocksBySector = this.groupDataBySector(data);
+            itemsToLayout = Object.entries(stocksBySector).map(([sectorName, sectorData]) => {
+                totalStocksToRender += sectorData.stocks.length;
+                return {
+                    name: sectorName, 
+                    isSector: true, 
+                    value: sectorData.total_market_cap,
+                    items: sectorData.stocks.map(s => ({ ...s, value: s.market_cap, isSector: false }))
+                };
+            });
+            console.log(`🏢 创建了 ${itemsToLayout.length} 个行业分组`);
+            console.log(`📊 总计要渲染的股票数: ${totalStocksToRender}`);
+        } else {
+            itemsToLayout = data.map(s => ({ ...s, value: s.market_cap, isSector: false }));
+            totalStocksToRender = itemsToLayout.length;
+            console.log(`📊 扁平模式，要渲染的股票数: ${totalStocksToRender}`);
+        }
+
+        // 递归布局函数
+        const layout = (items, x, y, width, height, parentEl) => {
+            if (items.length === 0 || width <= 1 || height <= 1) return;
+            
+            const totalValue = items.reduce((sum, item) => sum + (item.value || 0), 0);
+            if (totalValue <= 0) return;
+
+            if (items.length === 1) {
+                renderNode(items[0], x, y, width, height, parentEl);
                 return;
             }
-        }
-        
-        // 渲染热力图
-        renderHeatmap(dataToRender, title);
-        
-        console.log(`✅ 切换到 ${selectedSector === 'all' ? '全市场' : selectedSector} 视图`);
-        
-    } catch (error) {
-        console.error('❌ 行业切换失败:', error);
-        showErrorState('行业切换失败，请重试');
-    }
-}
 
-/**
- * 渲染热力图
- */
-function renderHeatmap(stockData, title) {
-    if (!heatmapInstance || !stockData || stockData.length === 0) {
-        showErrorState('无数据可显示');
-        return;
-    }
-    
-    try {
-        console.log('4. 转换后的树状数据:', stockData);
-        
-        // 更新标题
-        if (heatmapTitle) {
-            heatmapTitle.textContent = `📊 ${title}`;
-        }
-        
-        console.log('5. 渲染器实例已创建');
-        
-        // 渲染热力图
-        heatmapInstance.render(stockData, title);
-        
-        console.log('6. Renderer.render() 方法已被调用');
-        
-        // 更新统计信息
-        updateStatistics(stockData);
-        
-        console.log(`✅ 成功渲染 ${stockData.length} 只股票的热力图`);
-        
-    } catch (error) {
-        console.error('❌ 热力图渲染失败:', error);
-        showErrorState('热力图渲染失败');
-    }
-}
+            let bestSplitIndex = 0;
+            let minDiff = Infinity;
+            const targetValue = totalValue / 2;
+            let cumulativeValue = 0;
 
-/**
- * 更新统计信息
- */
-function updateStatistics(stockData) {
-    if (!stockData || stockData.length === 0) return;
-    
-    try {
-        const totalStocks = stockData.length;
-        const upStocks = stockData.filter(stock => (stock.change_percent || 0) > 0).length;
-        const downStocks = stockData.filter(stock => (stock.change_percent || 0) < 0).length;
-        const avgChange = stockData.reduce((sum, stock) => sum + (stock.change_percent || 0), 0) / totalStocks;
-        
-        // 更新DOM元素
-        if (totalStocksEl) totalStocksEl.textContent = totalStocks;
-        if (avgChangeEl) {
-            avgChangeEl.textContent = `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%`;
-            avgChangeEl.style.color = avgChange >= 0 ? '#28a745' : '#dc3545';
-        }
-        if (upStocksEl) upStocksEl.textContent = upStocks;
-        if (downStocksEl) downStocksEl.textContent = downStocks;
-        
-    } catch (error) {
-        console.error('❌ 统计信息更新失败:', error);
-    }
-}
+            for (let i = 0; i < items.length - 1; i++) {
+                cumulativeValue += items[i].value || 0;
+                const diff = Math.abs(cumulativeValue - targetValue);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestSplitIndex = i;
+                }
+            }
 
-/**
- * 处理刷新按钮点击
- */
-async function handleRefresh() {
-    try {
-        showLoadingState();
-        
-        // 强制重新加载数据（跳过缓存）
-        await loadMarketData(true);
-        
-        // 重新填充行业筛选
-        populateSectorFilter();
-        
-        // 重新渲染当前视图
-        const selectedSector = sectorFilter.value;
-        handleSectorChange();
-        
-        console.log('✅ 数据刷新完成');
-        
-    } catch (error) {
-        console.error('❌ 数据刷新失败:', error);
-        showErrorState('数据刷新失败，请重试');
-    }
-}
+            const firstGroup = items.slice(0, bestSplitIndex + 1);
+            const secondGroup = items.slice(bestSplitIndex + 1);
+            const firstValue = firstGroup.reduce((s, item) => s + (item.value || 0), 0);
+            
+            const proportion = totalValue > 0 ? firstValue / totalValue : 0.5;
+            const isHorizontal = width > height;
 
-/**
- * 获取本地缓存数据
- * @param {boolean} allowExpired - 是否允许返回过期数据
- * @param {string} cacheKey - 缓存键名，默认为全市场数据
- * @returns {object|null} 缓存的数据或null
- */
-function getCachedData(allowExpired = false, cacheKey = 'heatmap_stocks_data') {
-    try {
-        const cachedItem = localStorage.getItem(cacheKey);
-        
-        if (!cachedItem) {
-            return null;
-        }
-        
-        const cached = JSON.parse(cachedItem);
-        const now = new Date().getTime();
-        const cacheTime = new Date(cached.cacheTimestamp).getTime();
-        const cacheAge = now - cacheTime;
-        
-        // 缓存有效期：5分钟（300000毫秒）
-        const cacheValidDuration = 5 * 60 * 1000;
-        
-        if (cacheAge < cacheValidDuration || allowExpired) {
-            console.log(`📦 本地缓存${cacheAge > cacheValidDuration ? '(已过期)' : ''}可用，年龄: ${Math.round(cacheAge / 1000)}秒`);
-            return cached;
-        }
-        
-        // 缓存过期，清除
-        localStorage.removeItem(cacheKey);
-        console.log('🗑️ 本地缓存已过期并清除');
-        return null;
-        
-    } catch (error) {
-        console.error('❌ 读取本地缓存失败:', error);
-        return null;
-    }
-}
+            if (isHorizontal) {
+                const firstWidth = width * proportion;
+                layout(firstGroup, x, y, firstWidth, height, parentEl);
+                layout(secondGroup, x + firstWidth, y, width - firstWidth, height, parentEl);
+            } else {
+                const firstHeight = height * proportion;
+                layout(firstGroup, x, y, width, firstHeight, parentEl);
+                layout(secondGroup, x, y + firstHeight, width, height - firstHeight, parentEl);
+            }
+        };
 
-/**
- * 设置本地缓存数据
- * @param {object} data - 要缓存的数据
- * @param {string} cacheKey - 缓存键名，默认为全市场数据
- */
-function setCachedData(data, cacheKey = 'heatmap_stocks_data') {
-    try {
-        const cacheItem = {
-            ...data,
-            cacheTimestamp: new Date().toISOString()
+        // 渲染单个节点（行业或股票）- 性能优化版
+        const renderNode = (node, x, y, width, height, parentEl) => {
+            if (node.isSector) {
+                const sectorEl = this.createSectorElement(node, x, y, width, height);
+                if (parentEl === container) {
+                    fragment.appendChild(sectorEl);
+                } else {
+                    parentEl.appendChild(sectorEl);
+                }
+                const titleEl = sectorEl.querySelector('.treemap-title-link');
+                const titleHeight = titleEl ? titleEl.offsetHeight : 31;
+                const contentContainer = sectorEl.querySelector('.treemap-sector-content');
+                layout(node.items, 0, 0, width, height - titleHeight, contentContainer);
+            } else {
+                // 性能优化：只渲染可见区域的股票，小于4px的不渲染
+                if (width < 4 || height < 4) return;
+                
+                // 延迟渲染：将股票元素信息存储，稍后批量创建
+                elementsToRender.push({ node, x, y, width, height, parentEl });
+            }
         };
         
-        localStorage.setItem(cacheKey, JSON.stringify(cacheItem));
-        console.log(`💾 数据已缓存到本地存储，包含 ${data.data ? data.data.length : 0} 只股票`);
-        
-    } catch (error) {
-        console.error('❌ 设置本地缓存失败:', error);
-        // 可能是存储空间不足，尝试清理旧缓存
+        // 开始布局
         try {
-            localStorage.removeItem('heatmap_stocks_data');
-            console.log('🧹 已清理旧缓存数据');
-        } catch (cleanupError) {
-            console.error('❌ 清理缓存失败:', cleanupError);
+            console.log('🎯 开始执行布局算法...');
+            layout(itemsToLayout, 0, 0, totalWidth, totalHeight, container);
+            console.log(`📐 布局完成，准备渲染 ${elementsToRender.length} 个元素`);
+        } catch (layoutError) {
+            console.error('❌ 布局算法执行失败:', layoutError);
+            return;
         }
-    }
-}
-
-/**
- * 处理全屏按钮点击
- */
-function handleFullscreen() {
-    try {
-        const heatmapSection = document.getElementById('panoramic-heatmap');
         
-        if (!document.fullscreenElement) {
-            heatmapSection.requestFullscreen();
-        } else {
-            document.exitFullscreen();
+        // 批量渲染股票元素（性能优化）
+        const batchSize = 50; // 每批渲染50个元素
+        let currentBatch = 0;
+        let renderedCount = 0;
+        
+        const renderBatch = () => {
+            try {
+                const start = currentBatch * batchSize;
+                const end = Math.min(start + batchSize, elementsToRender.length);
+                const batchFragment = document.createDocumentFragment();
+                
+                for (let i = start; i < end; i++) {
+                    const { node, x, y, width, height, parentEl } = elementsToRender[i];
+                    
+                    // 验证数据完整性
+                    if (!node || isNaN(x) || isNaN(y) || isNaN(width) || isNaN(height)) {
+                        console.warn(`⚠️ 跳过无效元素 ${i}:`, { node: node?.ticker, x, y, width, height });
+                        continue;
+                    }
+                    
+                    const stockEl = this.createStockElement(node, width, height);
+                    stockEl.style.left = `${x}px`;
+                    stockEl.style.top = `${y}px`;
+                    
+                    if (parentEl === container) {
+                        batchFragment.appendChild(stockEl);
+                    } else {
+                        parentEl.appendChild(stockEl);
+                    }
+                    renderedCount++;
+                }
+                
+                if (batchFragment.hasChildNodes()) {
+                    container.appendChild(batchFragment);
+                }
+                
+                currentBatch++;
+                
+                // 如果还有更多元素需要渲染，使用requestAnimationFrame继续
+                if (end < elementsToRender.length) {
+                    requestAnimationFrame(renderBatch);
+                } else {
+                    console.log(`✅ 渲染完成! 成功渲染 ${renderedCount} 只股票 (计划: ${elementsToRender.length})`);
+                    if (renderedCount !== elementsToRender.length) {
+                        console.warn(`⚠️ 渲染数量不匹配，可能有 ${elementsToRender.length - renderedCount} 只股票被跳过`);
+                    }
+                }
+            } catch (renderError) {
+                console.error('❌ 批量渲染过程中发生错误:', renderError);
+            }
+        };
+        
+        // 首先添加行业容器到DOM
+        if (fragment.hasChildNodes()) {
+            container.appendChild(fragment);
         }
-    } catch (error) {
-        console.error('❌ 全屏切换失败:', error);
+        
+        // 开始批量渲染股票
+        if (elementsToRender.length > 0) {
+            console.log(`🚀 开始批量渲染 ${elementsToRender.length} 只股票...`);
+            requestAnimationFrame(renderBatch);
+        }
     }
-}
 
-/**
- * 显示加载状态
- */
-function showLoadingState() {
-    if (heatmapContainer) {
-        heatmapContainer.innerHTML = `
-            <div class="heatmap-placeholder">
-                <div class="placeholder-icon">🔄</div>
-                <p>正在加载数据...</p>
-            </div>
-        `;
+    /**
+     * 创建行业板块的DOM元素
+     */
+    createSectorElement(sector, x, y, width, height) {
+        const sectorEl = document.createElement('div');
+        sectorEl.className = 'treemap-sector';
+        sectorEl.style.left = `${x}px`; sectorEl.style.top = `${y}px`;
+        sectorEl.style.width = `${width}px`; sectorEl.style.height = `${height}px`;
+        
+        const titleLink = document.createElement('a');
+        titleLink.className = 'treemap-title-link';
+        titleLink.href = `/?sector=${encodeURIComponent(sector.name)}`;
+        titleLink.onclick = (e) => this.navigate(e, titleLink.href);
+        titleLink.innerHTML = `<h2 class="treemap-title">${sector.name}</h2>`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'treemap-sector-content';
+        
+        sectorEl.appendChild(titleLink);
+        sectorEl.appendChild(contentDiv);
+        return sectorEl;
     }
-    
-    // 重置统计信息
-    if (totalStocksEl) totalStocksEl.textContent = '-';
-    if (avgChangeEl) avgChangeEl.textContent = '-';
-    if (upStocksEl) upStocksEl.textContent = '-';
-    if (downStocksEl) downStocksEl.textContent = '-';
-}
 
-/**
- * 显示错误状态
- */
-function showErrorState(message) {
-    if (heatmapContainer) {
-        heatmapContainer.innerHTML = `
-            <div class="heatmap-placeholder">
-                <div class="placeholder-icon">❌</div>
-                <p>${message}</p>
-                <button onclick="handleRefresh()" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">重新加载</button>
-            </div>
-        `;
-    }
-}
-
-/**
- * 生成模拟数据（作为API失败时的回退）
- */
-function generateMockData() {
-    const sectors = ['科技', '医疗保健', '金融服务', '消费品', '工业', '能源'];
-    const mockStocks = [];
-    
-    for (let i = 0; i < 100; i++) {
-        mockStocks.push({
-            ticker: `MOCK${i.toString().padStart(3, '0')}`,
-            name_zh: `模拟股票${i + 1}`,
-            sector_zh: sectors[i % sectors.length],
-            market_cap: Math.random() * 1000000000000, // 随机市值
-            change_percent: (Math.random() - 0.5) * 10 // -5% 到 +5% 的随机涨跌幅
+    /**
+     * 设置工具提示事件委托
+     */
+    setupTooltipDelegation() {
+        if (this.tooltipEventDelegated) return;
+        
+        const container = document.getElementById('heatmap-container-final');
+        if (!container) return;
+        
+        container.addEventListener('mouseover', (e) => {
+            const stockLink = e.target.closest('.treemap-stock');
+            if (!stockLink || !this.tooltip) return;
+            
+            const stockData = JSON.parse(stockLink.dataset.stockInfo);
+            const change = parseFloat(stockData.change_percent || 0);
+            const marketCap = stockData.market_cap ? (stockData.market_cap / 1000).toFixed(2) : 'N/A';
+            const changeClass = change >= 0 ? 'gain' : 'loss';
+            
+            this.tooltip.innerHTML = `<div class="tooltip-header">${stockData.ticker} - ${stockData.name_zh}</div><div class="tooltip-row"><span class="tooltip-label">涨跌幅</span><span class="tooltip-value ${changeClass}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span></div><div class="tooltip-row"><span class="tooltip-label">总市值</span><span class="tooltip-value">${marketCap}B</span></div><div class="tooltip-row"><span class="tooltip-label">所属行业</span><span class="tooltip-value">${stockData.sector_zh || 'N/A'}</span></div>`;
+            this.tooltip.style.display = 'block';
         });
+        
+        container.addEventListener('mousemove', (e) => {
+            if (!e.target.closest('.treemap-stock') || !this.tooltip) return;
+            this.tooltip.style.left = `${e.clientX + 15}px`;
+            this.tooltip.style.top = `${e.clientY + 15}px`;
+        });
+        
+        container.addEventListener('mouseout', (e) => {
+            if (!e.target.closest('.treemap-stock') || !this.tooltip) return;
+            this.tooltip.style.display = 'none';
+        });
+        
+        this.tooltipEventDelegated = true;
+    }
+
+    /**
+     * 创建单个股票的DOM元素
+     */
+    createStockElement(stock, width, height) {
+        // 确保事件委托已设置
+        this.setupTooltipDelegation();
+        
+        const stockLink = document.createElement('a');
+        stockLink.className = 'treemap-stock';
+        stockLink.href = `https://stock-details-final-lckt58yeg-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
+        stockLink.target = '_blank';
+        stockLink.style.cssText = `width:${width}px;height:${height}px;position:absolute;`;
+        
+        // 将股票数据存储在dataset中，供事件委托使用
+        stockLink.dataset.stockInfo = JSON.stringify({
+            ticker: stock.ticker,
+            name_zh: stock.name_zh,
+            change_percent: stock.change_percent,
+            market_cap: stock.market_cap,
+            sector_zh: stock.sector_zh
+        });
+
+        const change = parseFloat(stock.change_percent || 0);
+        const area = width * height;
+        
+        // 性能优化：减少DOM层级，直接设置className
+        let detailClass = 'detail-xs';
+        if (area > 10000) detailClass = 'detail-xl';
+        else if (area > 4000) detailClass = 'detail-lg';
+        else if (area > 1500) detailClass = 'detail-md';
+        else if (area > 600) detailClass = 'detail-sm';
+        
+        stockLink.className = `treemap-stock stock ${this.getColorClass(change)} ${detailClass}`;
+        
+        // 性能优化：直接设置innerHTML，减少DOM操作
+        stockLink.innerHTML = `<span class="stock-name-zh">${stock.name_zh}</span><span class="stock-ticker">${stock.ticker}</span><span class="stock-change">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
+        
+        return stockLink;
+    }
+
+    /**
+     * 按行业分组数据
+     */
+    groupDataBySector(data) {
+        if (!data) return {};
+        
+        console.log('🔄 开始按行业分组数据...');
+        console.log(`输入数据: ${data.length} 只股票`);
+        
+        let processedCount = 0;
+        let skippedCount = 0;
+        const sectorStats = {};
+        
+        const result = data.reduce((acc, stock) => {
+            let sector = stock.sector_zh;
+            
+            // 清理和验证sector字段
+            if (sector && typeof sector === 'string') {
+                sector = sector.trim(); // 清理前后空格
+                if (sector === '') {
+                    sector = '其他'; // 空字符串归类为其他
+                }
+            } else {
+                sector = '其他'; // null, undefined或非字符串归类为其他
+                if (skippedCount < 5) { // 只记录前5个问题股票
+                    console.warn(`⚠️ 股票 ${stock.ticker} 的行业字段无效:`, stock.sector_zh);
+                }
+                skippedCount++;
+            }
+            
+            // 统计每个行业的股票数量
+            sectorStats[sector] = (sectorStats[sector] || 0) + 1;
+            
+            if (!acc[sector]) { 
+                acc[sector] = { stocks: [], total_market_cap: 0 }; 
+            }
+            acc[sector].stocks.push(stock);
+            acc[sector].total_market_cap += (stock.market_cap || 0);
+            processedCount++;
+            
+            return acc;
+        }, {});
+        
+        console.log(`✅ 分组完成! 处理了 ${processedCount} 只股票`);
+        console.log(`📊 各行业分组结果:`, sectorStats);
+        console.log(`🏢 最终行业数量: ${Object.keys(result).length}`);
+        
+        // 打印每个行业的详细信息
+        Object.entries(result).forEach(([sectorName, sectorData]) => {
+            console.log(`   ${sectorName}: ${sectorData.stocks.length} 只股票, 总市值: ${(sectorData.total_market_cap / 1000000).toFixed(0)}M`);
+        });
+        
+        return result;
+    }
+
+    /**
+     * 根据涨跌幅获取颜色类
+     */
+    getColorClass(change) {
+        if (isNaN(change) || Math.abs(change) < 0.01) return 'flat';
+        if (change >= 3) return 'gain-5'; if (change >= 2) return 'gain-4'; if (change >= 1) return 'gain-3';
+        if (change >= 0.25) return 'gain-2'; if (change > 0) return 'gain-1';
+        if (change <= -3) return 'loss-5'; if (change <= -2) return 'loss-4'; if (change <= -1) return 'loss-3';
+        if (change <= -0.25) return 'loss-2'; return 'loss-1';
+    }
+
+    /**
+     * SPA导航函数
+     */
+    navigate(event, path) {
+        event.preventDefault();
+        window.history.pushState({}, '', path);
+        this.router();
+    }
+
+    /**
+     * 渲染股票详情页
+     */
+    async renderStockDetailPage(symbol) {
+        try {
+            this.appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
+            
+            // 所有股票都跳转到外部增强版详情页，传递股票代码参数
+            const detailUrl = `https://stock-details-final-lckt58yeg-simon-pans-projects.vercel.app/?symbol=${symbol}`;
+            
+            // 直接跳转到外部详情页
+            window.open(detailUrl, '_blank');
+            
+            // 返回主页
+            window.history.pushState({}, '', '/');
+            await this.renderHomePage();
+            
+        } catch (error) {
+            console.error('Error rendering stock detail page:', error);
+            this.appContainer.innerHTML = `<div class="loading-indicator">${error.message}</div>`;
+        }
     }
     
-    return mockStocks;
-}
+    /**
+     * 设置嵌入模式样式和行为
+     */
+    setupEmbedMode() {
+        // 创建嵌入模式样式
+        const embedStyle = document.createElement('style');
+        embedStyle.textContent = `
+            /* 隐藏全局导航栏 */
+            .global-navbar {
+                display: none !important;
+            }
+            
+            /* 隐藏页头/标题区域 */
+            .hero-section {
+                display: none !important;
+            }
+            
+            /* 隐藏右侧边栏 */
+            .sidebar-panel {
+                display: none !important;
+            }
+            
+            /* 隐藏页脚 */
+            .footer {
+                display: none !important;
+            }
+            
+            /* 调整body样式 */
+            body {
+                margin: 0 !important;
+                padding-top: 0 !important;
+                overflow-x: hidden !important;
+            }
+            
+            /* 调整主内容区域 */
+            .main-content {
+                padding: 20px !important;
+                margin: 0 !important;
+                min-height: 100vh !important;
+                max-width: 100% !important;
+            }
+            
+            /* 优化热力图区域显示 */
+            .heatmap-section {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            /* 调整区域标题 */
+            .section-title {
+                font-size: 1.5rem !important;
+                margin-bottom: 10px !important;
+            }
+            
+            .section-subtitle {
+                font-size: 0.9rem !important;
+                margin-bottom: 15px !important;
+            }
+            
+            /* 优化热力图容器 */
+            .heatmap-canvas {
+                min-height: 400px !important;
+            }
+        `;
+        
+        document.head.appendChild(embedStyle);
+        
+        // 设置页面标题
+        document.title = '全景热力图 - 嵌入模式';
+        
+        console.log('🎯 嵌入模式已启用');
+    }
 
-/**
- * 全局函数：刷新热力图（供HTML按钮调用）
- */
-window.refreshHeatmap = handleRefresh;
+    /**
+     * 更新缓存状态显示
+     */
+    updateCacheStatus(meta) {
+    const statusEl = document.getElementById('cache-status');
+    if (!statusEl) return;
+    
+    const { total, cached, updated, marketStatus, cacheMinutes, processingTime } = meta;
+    const cacheHitRate = total > 0 ? ((cached / total) * 100).toFixed(1) : '0';
+    
+    statusEl.innerHTML = `
+        <div class="cache-info">
+            <span class="cache-stat">📊 ${total}只股票</span>
+            <span class="cache-stat">⚡ ${cacheHitRate}%缓存命中</span>
+            <span class="cache-stat">🔄 ${updated}只更新</span>
+            <span class="cache-stat">📈 ${marketStatus}</span>
+            <span class="cache-stat">⏱️ ${processingTime}ms</span>
+        </div>
+    `;
+    statusEl.style.display = 'block';
+    
+    // 3秒后自动隐藏
+    setTimeout(() => {
+        if (statusEl) statusEl.style.display = 'none';
+    }, 3000);
+    }
 
-/**
- * 全局函数：切换全屏（供HTML按钮调用）
- */
-window.toggleFullscreen = handleFullscreen;
-
-// 导出主要函数（如果需要模块化）
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        loadMarketData,
-        renderHeatmap,
-        updateStatistics
-    };
-}
+    /**
+      * 当窗口大小改变时，重新渲染当前的视图
+      */
+     rerenderCurrentView() {
+         if (!this.fullMarketData) return; // 如果没有数据，则不执行任何操作
+         const container = document.getElementById('heatmap-container-final');
+         if (container) {
+             const params = new URLSearchParams(window.location.search);
+             const sector = params.get('sector');
+             if (sector) {
+                 const dataToRender = this.fullMarketData.filter(stock => stock.sector_zh === decodeURIComponent(sector));
+                 this.generateTreemap(dataToRender, container, false);
+             } else {
+                 this.generateTreemap(this.fullMarketData, container, true);
+             }
+         }
+     }
+ }
+ 
+ // 创建全局应用实例
+ let heatmapApp;
+ 
+ // 页面加载完成后初始化应用
+ document.addEventListener('DOMContentLoaded', function() {
+     heatmapApp = new HeatmapApp();
+     heatmapApp.init();
+ });
+ 
+ // 暴露全局函数以保持向后兼容性
+ window.refreshHeatmap = function() {
+     if (heatmapApp) {
+         heatmapApp.router();
+     }
+ };
+ 
+ // 页面卸载时清理资源
+ window.addEventListener('beforeunload', function() {
+     if (heatmapApp) {
+         heatmapApp.stopDataRefresh();
+     }
+ });
