@@ -1,42 +1,22 @@
-// dashboard.js
-// 行业仪表盘动态渲染逻辑
+/**
+ * 独立的仪表盘脚本
+ * 职责：行业数据获取、iframe嵌入式卡片创建
+ * 重构后的简洁版本
+ */
 
 class SectorDashboard {
     constructor() {
         this.dashboardData = [];
-        this.sortBy = 'market_cap';
-        this.displayMode = 'grid';
         this.isLoading = false;
-        
         this.init();
     }
 
     init() {
-        this.setupEventListeners();
-        this.loadDashboardData();
+        this.loadSectorData();
     }
 
-    setupEventListeners() {
-        // 排序方式变更
-        const sortSelect = document.getElementById('dashboard-sort');
-        if (sortSelect) {
-            sortSelect.addEventListener('change', (e) => {
-                this.sortBy = e.target.value;
-                this.renderDashboard();
-            });
-        }
-
-        // 显示模式变更
-        const displaySelect = document.getElementById('dashboard-display-mode');
-        if (displaySelect) {
-            displaySelect.addEventListener('change', (e) => {
-                this.displayMode = e.target.value;
-                this.updateDisplayMode();
-            });
-        }
-    }
-
-    async loadDashboardData() {
+    // 获取行业聚合数据
+    async loadSectorData() {
         if (this.isLoading) return;
         
         this.isLoading = true;
@@ -44,315 +24,339 @@ class SectorDashboard {
 
         try {
             const response = await fetch('/api/sector-dashboard');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const result = await response.json();
             
-            if (result.success) {
+            if (result.success && result.data) {
                 this.dashboardData = result.data;
                 this.renderDashboard();
+                console.log('行业数据加载成功:', this.dashboardData.length, '个行业');
             } else {
-                throw new Error(result.error || '加载仪表盘数据失败');
+                throw new Error(result.message || '数据格式错误');
             }
         } catch (error) {
-            console.error('Dashboard loading error:', error);
-            this.showError('加载行业数据失败，请稍后重试');
+            console.error('加载行业数据失败:', error);
+            this.showError(`加载失败: ${error.message}`);
         } finally {
             this.isLoading = false;
             this.showLoading(false);
         }
     }
 
+    // 渲染仪表盘
     renderDashboard() {
-        const dashboardGrid = document.getElementById('dashboard-grid');
-        if (!dashboardGrid || !this.dashboardData.length) return;
+        const container = document.getElementById('dashboard-container');
+        if (!container) {
+            console.error('找不到仪表盘容器元素');
+            return;
+        }
 
-        // 排序数据
-        const sortedData = this.sortDashboardData(this.dashboardData, this.sortBy);
-        
-        // 清空现有内容
-        dashboardGrid.innerHTML = '';
-        
-        // 渲染每个行业卡片
-        sortedData.forEach((sector, index) => {
-            const cardElement = this.createSectorCard(sector, index);
-            dashboardGrid.appendChild(cardElement);
+        // 清空容器
+        container.innerHTML = '';
+
+        // 循环创建行业卡片
+        this.dashboardData.forEach((sector, index) => {
+            const sectorCard = this.createSectorCard(sector, index);
+            container.appendChild(sectorCard);
         });
+
+        console.log('仪表盘渲染完成，共', this.dashboardData.length, '个行业卡片');
     }
 
+    // 创建行业卡片
     createSectorCard(sector, index) {
-        const card = document.createElement('div');
-        card.className = 'industry-card';
-        card.setAttribute('data-sector', sector.sector_key);
-        
-        // 计算涨跌幅样式
-        const changeClass = sector.weighted_avg_change >= 0 ? 'positive' : 'negative';
-        const changeSymbol = sector.weighted_avg_change >= 0 ? '+' : '';
-        
-        // 获取行业对应的英文key用于URL参数
-        const sectorKey = this.getSectorKey(sector.sector_zh);
-        
-        card.innerHTML = `
-            <div class="industry-card-header">
-                <div class="industry-info">
-                    <div class="industry-icon">${sector.sector_icon}</div>
-                    <div class="industry-details">
-                        <h3 class="industry-name">${sector.sector_zh}</h3>
-                        <div class="industry-metrics">
-                            <span class="industry-change ${changeClass}">
-                                ${changeSymbol}${sector.weighted_avg_change.toFixed(2)}%
-                            </span>
-                            <span class="industry-count">${sector.stock_count} 只股票</span>
-                        </div>
-                    </div>
+        const cardElement = document.createElement('div');
+        cardElement.className = 'sector-card';
+        cardElement.setAttribute('data-sector', sector.sector_zh);
+
+        // 计算涨跌幅颜色
+        const changePercent = parseFloat(sector.avg_change_percent) || 0;
+        const changeColor = changePercent >= 0 ? '#00c851' : '#ff4444';
+        const changeSign = changePercent >= 0 ? '+' : '';
+
+        // 创建卡片HTML结构
+        cardElement.innerHTML = `
+            <div class="sector-card-header">
+                <h3 class="sector-name">${sector.sector_zh}</h3>
+                <div class="sector-stats">
+                    <span class="change-percent" style="color: ${changeColor}">
+                        ${changeSign}${changePercent.toFixed(2)}%
+                    </span>
+                    <span class="stock-count">${sector.stock_count || 0}只股票</span>
                 </div>
-                <button class="industry-expand-btn" onclick="expandSector('${sector.sector_zh}')">
-                    <i class="fas fa-external-link-alt"></i>
+            </div>
+            
+            <div class="sector-details">
+                <div class="detail-item">
+                    <span class="label">总市值:</span>
+                    <span class="value">${this.formatMarketCap(sector.total_market_cap)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">上涨:</span>
+                    <span class="value" style="color: #00c851">${sector.rising_count || 0}只</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">下跌:</span>
+                    <span class="value" style="color: #ff4444">${sector.falling_count || 0}只</span>
+                </div>
+            </div>
+            
+            <div class="sector-heatmap-container">
+                <iframe 
+                    src="/heatmap-viewer.html?sector=${encodeURIComponent(sector.sector_zh)}&embed=true"
+                    frameborder="0"
+                    width="100%"
+                    height="200"
+                    loading="lazy"
+                    title="${sector.sector_zh}热力图"
+                    class="sector-heatmap-iframe">
+                </iframe>
+            </div>
+            
+            <div class="sector-card-footer">
+                <button class="view-full-btn" onclick="window.open('/heatmap-viewer.html?sector=${encodeURIComponent(sector.sector_zh)}', '_blank')">
+                    查看完整热力图
                 </button>
             </div>
-            
-            <div class="industry-mini-heatmap" id="mini-heatmap-${index}">
-                <div class="mini-heatmap-loading">
-                    <div class="loading-dots"></div>
-                    <span>正在加载热力图...</span>
-                </div>
-            </div>
-            
-            <div class="industry-stats">
-                <div class="stat-row">
-                    <div class="stat-item">
-                        <span class="stat-value">${this.formatMarketCap(sector.total_market_cap)}</span>
-                        <span class="stat-label">总市值</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${sector.volume}B</span>
-                        <span class="stat-label">成交量</span>
-                    </div>
-                </div>
-                <div class="stat-row">
-                    <div class="stat-item">
-                        <span class="stat-value">${sector.rising_stocks}</span>
-                        <span class="stat-label">上涨</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${sector.falling_stocks}</span>
-                        <span class="stat-label">下跌</span>
-                    </div>
-                </div>
-            </div>
         `;
-        
-        // 异步加载iframe热力图（第二层加载）
-        setTimeout(() => {
-            this.loadSectorIframe(sector.sector_zh, sectorKey, index);
-        }, index * 200); // 延迟加载，避免同时请求过多
-        
-        return card;
+
+        return cardElement;
     }
 
-    // 获取行业中文名对应的英文key
-    getSectorKey(sectorZh) {
-        const sectorMap = {
-            '科技': 'technology',
-            '金融': 'finance',
-            '医疗': 'healthcare',
-            '消费': 'consumer',
-            '工业': 'industrial',
-            '能源': 'energy',
-            '材料': 'materials',
-            '房地产': 'real_estate',
-            '公用事业': 'utilities',
-            '通信': 'communication'
-        };
-        return sectorMap[sectorZh] || sectorZh.toLowerCase();
-    }
-
-    // 加载行业iframe热力图
-    async loadSectorIframe(sectorZh, sectorKey, index) {
-        try {
-            const container = document.getElementById(`mini-heatmap-${index}`);
-            if (!container) return;
-
-            // 创建iframe元素
-            const iframe = document.createElement('iframe');
-            iframe.src = `/panoramic-heatmap.html?sector=${encodeURIComponent(sectorKey)}&embed=true`;
-            iframe.style.width = '100%';
-            iframe.style.height = '200px';
-            iframe.style.border = 'none';
-            iframe.style.borderRadius = '8px';
-            iframe.loading = 'lazy';
-            iframe.title = `${sectorZh}行业热力图`;
-
-            // 添加加载事件监听
-            iframe.onload = () => {
-                container.innerHTML = '';
-                container.appendChild(iframe);
-            };
-
-            iframe.onerror = () => {
-                container.innerHTML = `
-                    <div class="mini-heatmap-error">
-                        <span>热力图加载失败</span>
-                        <button onclick="window.open('/panoramic-heatmap.html?sector=${encodeURIComponent(sectorKey)}', '_blank')">
-                            在新窗口打开
-                        </button>
-                    </div>
-                `;
-            };
-
-            // 设置超时处理
-            setTimeout(() => {
-                if (iframe.src && !iframe.contentDocument) {
-                    iframe.onerror();
-                }
-            }, 10000); // 10秒超时
-
-        } catch (error) {
-            console.error('加载iframe热力图失败:', error);
-            const container = document.getElementById(`mini-heatmap-${index}`);
-            if (container) {
-                container.innerHTML = `
-                    <div class="mini-heatmap-error">
-                        <span>加载失败</span>
-                    </div>
-                `;
-            }
-        }
-    }
-
-    sortDashboardData(data, sortBy) {
-        const sortedData = [...data];
-        
-        switch (sortBy) {
-            case 'market_cap':
-                return sortedData.sort((a, b) => b.total_market_cap - a.total_market_cap);
-            case 'performance':
-                return sortedData.sort((a, b) => b.weighted_avg_change - a.weighted_avg_change);
-            case 'volume':
-                return sortedData.sort((a, b) => b.volume - a.volume);
-            default:
-                return sortedData;
-        }
-    }
-
-    updateDisplayMode() {
-        const dashboardGrid = document.getElementById('dashboard-grid');
-        if (!dashboardGrid) return;
-        
-        // 移除现有的显示模式类
-        dashboardGrid.classList.remove('grid-mode', 'compact-mode');
-        
-        // 添加新的显示模式类
-        dashboardGrid.classList.add(`${this.displayMode}-mode`);
-    }
-
+    // 格式化市值显示
     formatMarketCap(value) {
-        if (value >= 1000) {
-            return `${(value / 1000).toFixed(1)}万亿`;
+        if (!value || isNaN(value)) return '暂无数据';
+        
+        const num = parseFloat(value);
+        if (num >= 1e12) {
+            return (num / 1e12).toFixed(2) + '万亿';
+        } else if (num >= 1e8) {
+            return (num / 1e8).toFixed(2) + '亿';
+        } else if (num >= 1e4) {
+            return (num / 1e4).toFixed(2) + '万';
         } else {
-            return `${value.toFixed(0)}亿`;
+            return num.toFixed(2);
         }
     }
 
-    navigateToSector(sectorZh) {
-        // 行业名称到Vercel热力图链接的映射表
-        const sectorUrlMap = {
-            '信息技术': 'https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF',
-            '工业': 'https://heatmap-pro.vercel.app/?sector=%E5%B7%A5%E4%B8%9A',
-            '金融': 'https://heatmap-pro.vercel.app/?sector=%E9%87%91%E8%9E%8D',
-            '医疗保健': 'https://heatmap-pro.vercel.app/?sector=%E5%8C%BB%E7%96%97%E4%BF%9D%E5%81%A5',
-            '非必需消费品': 'https://heatmap-pro.vercel.app/?sector=%E9%9D%9E%E5%BF%85%E9%9C%80%E6%B6%88%E8%B4%B9%E5%93%81',
-            '日常消费品': 'https://heatmap-pro.vercel.app/?sector=%E6%97%A5%E5%B8%B8%E6%B6%88%E8%B4%B9%E5%93%81',
-            '公用事业': 'https://heatmap-pro.vercel.app/?sector=%E5%85%AC%E7%94%A8%E4%BA%8B%E4%B8%9A',
-            '房地产': 'https://heatmap-pro.vercel.app/?sector=%E6%88%BF%E5%9C%B0%E4%BA%A7',
-            '原材料': 'https://heatmap-pro.vercel.app/?sector=%E5%8E%9F%E6%9D%90%E6%96%99',
-            '能源': 'https://heatmap-pro.vercel.app/?sector=%E8%83%BD%E6%BA%90',
-            '半导体': 'https://heatmap-pro.vercel.app/?sector=%E5%8D%8A%E5%AF%BC%E4%BD%93',
-            '媒体娱乐': 'https://heatmap-pro.vercel.app/?sector=%E5%AA%92%E4%BD%93%E5%A8%B1%E4%B9%90',
-            '通讯服务': 'https://heatmap-pro.vercel.app/?sector=%E9%80%9A%E8%AE%AF%E6%9C%8D%E5%8A%A1'
-        };
-        
-        // 获取对应的Vercel链接
-        const vercelUrl = sectorUrlMap[sectorZh];
-        
-        if (vercelUrl) {
-            // 在新窗口打开Vercel热力图页面
-            window.open(vercelUrl, '_blank');
-        } else {
-            // 如果没有找到对应链接，回退到本地页面
-            console.warn(`未找到行业 "${sectorZh}" 的Vercel链接，回退到本地页面`);
-            window.location.href = `panoramic-heatmap.html?sector=${encodeURIComponent(sectorZh)}`;
-        }
-    }
-
+    // 显示加载状态
     showLoading(show) {
-        const loadingElement = document.getElementById('dashboard-loading');
-        if (loadingElement) {
-            loadingElement.style.display = show ? 'flex' : 'none';
-        }
-    }
+        const container = document.getElementById('dashboard-container');
+        if (!container) return;
 
-    showError(message) {
-        const dashboardGrid = document.getElementById('dashboard-grid');
-        if (dashboardGrid) {
-            dashboardGrid.innerHTML = `
-                <div class="dashboard-error">
-                    <div class="error-icon">⚠️</div>
-                    <h3>加载失败</h3>
-                    <p>${message}</p>
-                    <button onclick="location.reload()" class="retry-btn">重试</button>
+        if (show) {
+            container.innerHTML = `
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>正在加载行业数据...</p>
                 </div>
             `;
+            
+            // 添加加载动画样式
+            this.addLoadingStyles();
         }
     }
 
-    // 公共方法：刷新仪表盘
+    // 显示错误信息
+    showError(message) {
+        const container = document.getElementById('dashboard-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="error-container">
+                <div class="error-icon">⚠️</div>
+                <h3>加载失败</h3>
+                <p>${message}</p>
+                <button onclick="location.reload()" class="retry-btn">重新加载</button>
+            </div>
+        `;
+    }
+
+    // 添加加载动画样式
+    addLoadingStyles() {
+        if (document.getElementById('dashboard-loading-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'dashboard-loading-styles';
+        style.textContent = `
+            .loading-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 300px;
+                color: #666;
+            }
+            
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #007bff;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 16px;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .error-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 300px;
+                color: #666;
+                text-align: center;
+            }
+            
+            .error-icon {
+                font-size: 48px;
+                margin-bottom: 16px;
+            }
+            
+            .retry-btn {
+                padding: 8px 16px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 16px;
+            }
+            
+            .retry-btn:hover {
+                background: #0056b3;
+            }
+            
+            .sector-card {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 16px;
+                background: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            
+            .sector-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+            
+            .sector-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            
+            .sector-name {
+                margin: 0;
+                color: #333;
+                font-size: 18px;
+            }
+            
+            .sector-stats {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+            }
+            
+            .change-percent {
+                font-weight: bold;
+                font-size: 16px;
+            }
+            
+            .stock-count {
+                color: #666;
+                font-size: 14px;
+            }
+            
+            .sector-details {
+                display: flex;
+                gap: 16px;
+                margin-bottom: 16px;
+                flex-wrap: wrap;
+            }
+            
+            .detail-item {
+                display: flex;
+                gap: 4px;
+            }
+            
+            .detail-item .label {
+                color: #666;
+                font-size: 14px;
+            }
+            
+            .detail-item .value {
+                font-weight: 500;
+                font-size: 14px;
+            }
+            
+            .sector-heatmap-container {
+                margin: 16px 0;
+                border-radius: 4px;
+                overflow: hidden;
+                background: #f8f9fa;
+            }
+            
+            .sector-heatmap-iframe {
+                display: block;
+                border: none;
+            }
+            
+            .sector-card-footer {
+                text-align: center;
+                margin-top: 12px;
+            }
+            
+            .view-full-btn {
+                padding: 8px 16px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            
+            .view-full-btn:hover {
+                background: #0056b3;
+            }
+        `;
+        
+        document.head.appendChild(style);
+    }
+
+    // 刷新数据
     refresh() {
-        this.loadDashboardData();
+        this.loadSectorData();
     }
 }
 
-// 全局函数：刷新仪表盘
+// 全局刷新函数
 function refreshDashboard() {
     if (window.sectorDashboard) {
         window.sectorDashboard.refresh();
     }
 }
 
-// 全局函数：展开行业（兼容现有代码）
-function expandSector(sector) {
-    // 行业名称到Vercel热力图链接的映射表
-    const sectorUrlMap = {
-        '信息技术': 'https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF',
-        '工业': 'https://heatmap-pro.vercel.app/?sector=%E5%B7%A5%E4%B8%9A',
-        '金融': 'https://heatmap-pro.vercel.app/?sector=%E9%87%91%E8%9E%8D',
-        '医疗保健': 'https://heatmap-pro.vercel.app/?sector=%E5%8C%BB%E7%96%97%E4%BF%9D%E5%81%A5',
-        '非必需消费品': 'https://heatmap-pro.vercel.app/?sector=%E9%9D%9E%E5%BF%85%E9%9C%80%E6%B6%88%E8%B4%B9%E5%93%81',
-        '日常消费品': 'https://heatmap-pro.vercel.app/?sector=%E6%97%A5%E5%B8%B8%E6%B6%88%E8%B4%B9%E5%93%81',
-        '公用事业': 'https://heatmap-pro.vercel.app/?sector=%E5%85%AC%E7%94%A8%E4%BA%8B%E4%B8%9A',
-        '房地产': 'https://heatmap-pro.vercel.app/?sector=%E6%88%BF%E5%9C%B0%E4%BA%A7',
-        '原材料': 'https://heatmap-pro.vercel.app/?sector=%E5%8E%9F%E6%9D%90%E6%96%99',
-        '能源': 'https://heatmap-pro.vercel.app/?sector=%E8%83%BD%E6%BA%90',
-        '半导体': 'https://heatmap-pro.vercel.app/?sector=%E5%8D%8A%E5%AF%BC%E4%BD%93',
-        '媒体娱乐': 'https://heatmap-pro.vercel.app/?sector=%E5%AA%92%E4%BD%93%E5%A8%B1%E4%B9%90',
-        '通讯服务': 'https://heatmap-pro.vercel.app/?sector=%E9%80%9A%E8%AE%AF%E6%9C%8D%E5%8A%A1'
-    };
-    
-    // 获取对应的Vercel链接
-    const vercelUrl = sectorUrlMap[sector];
-    
-    if (vercelUrl) {
-        // 在新窗口打开Vercel热力图页面
-        window.open(vercelUrl, '_blank');
-    } else {
-        // 如果没有找到对应链接，回退到本地页面
-        console.warn(`未找到行业 "${sector}" 的Vercel链接，回退到本地页面`);
-        window.location.href = `panoramic-heatmap.html?sector=${encodeURIComponent(sector)}`;
-    }
-}
-
-// 页面加载完成后初始化仪表盘
+// DOM加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
-    // 只在包含dashboard-grid元素的页面初始化
-    if (document.getElementById('dashboard-grid')) {
-        window.sectorDashboard = new SectorDashboard();
-    }
+    console.log('仪表盘脚本初始化开始');
+    window.sectorDashboard = new SectorDashboard();
+    console.log('仪表盘脚本初始化完成');
 });
+
+// 导出供外部使用
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SectorDashboard;
+}
