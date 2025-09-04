@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>热力图查看器 - Heatmap Viewer</title>
+    <link rel="stylesheet" href="heatmap-component/panoramic-heatmap.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 全局导航栏 -->
+    <nav class="global-navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <span class="navbar-logo">📊</span>
+                <span class="navbar-title">Stock Explorer</span>
+            </a>
+            <ul class="navbar-links">
+                <li>
+                    <a href="index.html" class="global-nav-link">
+                        <span class="nav-icon">🏷️</span>
+                        标签云广场
+                    </a>
+                </li>
+                <li>
+                    <a href="heatmap-component/trending.html" class="global-nav-link">
+                        <span class="nav-icon">📈</span>
+                        趋势风云榜
+                    </a>
+                </li>
+                <li>
+                    <a href="heatmap-component/heatmap-center.html" class="global-nav-link">
+                        <span class="nav-icon">🔥</span>
+                        股票热力图
+                    </a>
+                </li>
+                <li>
+                    <a href="heatmap-viewer.html" class="global-nav-link active">
+                        <span class="nav-icon">🌍</span>
+                        热力图查看器
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <!-- 页面标题区域 -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">🌍 热力图查看器</h1>
+                <p class="hero-subtitle">全方位展示市场动态，深度洞察行业趋势</p>
+            </div>
+        </section>
+
+        <!-- 市场概览热力图 -->
+        <section id="market-overview" class="heatmap-section">
+            <div class="section-header">
+                <div class="header-content">
+                    <h2 class="section-title">📊 市场全景热力图</h2>
+                    <p class="section-subtitle">实时展示所有股票的市值和涨跌幅分布</p>
+                </div>
+                <div class="section-controls">
+                    <div class="control-group">
+                        <label>数据源:</label>
+                        <select id="market-data-source">
+                            <option value="realtime">实时数据</option>
+                            <option value="delayed">延时数据</option>
+                            <option value="simulation">模拟数据</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>时间范围:</label>
+                        <select id="market-timeframe">
+                            <option value="1d">今日</option>
+                            <option value="1w">本周</option>
+                            <option value="1m">本月</option>
+                            <option value="3m">三个月</option>
+                        </select>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshMarketHeatmap()">🔄 刷新</button>
+                </div>
+            </div>
+            <div class="heatmap-display">
+                <div id="market-heatmap" class="heatmap-canvas">
+                    <div class="heatmap-placeholder">
+                        <div class="placeholder-icon">📊</div>
+                        <p>正在加载市场热力图...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="heatmap-legend">
+                <div class="legend-title">涨跌幅图例</div>
+                <div class="legend-scale">
+                    <div class="legend-item" style="background: #d73027;">-5%+</div>
+                    <div class="legend-item" style="background: #f46d43;">-3%</div>
+                    <div class="legend-item" style="background: #fdae61;">-1%</div>
+                    <div class="legend-item" style="background: #fee08b;">0%</div>
+                    <div class="legend-item" style="background: #d9ef8b;">+1%</div>
+                    <div class="legend-item" style="background: #a6d96a;">+3%</div>
+                    <div class="legend-item" style="background: #66bd63;">+5%+</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 行业仪表盘 -->
+        <section id="sector-dashboard" class="dashboard-section">
+            <div class="section-header">
+                <div class="header-content">
+                    <h2 class="section-title">🏭 行业仪表盘</h2>
+                    <p class="section-subtitle">实时展示各行业关键指标和迷你热力图</p>
+                </div>
+                <div class="section-controls">
+                    <div class="control-group">
+                        <label>排序方式:</label>
+                        <select id="dashboard-sort">
+                            <option value="market_cap">按市值排序</option>
+                            <option value="performance">按表现排序</option>
+                            <option value="volume">按成交量排序</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>显示模式:</label>
+                        <select id="dashboard-display-mode">
+                            <option value="grid">网格模式</option>
+                            <option value="compact">紧凑模式</option>
+                        </select>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshDashboard()">🔄 刷新</button>
+                </div>
+            </div>
+            
+            <!-- 加载状态 -->
+            <div id="dashboard-loading" class="dashboard-loading">
+                <div class="loading-spinner"></div>
+                <p>正在加载行业数据...</p>
+            </div>
+            
+            <!-- 动态生成的行业仪表盘网格 -->
+            <div class="industry-dashboard-grid" id="dashboard-grid">
+                <!-- 行业卡片将由JavaScript动态生成 -->
+            </div>
+        </section>
+
+        <!-- 特定行业焦点区域 -->
+        <section id="featured-sector-section" class="featured-sector-section" style="display: none;">
+            <div class="featured-sector-header">
+                <button id="back-to-overview" class="back-btn">
+                    <span class="back-icon">←</span>
+                    <span class="back-text">返回全景视图</span>
+                </button>
+                <div class="featured-sector-title">
+                    <h2 id="featured-sector-name">科技行业深度分析</h2>
+                    <p class="featured-sector-desc">深入分析该行业内股票的实时表现和趋势</p>
+                </div>
+            </div>
+            
+            <div class="featured-heatmap-display">
+                <div id="featured-sector-heatmap" class="heatmap-canvas featured">
+                    <div class="heatmap-placeholder">
+                        <div class="placeholder-icon">📊</div>
+                        <p>正在加载行业详细热力图...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="featured-sector-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="featured-sector-count">128</span>
+                    <span class="stat-label">行业股票</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="featured-sector-change">+2.34%</span>
+                    <span class="stat-label">平均涨幅</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="featured-sector-leader">AAPL</span>
+                    <span class="stat-label">领涨股票</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="featured-sector-volume">$2.8B</span>
+                    <span class="stat-label">成交额</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速导航 -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title">快速导航</h2>
+                <div class="quick-nav-grid">
+                    <a href="heatmap-component/heatmap-center.html#market-overview" class="nav-card">
+                        <div class="nav-card-icon">🔥</div>
+                        <h3>热力图中心</h3>
+                        <p>返回热力图中心页面</p>
+                    </a>
+                    <a href="heatmap-component/trending.html" class="nav-card">
+                        <div class="nav-card-icon">📈</div>
+                        <h3>趋势榜单</h3>
+                        <p>查看热门股票排行</p>
+                    </a>
+                    <a href="index.html" class="nav-card">
+                        <div class="nav-card-icon">🏷️</div>
+                        <h3>标签广场</h3>
+                        <p>探索投资主题标签</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Heatmap Viewer. 专业的股票热力图查看平台.</p>
+            <div class="footer-links">
+                <a href="#">关于我们</a>
+                <a href="#">数据来源</a>
+                <a href="#">使用条款</a>
+                <a href="#">隐私政策</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript 文件 -->
+    <script src="heatmap-component/DataProcessor.js"></script>
+    <script src="heatmap-component/HeatmapRenderer.js"></script>
+    <script src="heatmap-component/StockHeatmap.js"></script>
+    <script src="heatmap-component/panoramic-heatmap.js"></script>
+    <script src="heatmap-component/js/dashboard.js"></script>
+</body>
+</html>
