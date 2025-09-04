@@ -21,7 +21,7 @@ class SectorDashboard {
             { name: '通讯服务', code: '通讯服务', icon: '📡' }
         ];
         
-        this.baseUrl = 'http://localhost:8000/';
+        this.baseUrl = 'http://localhost:8000/heatmap-component/';
         this.loadedSectors = new Set();
         this.errorSectors = new Set();
         this.refreshInterval = null;
@@ -30,8 +30,31 @@ class SectorDashboard {
             sectorsLoaded: 0,
             totalLoadTime: 0
         };
+        this.authHeaders = this.getAuthHeaders();
         
         this.init();
+    }
+
+    /**
+     * 获取认证头
+     */
+    getAuthHeaders() {
+        // 开发环境使用API密钥
+        const apiKey = 'heatmap-api-key-secure';
+        return {
+            'X-API-Key': apiKey,
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+    }
+
+    /**
+     * 为iframe URL添加认证参数
+     */
+    addAuthToUrl(url) {
+        const urlObj = new URL(url);
+        urlObj.searchParams.set('auth', 'true');
+        urlObj.searchParams.set('apikey', this.authHeaders['X-API-Key']);
+        return urlObj.toString();
     }
 
     /**
@@ -68,7 +91,7 @@ class SectorDashboard {
      * 创建行业卡片HTML
      */
     createSectorCard(sector, index) {
-        const sectorUrl = `${this.baseUrl}panoramic-heatmap.html?sector=${encodeURIComponent(sector.code)}&embed=true`;
+        const sectorUrl = this.addAuthToUrl(`${this.baseUrl}panoramic-heatmap.html?sector=${encodeURIComponent(sector.code)}&embed=true`);
         const animationDelay = (index * 0.1).toFixed(1);
         
         return `
@@ -102,7 +125,7 @@ class SectorDashboard {
                     </div>
                 </div>
                 <div class="sector-actions">
-                    <a href="${this.baseUrl}panoramic-heatmap.html?sector=${encodeURIComponent(sector.code)}" 
+                    <a href="${this.addAuthToUrl(this.baseUrl + 'panoramic-heatmap.html?sector=' + encodeURIComponent(sector.code))}" 
                        target="_blank" 
                        class="action-btn view-detail-btn"
                        title="查看${sector.name}详细热力图">

@@ -33,6 +33,13 @@ class PanoramicHeatmap {
         const urlParams = new URLSearchParams(window.location.search);
         const sector = urlParams.get('sector');
         const embed = urlParams.get('embed');
+        const auth = urlParams.get('auth');
+        const apikey = urlParams.get('apikey');
+        
+        // 处理认证参数
+        if (auth === 'true' && apikey) {
+            this.setupAuthentication(apikey);
+        }
         
         // 如果是嵌入模式，设置样式
         if (embed === 'true') {
@@ -46,6 +53,27 @@ class PanoramicHeatmap {
                 this.expandSector(sector);
             }, 500);
         }
+    }
+
+    /**
+     * 设置认证
+     */
+    setupAuthentication(apiKey) {
+        // 存储API密钥用于后续请求
+        this.apiKey = apiKey;
+        
+        // 为所有fetch请求添加认证头
+        const originalFetch = window.fetch;
+        window.fetch = (url, options = {}) => {
+            options.headers = {
+                ...options.headers,
+                'X-API-Key': apiKey,
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            return originalFetch(url, options);
+        };
+        
+        console.log('Authentication setup completed with API key');
     }
 
     /**
