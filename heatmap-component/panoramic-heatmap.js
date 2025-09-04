@@ -18,11 +18,95 @@ class PanoramicHeatmap {
      * 初始化页面
      */
     init() {
+        this.handleUrlParams();
         this.setupEventListeners();
         this.handleUrlHash();
         this.loadInitialData();
         this.startAutoRefresh();
         this.renderSectorHeatmaps();
+    }
+
+    /**
+     * 处理URL查询参数
+     */
+    handleUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sector = urlParams.get('sector');
+        const embed = urlParams.get('embed');
+        
+        // 如果是嵌入模式，设置样式
+        if (embed === 'true') {
+            this.setupEmbedMode();
+        }
+        
+        // 如果指定了行业，直接展开该行业
+        if (sector) {
+            this.currentSector = sector;
+            setTimeout(() => {
+                this.expandSector(sector);
+            }, 500);
+        }
+    }
+
+    /**
+     * 设置嵌入模式样式
+     */
+    setupEmbedMode() {
+        document.body.classList.add('embed-mode');
+        
+        // 隐藏不必要的元素
+        const elementsToHide = [
+            'nav', 'footer', '.hero-section', '.back-to-top',
+            '.control-panel', '.market-overview-section'
+        ];
+        
+        elementsToHide.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => el.style.display = 'none');
+        });
+        
+        // 调整主内容区域
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.style.paddingTop = '0';
+            mainContent.style.minHeight = '100vh';
+        }
+        
+        // 添加嵌入模式专用样式
+        const embedStyles = `
+            <style id="embed-mode-styles">
+                .embed-mode {
+                    margin: 0;
+                    padding: 0;
+                    overflow-x: hidden;
+                }
+                .embed-mode .heatmap-section {
+                    padding: 10px;
+                    margin: 0;
+                }
+                .embed-mode .section-header {
+                    margin-bottom: 10px;
+                    font-size: 1.2em;
+                }
+                .embed-mode .heatmap-canvas {
+                    height: 360px !important;
+                    width: 100%;
+                    border-radius: 8px;
+                }
+                .embed-mode .heatmap-legend {
+                    margin-top: 10px;
+                    justify-content: center;
+                }
+                .embed-mode .legend-item {
+                    font-size: 0.85em;
+                }
+                .embed-mode .main-content {
+                    background: transparent;
+                }
+            </style>
+        `;
+        
+        document.head.insertAdjacentHTML('beforeend', embedStyles);
     }
 
     /**
