@@ -201,3 +201,4 @@ window.location.href = externalDetailUrl;
 **🎯 当前状态：标普500数据库集成完成 ✅**
 
 点击任意股票，体验从热力图到外部详情页的无缝对接！
+
