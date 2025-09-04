@@ -11,6 +11,11 @@ class PanoramicHeatmap {
         this.heatmaps = {}; // 存储各个热力图实例
         this.currentSector = null;
         
+        // 解析URL参数
+        this.urlParams = new URLSearchParams(window.location.search);
+        this.isEmbedMode = this.urlParams.get('embed') === 'true';
+        this.targetSector = this.urlParams.get('sector');
+        
         this.init();
     }
 
@@ -18,11 +23,251 @@ class PanoramicHeatmap {
      * 初始化页面
      */
     init() {
+        // 如果是嵌入模式，调整页面样式
+        if (this.isEmbedMode) {
+            this.setupEmbedMode();
+        }
+        
         this.setupEventListeners();
         this.handleUrlHash();
         this.loadInitialData();
         this.startAutoRefresh();
         this.renderSectorHeatmaps();
+        
+        // 如果指定了特定行业，直接加载该行业
+        if (this.targetSector && this.isEmbedMode) {
+            this.loadTargetSectorHeatmap();
+        }
+    }
+
+    /**
+     * 设置嵌入模式
+     */
+    setupEmbedMode() {
+        // 隐藏导航栏和页脚
+        const navbar = document.querySelector('.global-navbar');
+        const footer = document.querySelector('.footer');
+        const heroSection = document.querySelector('.hero-section');
+        
+        if (navbar) navbar.style.display = 'none';
+        if (footer) footer.style.display = 'none';
+        if (heroSection) heroSection.style.display = 'none';
+        
+        // 调整主内容区域样式
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.style.padding = '10px';
+            mainContent.style.margin = '0';
+        }
+        
+        // 添加嵌入模式样式
+        document.body.classList.add('embed-mode');
+        
+        // 添加CSS样式
+        const embedStyles = `
+            <style>
+                .embed-mode {
+                    overflow: hidden;
+                }
+                .embed-mode .heatmap-section {
+                    margin: 0;
+                    padding: 8px;
+                }
+                .embed-mode .section-header {
+                    display: none;
+                }
+                .embed-mode .heatmap-canvas {
+                    height: 360px;
+                    min-height: 360px;
+                    border-radius: 8px;
+                }
+                .embed-mode .heatmap-legend {
+                    margin-top: 8px;
+                    padding: 8px;
+                    font-size: 11px;
+                }
+                .embed-mode .legend-item {
+                    font-size: 10px;
+                    padding: 2px 6px;
+                }
+                .embed-mode .main-content {
+                    background: transparent;
+                }
+            </style>
+        `;
+        document.head.insertAdjacentHTML('beforeend', embedStyles);
+    }
+    
+    /**
+     * 加载目标行业热力图
+     */
+    async loadTargetSectorHeatmap() {
+        try {
+            // 隐藏其他不相关的部分
+            const sectionsToHide = ['.dashboard-section', '.featured-sector-section', '.quick-nav-grid'];
+            sectionsToHide.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) element.style.display = 'none';
+            });
+            
+            // 只显示市场概览热力图部分
+            const marketOverview = document.getElementById('market-overview');
+            if (marketOverview) {
+                marketOverview.style.display = 'block';
+                
+                // 更新标题显示目标行业
+                const sectorTitle = document.querySelector('.section-title');
+                if (sectorTitle && this.targetSector) {
+                    const sectorName = this.getSectorDisplayName(this.targetSector);
+                    sectorTitle.textContent = `📊 ${sectorName} 热力图`;
+                }
+                
+                // 加载该行业的热力图数据
+                await this.loadSectorSpecificHeatmap(this.targetSector);
+            }
+        } catch (error) {
+            console.error('加载目标行业热力图失败:', error);
+        }
+    }
+    
+    /**
+     * 获取行业显示名称
+     */
+    getSectorDisplayName(sectorCode) {
+        const sectorMap = {
+            'technology': '科技',
+            'healthcare': '医疗保健',
+            'financials': '金融',
+            'consumer-discretionary': '非必需消费品',
+            'industrials': '工业',
+            'communication-services': '通信服务',
+            'consumer-staples': '必需消费品',
+            'energy': '能源',
+            'utilities': '公用事业',
+            'real-estate': '房地产',
+            'materials': '材料',
+            'aerospace-defense': '航空航天与国防',
+            'automotive': '汽车'
+        };
+        return sectorMap[sectorCode] || sectorCode;
+    }
+    
+    /**
+     * 加载特定行业的热力图
+     */
+    async loadSectorSpecificHeatmap(sectorCode) {
+        try {
+            const heatmapCanvas = document.getElementById('market-heatmap');
+            if (!heatmapCanvas) return;
+            
+            // 显示加载状态
+            heatmapCanvas.innerHTML = `
+                <div class="heatmap-placeholder">
+                    <div class="placeholder-icon">📊</div>
+                    <p>正在加载${this.getSectorDisplayName(sectorCode)}热力图...</p>
+                </div>
+            `;
+            
+            // 模拟加载延迟
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 生成该行业的模拟数据
+            const sectorData = this.generateSectorMockData(sectorCode, true, true);
+            
+            // 渲染热力图
+            this.renderSectorHeatmap(heatmapCanvas, sectorData);
+            
+        } catch (error) {
+            console.error(`加载${sectorCode}热力图失败:`, error);
+            const heatmapCanvas = document.getElementById('market-heatmap');
+            if (heatmapCanvas) {
+                heatmapCanvas.innerHTML = `
+                    <div class="heatmap-placeholder error">
+                        <div class="placeholder-icon">⚠️</div>
+                        <p>热力图加载失败</p>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    /**
+     * 渲染行业热力图
+     */
+    renderSectorHeatmap(container, data) {
+        // 清空容器
+        container.innerHTML = '';
+        
+        // 创建热力图网格
+        const grid = document.createElement('div');
+        grid.className = 'mini-heatmap-grid';
+        
+        data.stocks.forEach(stock => {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            cell.style.backgroundColor = this.getColorByChange(stock.change_percent);
+            cell.style.width = `${Math.max(20, Math.min(100, stock.market_cap / 1000000))}px`;
+            cell.style.height = `${Math.max(20, Math.min(60, Math.abs(stock.change_percent) * 10))}px`;
+            cell.title = `${stock.symbol}: ${stock.change_percent > 0 ? '+' : ''}${stock.change_percent.toFixed(2)}%`;
+            
+            const label = document.createElement('span');
+            label.textContent = stock.symbol;
+            label.className = 'cell-label';
+            cell.appendChild(label);
+            
+            grid.appendChild(cell);
+        });
+        
+        container.appendChild(grid);
+        
+        // 添加迷你热力图样式
+        if (!document.getElementById('mini-heatmap-styles')) {
+            const styles = `
+                <style id="mini-heatmap-styles">
+                    .mini-heatmap-grid {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 2px;
+                        padding: 10px;
+                        justify-content: center;
+                        align-items: flex-end;
+                    }
+                    .heatmap-cell {
+                        position: relative;
+                        border-radius: 2px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: transform 0.2s;
+                        cursor: pointer;
+                    }
+                    .heatmap-cell:hover {
+                        transform: scale(1.1);
+                        z-index: 10;
+                    }
+                    .cell-label {
+                        font-size: 8px;
+                        font-weight: bold;
+                        color: white;
+                        text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+                    }
+                </style>
+            `;
+            document.head.insertAdjacentHTML('beforeend', styles);
+        }
+    }
+    
+    /**
+     * 根据涨跌幅获取颜色
+     */
+    getColorByChange(change) {
+        if (change > 5) return '#66bd63';
+        if (change > 3) return '#a6d96a';
+        if (change > 1) return '#d9ef8b';
+        if (change > 0) return '#fee08b';
+        if (change > -1) return '#fdae61';
+        if (change > -3) return '#f46d43';
+        return '#d73027';
     }
 
     /**
@@ -469,7 +714,14 @@ class PanoramicHeatmap {
         }
         
         // 按市值排序，确保大股票在前面（符合热力图最佳实践）
-        return stocks.sort((a, b) => b.market_cap - a.market_cap);
+        const sortedStocks = stocks.sort((a, b) => b.market_cap - a.market_cap);
+        
+        // 返回包含 stocks 属性的对象，以匹配 renderSectorHeatmap 的期望格式
+        return {
+            stocks: sortedStocks,
+            sector: sector,
+            totalCount: sortedStocks.length
+        };
     }
 }
 

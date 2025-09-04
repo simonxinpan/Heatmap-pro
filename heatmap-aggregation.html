@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业热力图聚合仪表盘 - Heatmap Pro</title>
+    <link rel="stylesheet" href="heatmap-aggregation.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 页面头部 -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <span class="title-icon">📊</span>
+                    行业热力图聚合仪表盘
+                </h1>
+                <p class="subtitle">实时监控13个主要行业的股票表现</p>
+            </div>
+            <div class="header-controls">
+                <button class="refresh-btn" id="refreshAll">
+                    <span class="refresh-icon">🔄</span>
+                    刷新全部
+                </button>
+                <div class="view-toggle">
+                    <button class="toggle-btn active" data-view="grid">网格视图</button>
+                    <button class="toggle-btn" data-view="list">列表视图</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 统计概览 -->
+        <section class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSectors">13</div>
+                <div class="stat-label">行业总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="loadedSectors">0</div>
+                <div class="stat-label">已加载</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgPerformance">--</div>
+                <div class="stat-label">平均涨跌幅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lastUpdate">--</div>
+                <div class="stat-label">最后更新</div>
+            </div>
+        </section>
+
+        <!-- 行业热力图网格 -->
+        <main class="heatmap-grid" id="heatmapGrid">
+            <!-- 动态生成的行业卡片将插入这里 -->
+        </main>
+
+        <!-- 加载状态 -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <p>正在加载行业热力图...</p>
+        </div>
+
+        <!-- 错误提示 -->
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <div class="error-content">
+                <span class="error-icon">⚠️</span>
+                <p>部分热力图加载失败，请检查网络连接或稍后重试。</p>
+                <button class="retry-btn" onclick="location.reload()">重新加载</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 行业卡片模板 -->
+    <template id="sectorCardTemplate">
+        <div class="sector-card" data-sector="">
+            <div class="sector-header">
+                <h3 class="sector-name"></h3>
+                <div class="sector-status">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">加载中...</span>
+                </div>
+            </div>
+            <div class="sector-iframe-container">
+                <iframe 
+                    class="sector-iframe" 
+                    frameborder="0" 
+                    scrolling="no"
+                    loading="lazy"
+                    title="">
+                </iframe>
+                <div class="iframe-overlay">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="sector-footer">
+                <button class="fullscreen-btn" title="全屏查看">
+                    <span>🔍</span>
+                </button>
+                <button class="refresh-sector-btn" title="刷新">
+                    <span>🔄</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script src="heatmap-aggregation.js"></script>
+</body>
+</html>
