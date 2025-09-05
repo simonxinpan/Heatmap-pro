@@ -38,6 +38,10 @@
 }
 ```
 
+**错误信息 5**：`Function Runtimes must have a valid version, for example 'now-php@1.0.0'.`
+
+**解决方案**：将 `vercel.json` 中的 runtime 从 `nodejs20.x` 改为带版本号的格式 `@vercel/node@3.1.0`
+
 ## 解决方案
 
 ### 1. 更新 Vercel 配置（已完成）
