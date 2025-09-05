@@ -1,12 +1,32 @@
 // /api/sector-aggregation.js - 行业聚合数据API
 // 提供行业级别的股票数据聚合，包括涨跌幅、成交量、活跃股票数量
 
-import { Pool } from 'pg';
+import { Client } from 'pg';
 
-const pool = new Pool({
-    connectionString: process.env.NEON_DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-});
+// 检查数据库配置
+const isDatabaseConfigured = process.env.DATABASE_URL && 
+    !process.env.DATABASE_URL.includes('username:password') &&
+    !process.env.DATABASE_URL.includes('ep-xxx-xxx');
+
+let client = null;
+
+if (isDatabaseConfigured) {
+    // Neon数据库连接配置
+    client = new Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false
+        }
+    });
+    
+    // 连接数据库
+    client.connect().catch(err => {
+        console.error('数据库连接失败:', err);
+        client = null;
+    });
+} else {
+    console.log('⚠️ 数据库未配置，将使用模拟数据');
+}
 
 // 缓存配置
 const cache = new Map();
@@ -64,6 +84,34 @@ function formatVolumeInChinese(volume) {
 }
 
 /**
+ * 生成模拟行业数据
+ * @returns {Array} 模拟的行业聚合数据
+ */
+function generateMockSectorData() {
+    const sectors = [
+        '信息技术', '医疗保健', '金融', '非必需消费品', '工业',
+        '必需消费品', '能源', '公用事业', '材料', '房地产', '通信服务'
+    ];
+    
+    return sectors.map(sector => {
+        const changePercent = (Math.random() - 0.5) * 10; // -5% 到 +5%
+        const volume = Math.floor(Math.random() * 1000000000); // 随机成交量
+        const activeStocks = Math.floor(Math.random() * 50) + 10; // 10-60只活跃股票
+        const totalMarketCap = Math.floor(Math.random() * 1000000000000); // 随机市值
+        
+        return {
+            sector: sector,
+            change_percent: Math.round(changePercent * 100) / 100,
+            volume_formatted: formatVolumeInChinese(volume),
+            active_stocks: activeStocks,
+            total_market_cap: totalMarketCap,
+            stocks: [],
+            last_updated: new Date().toISOString()
+        };
+    });
+}
+
+/**
  * 计算行业聚合数据
  * @param {string} sectorZh - 行业中文名称
  * @returns {Object} 行业聚合数据
@@ -78,8 +126,33 @@ async function calculateSectorAggregation(sectorZh) {
         return cached;
     }
     
+    // 如果数据库未配置，返回模拟数据
+    if (!client) {
+        console.log(`🎭 使用模拟数据 for ${sectorZh}`);
+        const mockData = generateMockSectorData();
+        const sectorData = mockData.find(s => s.sector === sectorZh);
+        if (sectorData) {
+            setCache(cacheKey, sectorData);
+            return sectorData;
+        } else {
+            // 如果找不到对应行业，生成一个默认的
+            const changePercent = (Math.random() - 0.5) * 10;
+            const defaultData = {
+                sector: sectorZh,
+                change_percent: Math.round(changePercent * 100) / 100,
+                volume_formatted: formatVolumeInChinese(Math.floor(Math.random() * 1000000000)),
+                active_stocks: Math.floor(Math.random() * 50) + 10,
+                total_market_cap: Math.floor(Math.random() * 1000000000000),
+                stocks: [],
+                last_updated: new Date().toISOString()
+            };
+            setCache(cacheKey, defaultData);
+            return defaultData;
+        }
+    }
+    
     try {
-        const client = await pool.connect();
+        // 使用已连接的client
         
         // 查询该行业的所有股票数据
         const query = `
@@ -107,7 +180,7 @@ async function calculateSectorAggregation(sectorZh) {
         
         const stocks = result.rows;
         
-        client.release();
+        // client保持连接
         
         let data;
         if (stocks.length === 0) {
@@ -142,7 +215,7 @@ async function calculateSectorAggregation(sectorZh) {
             
             data = {
                 sector: sectorZh,
-                change_percent: parseFloat(avgChangePercent.toFixed(2)),
+                change_percent: Math.round(avgChangePercent * 100) / 100,
                 volume_formatted: formatVolumeInChinese(totalVolume),
                 active_stocks: stocks.length,
                 total_market_cap: totalMarketCap,
@@ -182,9 +255,37 @@ async function getAllSectorsAggregation() {
         return cached;
     }
     
-    try {
-        const client = await pool.connect();
+    // 如果数据库未配置，返回模拟数据
+    if (!client) {
+        console.log('🎭 使用模拟数据获取所有行业');
+        const mockData = generateMockSectorData();
         
+        // 计算总体统计数据
+        const totalMarketCap = mockData.reduce((sum, agg) => sum + agg.total_market_cap, 0);
+        const totalActiveStocks = mockData.reduce((sum, agg) => sum + agg.active_stocks, 0);
+        
+        // 计算市值加权平均涨跌幅
+        const weightedChangeSum = mockData.reduce((sum, agg) => {
+            return sum + (agg.total_market_cap * agg.change_percent);
+        }, 0);
+        const overallChange = totalMarketCap > 0 ? Math.round((weightedChangeSum / totalMarketCap) * 100) / 100 : 0;
+        
+        const data = {
+            success: true,
+            data: mockData,
+            total_sectors: mockData.length,
+            overall_change: overallChange,
+            total_active_stocks: totalActiveStocks,
+            total_market_cap: totalMarketCap,
+            timestamp: new Date().toISOString()
+        };
+        
+        // 缓存结果
+        setCache(cacheKey, data);
+        return data;
+    }
+    
+    try {
         // 获取所有行业列表
         const sectorsQuery = `
             SELECT DISTINCT sector_zh 
@@ -197,8 +298,6 @@ async function getAllSectorsAggregation() {
         const startTime = Date.now();
         const sectorsResult = await client.query(sectorsQuery);
         const sectors = sectorsResult.rows.map(row => row.sector_zh);
-        
-        client.release();
         
         // 并行计算所有行业的聚合数据
         const aggregationPromises = sectors.map(sector => 
@@ -218,13 +317,13 @@ async function getAllSectorsAggregation() {
         const weightedChangeSum = aggregations.reduce((sum, agg) => {
             return sum + (agg.total_market_cap * agg.change_percent);
         }, 0);
-        const overallChange = totalMarketCap > 0 ? (weightedChangeSum / totalMarketCap) : 0;
+        const overallChange = totalMarketCap > 0 ? Math.round((weightedChangeSum / totalMarketCap) * 100) / 100 : 0;
         
         const data = {
             success: true,
             data: aggregations,
             total_sectors: aggregations.length,
-            overall_change: parseFloat(overallChange.toFixed(2)),
+            overall_change: overallChange,
             total_active_stocks: totalActiveStocks,
             total_market_cap: totalMarketCap,
             timestamp: new Date().toISOString()
