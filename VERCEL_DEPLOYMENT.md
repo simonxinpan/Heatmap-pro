@@ -18,6 +18,15 @@
 
 **解决方案**：已修复 `vercel.json` 中的 runtime 配置，从 `nodejs18.x` 改为 `@vercel/node@3.0.7`。
 
+**错误信息 3**：`Found invalid Node.js Version: "22.x". Please set Node.js Version to 18.x in your Project Settings to use Node.js 18.`
+
+**解决方案**：在 `package.json` 中添加 engines 字段指定 Node.js 版本：
+```json
+"engines": {
+  "node": "18.x"
+}
+```
+
 ## 解决方案
 
 ### 1. 更新 Vercel 配置（已完成）
