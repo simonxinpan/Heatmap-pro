@@ -10,9 +10,13 @@
 
 ### 最新错误解决
 
-**错误信息**：`Environment Variable "DATABASE_URL" references Secret "database_url", which does not exist.`
+**错误信息 1**：`Environment Variable "DATABASE_URL" references Secret "database_url", which does not exist.`
 
 **解决方案**：已移除 `vercel.json` 中的 `@` 符号引用，改为直接在 Vercel Dashboard 中配置环境变量。
+
+**错误信息 2**：`Build Failed - Function Runtimes must have a valid version, for example 'now-php@1.0.0'.`
+
+**解决方案**：已修复 `vercel.json` 中的 runtime 配置，从 `nodejs18.x` 改为 `@vercel/node@3.0.7`。
 
 ## 解决方案
 
