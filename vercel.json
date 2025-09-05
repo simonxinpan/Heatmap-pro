@@ -1,13 +1,16 @@
 {
   "version": 2,
   "name": "heatmap-sector-aggregation",
-  "builds": [
-    {
-      "src": "**/*",
-      "use": "@vercel/static"
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs18.x"
     }
-  ],
+  },
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
     {
       "source": "/sector-aggregation",
       "destination": "/sector-aggregation.html"
@@ -53,6 +56,10 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "DATABASE_URL": "@database_url",
+    "NEON_DATABASE_URL": "@neon_database_url",
+    "POLYGON_API_KEY": "@polygon_api_key",
+    "FINNHUB_API_KEY": "@finnhub_api_key"
   }
 }
