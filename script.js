@@ -286,13 +286,15 @@ async function renderHomePage(sectorName = null) {
             <main id="heatmap-container-final" class="heatmap-container-final"></main>
             <footer class="legend">
                 <span>-3%</span>
-                <div class="legend-item"><div class="legend-color-box loss-5"></div></div>
-                <div class="legend-item"><div class="legend-color-box loss-3"></div></div>
-                <div class="legend-item"><div class="legend-color-box loss-1"></div></div>
-                <div class="legend-item"><div class="legend-color-box flat"></div></div>
-                <div class="legend-item"><div class="legend-color-box gain-1"></div></div>
-                <div class="legend-item"><div class="legend-color-box gain-3"></div></div>
-                <div class="legend-item"><div class="legend-color-box gain-5"></div></div>
+                <div class="legend-gradient-bar">
+                    <div class="gradient-segment loss-5"></div>
+                    <div class="gradient-segment loss-3"></div>
+                    <div class="gradient-segment loss-1"></div>
+                    <div class="gradient-segment flat"></div>
+                    <div class="gradient-segment gain-1"></div>
+                    <div class="gradient-segment gain-3"></div>
+                    <div class="gradient-segment gain-5"></div>
+                </div>
                 <span>+3%</span>
             </footer>
         `;
@@ -300,6 +302,27 @@ async function renderHomePage(sectorName = null) {
         // 行业视图下不显示图例
         if (sectorName) {
             appContainer.querySelector('.legend').style.display = 'none';
+        } else {
+            // 为长条色块添加点击事件
+            const legendBar = appContainer.querySelector('.legend-gradient-bar');
+            if (legendBar) {
+                legendBar.style.cursor = 'pointer';
+                legendBar.addEventListener('click', () => {
+                    // 跳转到行业热力图聚合页面
+                    window.open('heatmap-aggregation.html', '_blank');
+                });
+                
+                // 添加悬停效果
+                legendBar.addEventListener('mouseenter', () => {
+                    legendBar.style.transform = 'scale(1.05)';
+                    legendBar.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+                });
+                
+                legendBar.addEventListener('mouseleave', () => {
+                    legendBar.style.transform = 'scale(1)';
+                    legendBar.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+                });
+            }
         }
 
         // 使用 requestAnimationFrame 确保在DOM渲染后执行treemap计算

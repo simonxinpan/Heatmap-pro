@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业热力图聚合仪表盘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .sectors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .sector-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .sector-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .sector-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sector-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sector-icon {
+            font-size: 1.5rem;
+        }
+
+        .sector-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fbbf24;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.loading {
+            background: #fbbf24;
+        }
+
+        .status-indicator.success {
+            background: #10b981;
+            animation: none;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .sector-iframe-container {
+            position: relative;
+            height: 320px;
+            overflow: hidden;
+        }
+
+        .sector-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #f8f9fa;
+        }
+
+        .iframe-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 249, 250, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .iframe-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .error-content {
+            text-align: center;
+            color: #ef4444;
+        }
+
+        .error-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .retry-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .control-btn.secondary {
+            background: #6b7280;
+        }
+
+        .control-btn.secondary:hover {
+            background: #4b5563;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sectors-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-title {
+                font-size: 2rem;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .sector-card {
+                min-height: 350px;
+            }
+            
+            .sector-iframe-container {
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 仪表盘标题 -->
+        <header class="dashboard-header">
+            <h1 class="dashboard-title">🌍 行业热力图聚合仪表盘</h1>
+            <p class="dashboard-subtitle">实时展示13个行业的股票热力图，一页掌握全市场动态</p>
+        </header>
+
+        <!-- 统计概览 -->
+        <section class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSectors">13</div>
+                <div class="stat-label">行业总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="loadedSectors">0</div>
+                <div class="stat-label">已加载</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="errorSectors">0</div>
+                <div class="stat-label">加载失败</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="loadTime">--</div>
+                <div class="stat-label">平均加载时间(s)</div>
+            </div>
+        </section>
+
+        <!-- 控制面板 -->
+        <section class="control-panel">
+            <div class="control-group">
+                <span>数据源状态:</span>
+                <span id="dataSourceStatus" style="color: #10b981; font-weight: 600;">V4版本 - 正常</span>
+            </div>
+            <div class="control-group">
+                <button class="control-btn" onclick="refreshAllSectors()">🔄 刷新全部</button>
+                <button class="control-btn secondary" onclick="toggleAutoRefresh()">⏱️ 自动刷新</button>
+                <button class="control-btn secondary" onclick="exportData()">📊 导出数据</button>
+            </div>
+        </section>
+
+        <!-- 行业热力图网格 -->
+        <section class="sectors-grid" id="sectorsGrid">
+            <!-- 动态生成的行业卡片将插入这里 -->
+        </section>
+    </div>
+
+    <script>
+        /**
+         * 行业热力图聚合仪表盘
+         * 基于虚拟iframe映射技术的独立聚合页面
+         */
+        class SectorAggregationDashboard {
+            constructor() {
+                // 13个行业配置
+                this.sectors = [
+                    { name: '信息技术', code: '信息技术', icon: '💻', color: '#3b82f6' },
+                    { name: '工业', code: '工业', icon: '🏭', color: '#8b5cf6' },
+                    { name: '金融', code: '金融', icon: '🏦', color: '#10b981' },
+                    { name: '医疗保健', code: '医疗保健', icon: '🏥', color: '#f59e0b' },
+                    { name: '非必需消费品', code: '非必需消费品', icon: '🛍️', color: '#ef4444' },
+                    { name: '日常消费品', code: '日常消费品', icon: '🛒', color: '#06b6d4' },
+                    { name: '公用事业', code: '公用事业', icon: '⚡', color: '#84cc16' },
+                    { name: '房地产', code: '房地产', icon: '🏠', color: '#f97316' },
+                    { name: '原材料', code: '原材料', icon: '⛏️', color: '#6b7280' },
+                    { name: '能源', code: '能源', icon: '⛽', color: '#dc2626' },
+                    { name: '半导体', code: '半导体', icon: '🔌', color: '#7c3aed' },
+                    { name: '媒体娱乐', code: '媒体娱乐', icon: '🎬', color: '#ec4899' },
+                    { name: '通讯服务', code: '通讯服务', icon: '📡', color: '#14b8a6' }
+                ];
+                
+                // V4版本基础URL
+                this.baseUrl = 'https://heatmap-9yhj8kono-simon-pans-projects.vercel.app/';
+                
+                // 状态管理
+                this.loadedSectors = new Set();
+                this.errorSectors = new Set();
+                this.loadTimes = [];
+                this.autoRefreshEnabled = false;
+                this.refreshInterval = null;
+                
+                this.init();
+            }
+
+            /**
+             * 初始化仪表盘
+             */
+            init() {
+                this.renderSectors();
+                this.setupEventListeners();
+                this.startPerformanceMonitoring();
+                console.log('🚀 行业热力图聚合仪表盘初始化完成');
+            }
+
+            /**
+             * 渲染所有行业卡片
+             */
+            renderSectors() {
+                const sectorsGrid = document.getElementById('sectorsGrid');
+                sectorsGrid.innerHTML = this.sectors.map((sector, index) => 
+                    this.createSectorCard(sector, index)
+                ).join('');
+                
+                // 设置懒加载
+                this.setupLazyLoading();
+            }
+
+            /**
+             * 创建单个行业卡片
+             */
+            createSectorCard(sector, index) {
+                const encodedSector = encodeURIComponent(sector.code);
+                const sectorUrl = `${this.baseUrl}?sector=${encodedSector}`;
+                const animationDelay = (index * 0.1).toFixed(1);
+                
+                return `
+                    <div class="sector-card" 
+                         data-sector="${sector.code}" 
+                         style="animation-delay: ${animationDelay}s">
+                        <div class="sector-header">
+                            <h3 class="sector-name">
+                                <span class="sector-icon">${sector.icon}</span>
+                                ${sector.name}
+                            </h3>
+                            <div class="sector-status">
+                                <div class="status-indicator loading" id="status-${sector.code}"></div>
+                                <span class="status-text" id="status-text-${sector.code}">准备加载...</span>
+                            </div>
+                        </div>
+                        <div class="sector-iframe-container">
+                            <iframe 
+                                class="sector-iframe" 
+                                data-src="${sectorUrl}"
+                                id="iframe-${sector.code}"
+                                loading="lazy"
+                                sandbox="allow-scripts allow-same-origin allow-forms"
+                                title="${sector.name}热力图"
+                            ></iframe>
+                            <div class="iframe-overlay" id="overlay-${sector.code}">
+                                <div class="loading-content">
+                                    <div class="loading-spinner"></div>
+                                    <p class="loading-text">正在加载${sector.name}数据...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            /**
+             * 设置懒加载
+             */
+            setupLazyLoading() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const iframe = entry.target.querySelector('.sector-iframe');
+                            const sectorCode = entry.target.dataset.sector;
+                            
+                            if (iframe && iframe.dataset.src && !iframe.src) {
+                                this.loadSectorIframe(iframe, sectorCode);
+                                observer.unobserve(entry.target);
+                            }
+                        }
+                    });
+                }, {
+                    rootMargin: '50px'
+                });
+
+                document.querySelectorAll('.sector-card').forEach(card => {
+                    observer.observe(card);
+                });
+            }
+
+            /**
+             * 加载单个行业iframe
+             */
+            loadSectorIframe(iframe, sectorCode) {
+                const startTime = Date.now();
+                const overlay = document.getElementById(`overlay-${sectorCode}`);
+                const statusIndicator = document.getElementById(`status-${sectorCode}`);
+                const statusText = document.getElementById(`status-text-${sectorCode}`);
+                
+                // 更新状态为加载中
+                statusText.textContent = '加载中...';
+                
+                // 设置iframe源
+                iframe.src = iframe.dataset.src;
+                
+                // 监听加载完成
+                iframe.onload = () => {
+                    const loadTime = (Date.now() - startTime) / 1000;
+                    this.handleIframeLoad(sectorCode, overlay, statusIndicator, statusText, loadTime);
+                };
+                
+                // 监听加载错误
+                iframe.onerror = () => {
+                    this.handleIframeError(sectorCode, overlay, statusIndicator, statusText);
+                };
+                
+                // 设置超时
+                setTimeout(() => {
+                    if (!this.loadedSectors.has(sectorCode) && !this.errorSectors.has(sectorCode)) {
+                        this.handleIframeError(sectorCode, overlay, statusIndicator, statusText, '加载超时');
+                    }
+                }, 15000); // 15秒超时
+            }
+
+            /**
+             * 处理iframe加载成功
+             */
+            handleIframeLoad(sectorCode, overlay, statusIndicator, statusText, loadTime) {
+                this.loadedSectors.add(sectorCode);
+                this.loadTimes.push(loadTime);
+                
+                // 隐藏覆盖层
+                overlay.classList.add('hidden');
+                
+                // 更新状态
+                statusIndicator.className = 'status-indicator success';
+                statusText.textContent = `已加载 (${loadTime.toFixed(1)}s)`;
+                
+                // 更新统计
+                this.updateStats();
+                
+                console.log(`✅ ${sectorCode} 加载完成，耗时: ${loadTime.toFixed(1)}s`);
+            }
+
+            /**
+             * 处理iframe加载错误
+             */
+            handleIframeError(sectorCode, overlay, statusIndicator, statusText, errorMsg = '加载失败') {
+                this.errorSectors.add(sectorCode);
+                
+                // 显示错误内容
+                overlay.innerHTML = `
+                    <div class="error-content">
+                        <div class="error-icon">⚠️</div>
+                        <p>${errorMsg}</p>
+                        <button class="retry-btn" onclick="dashboard.retrySector('${sectorCode}')">重试</button>
+                    </div>
+                `;
+                
+                // 更新状态
+                statusIndicator.className = 'status-indicator error';
+                statusText.textContent = errorMsg;
+                
+                // 更新统计
+                this.updateStats();
+                
+                console.warn(`❌ ${sectorCode} ${errorMsg}`);
+            }
+
+            /**
+             * 重试加载单个行业
+             */
+            retrySector(sectorCode) {
+                this.errorSectors.delete(sectorCode);
+                const iframe = document.getElementById(`iframe-${sectorCode}`);
+                const overlay = document.getElementById(`overlay-${sectorCode}`);
+                
+                // 重置iframe
+                iframe.src = '';
+                
+                // 重置覆盖层
+                overlay.innerHTML = `
+                    <div class="loading-content">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">正在重新加载${sectorCode}数据...</p>
+                    </div>
+                `;
+                overlay.classList.remove('hidden');
+                
+                // 重新加载
+                setTimeout(() => {
+                    this.loadSectorIframe(iframe, sectorCode);
+                }, 500);
+            }
+
+            /**
+             * 更新统计信息
+             */
+            updateStats() {
+                document.getElementById('loadedSectors').textContent = this.loadedSectors.size;
+                document.getElementById('errorSectors').textContent = this.errorSectors.size;
+                
+                if (this.loadTimes.length > 0) {
+                    const avgTime = this.loadTimes.reduce((a, b) => a + b, 0) / this.loadTimes.length;
+                    document.getElementById('loadTime').textContent = avgTime.toFixed(1);
+                }
+            }
+
+            /**
+             * 设置事件监听器
+             */
+            setupEventListeners() {
+                // 监听窗口大小变化
+                window.addEventListener('resize', this.debounce(() => {
+                    console.log('📱 窗口大小变化，重新调整布局');
+                }, 300));
+            }
+
+            /**
+             * 性能监控
+             */
+            startPerformanceMonitoring() {
+                setInterval(() => {
+                    const memoryInfo = performance.memory;
+                    if (memoryInfo) {
+                        const usedMB = (memoryInfo.usedJSHeapSize / 1024 / 1024).toFixed(1);
+                        console.log(`📊 内存使用: ${usedMB}MB`);
+                    }
+                }, 30000); // 每30秒检查一次
+            }
+
+            /**
+             * 防抖函数
+             */
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        }
+
+        // 全局函数
+        function refreshAllSectors() {
+            console.log('🔄 刷新所有行业热力图');
+            location.reload();
+        }
+
+        function toggleAutoRefresh() {
+            dashboard.autoRefreshEnabled = !dashboard.autoRefreshEnabled;
+            const btn = event.target;
+            
+            if (dashboard.autoRefreshEnabled) {
+                btn.textContent = '⏹️ 停止自动刷新';
+                dashboard.refreshInterval = setInterval(() => {
+                    console.log('🔄 自动刷新触发');
+                    refreshAllSectors();
+                }, 300000); // 5分钟
+            } else {
+                btn.textContent = '⏱️ 自动刷新';
+                if (dashboard.refreshInterval) {
+                    clearInterval(dashboard.refreshInterval);
+                }
+            }
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                sectors: dashboard.sectors.length,
+                loaded: dashboard.loadedSectors.size,
+                errors: dashboard.errorSectors.size,
+                avgLoadTime: dashboard.loadTimes.length > 0 ? 
+                    (dashboard.loadTimes.reduce((a, b) => a + b, 0) / dashboard.loadTimes.length).toFixed(2) : 0,
+                loadTimes: dashboard.loadTimes
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sector-dashboard-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            console.log('📊 数据导出完成');
+        }
+
+        // 初始化仪表盘
+        let dashboard;
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboard = new SectorAggregationDashboard();
+        });
+
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            if (dashboard && dashboard.refreshInterval) {
+                clearInterval(dashboard.refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>
