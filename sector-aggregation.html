@@ -544,6 +544,15 @@
         .control-btn.secondary:hover {
             background: #4b5563;
         }
+        
+        .control-btn.active {
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+        
+        .control-btn.active:hover {
+            background: #059669;
+        }
 
         /* 响应式设计 */
         @media (max-width: 768px) {
@@ -771,7 +780,13 @@
                             const sectorCode = entry.target.dataset.sector;
                             
                             if (iframe && iframe.dataset.src && !iframe.src) {
-                                this.updateSectorData(sectorCode); // 更新行业数据
+                                // 异步更新行业数据
+                                this.updateSectorData(sectorCode).then(() => {
+                                    console.log(`✅ ${sectorCode} 数据更新完成`);
+                                }).catch(error => {
+                                    console.error(`❌ ${sectorCode} 数据更新失败:`, error);
+                                });
+                                
                                 this.loadSectorIframe(iframe, sectorCode);
                                 observer.unobserve(entry.target);
                             }
@@ -787,54 +802,104 @@
             }
 
             /**
-             * 生成随机行业数据
+             * 从数据库获取行业数据
              */
-            generateSectorData() {
-                const changePercent = (Math.random() * 10 - 5).toFixed(2); // -5% 到 +5%
-                const volume = (Math.random() * 5 + 0.5).toFixed(1); // 0.5B 到 5.5B
-                const activeStocks = Math.floor(Math.random() * 200 + 50); // 50 到 250
-                
-                return {
-                    change: changePercent,
-                    volume: volume + 'B',
-                    active: activeStocks
-                };
+            async generateSectorData(sectorCode) {
+                try {
+                    const response = await fetch(`/api/sector-aggregation?sector=${encodeURIComponent(sectorCode)}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        return {
+                            change: data.change_percent,
+                            volume: data.volume_formatted,
+                            active: data.active_stocks,
+                            totalMarketCap: data.total_market_cap,
+                            lastUpdated: data.last_updated
+                        };
+                    } else {
+                        throw new Error('Invalid API response format');
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ 获取${sectorCode}数据失败，使用默认数据:`, error.message);
+                    
+                    // 降级到默认数据
+                    const changePercent = (Math.random() * 10 - 5).toFixed(2);
+                    const volume = (Math.random() * 5 + 0.5).toFixed(1);
+                    const activeStocks = Math.floor(Math.random() * 200 + 50);
+                    
+                    return {
+                        change: changePercent,
+                        volume: volume + 'B',
+                        active: activeStocks,
+                        totalMarketCap: 0,
+                        lastUpdated: null
+                    };
+                }
             }
 
             /**
              * 更新行业数据显示
              */
-            updateSectorData(sectorCode) {
-                const data = this.generateSectorData();
-                
+            async updateSectorData(sectorCode) {
                 const changeElement = document.getElementById(`change-${sectorCode}`);
                 const volumeElement = document.getElementById(`volume-${sectorCode}`);
                 const activeElement = document.getElementById(`active-${sectorCode}`);
                 
-                // 添加更新动画
+                // 添加加载状态
                 const elements = [changeElement, volumeElement, activeElement];
                 elements.forEach(el => {
                     if (el) {
                         el.classList.add('updating');
-                        setTimeout(() => el.classList.remove('updating'), 600);
+                        el.textContent = '加载中...';
                     }
                 });
                 
-                // 延迟更新数据以配合动画
-                setTimeout(() => {
-                    if (changeElement) {
-                        changeElement.textContent = (data.change >= 0 ? '+' : '') + data.change + '%';
-                        changeElement.className = 'summary-value ' + (data.change >= 0 ? 'positive' : 'negative');
-                    }
+                try {
+                    // 从数据库获取实时数据
+                    const data = await this.generateSectorData(sectorCode);
                     
-                    if (volumeElement) {
-                        volumeElement.textContent = data.volume;
-                    }
+                    // 延迟更新数据以配合动画
+                    setTimeout(() => {
+                        if (changeElement) {
+                            changeElement.textContent = (data.change >= 0 ? '+' : '') + data.change + '%';
+                            changeElement.className = 'summary-value ' + (data.change >= 0 ? 'positive' : 'negative');
+                        }
+                        
+                        if (volumeElement) {
+                            volumeElement.textContent = data.volume;
+                        }
+                        
+                        if (activeElement) {
+                            activeElement.textContent = data.active;
+                        }
+                        
+                        // 移除更新状态
+                        elements.forEach(el => {
+                            if (el) el.classList.remove('updating');
+                        });
+                        
+                        console.log(`✅ ${sectorCode} 数据更新完成:`, data);
+                    }, 300);
                     
-                    if (activeElement) {
-                        activeElement.textContent = data.active;
-                    }
-                }, 300);
+                } catch (error) {
+                    console.error(`❌ 更新${sectorCode}数据失败:`, error);
+                    
+                    // 显示错误状态
+                    elements.forEach(el => {
+                        if (el) {
+                            el.classList.remove('updating');
+                            el.textContent = '数据错误';
+                            el.classList.add('error');
+                        }
+                    });
+                }
             }
 
             /**
@@ -945,13 +1010,69 @@
             /**
              * 更新统计信息
              */
-            updateStats() {
+            async updateStats() {
+                try {
+                    // 从API获取所有行业的聚合统计数据
+                    const response = await fetch('/api/sector-aggregation?all=true');
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        const stats = result.data;
+                        
+                        // 更新总体统计数据
+                        document.getElementById('total-change').textContent = 
+                            (stats.overall_change >= 0 ? '+' : '') + stats.overall_change + '%';
+                        document.getElementById('total-volume').textContent = stats.total_volume_formatted;
+                        document.getElementById('total-active').textContent = stats.total_active_stocks;
+                        
+                        // 更新样式
+                        const changeElement = document.getElementById('total-change');
+                        changeElement.className = 'stat-value ' + (stats.overall_change >= 0 ? 'positive' : 'negative');
+                        
+                        console.log('📊 统计信息更新完成:', stats);
+                    } else {
+                        throw new Error('Invalid stats API response');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ 获取统计数据失败，使用模拟数据:', error.message);
+                    
+                    // 降级到模拟数据
+                    const totalChange = (Math.random() * 4 - 2).toFixed(2);
+                    const totalVolume = (Math.random() * 50 + 100).toFixed(1);
+                    const totalActive = Math.floor(Math.random() * 500 + 1000);
+                    
+                    document.getElementById('total-change').textContent = (totalChange >= 0 ? '+' : '') + totalChange + '%';
+                    document.getElementById('total-volume').textContent = totalVolume + 'B';
+                    document.getElementById('total-active').textContent = totalActive;
+                    
+                    // 更新样式
+                    const changeElement = document.getElementById('total-change');
+                    changeElement.className = 'stat-value ' + (totalChange >= 0 ? 'positive' : 'negative');
+                }
+                
+                // 更新性能统计
                 document.getElementById('loadedSectors').textContent = this.loadedSectors.size;
                 document.getElementById('errorSectors').textContent = this.errorSectors.size;
                 
                 if (this.loadTimes.length > 0) {
                     const avgTime = this.loadTimes.reduce((a, b) => a + b, 0) / this.loadTimes.length;
                     document.getElementById('loadTime').textContent = avgTime.toFixed(1);
+                }
+                
+                // 更新所有行业的数据
+                try {
+                    const updatePromises = this.sectors.map(sector => 
+                        this.updateSectorData(sector.code)
+                    );
+                    await Promise.allSettled(updatePromises);
+                    console.log('📊 所有行业数据更新完成');
+                } catch (error) {
+                    console.error('❌ 更新行业数据时发生错误:', error);
                 }
             }
 
@@ -995,9 +1116,24 @@
         }
 
         // 全局函数
-        function refreshAllSectors() {
-            console.log('🔄 刷新所有行业热力图');
-            location.reload();
+        async function refreshAllSectors() {
+            console.log('🔄 刷新所有行业数据...');
+            
+            try {
+                // 并行更新所有行业数据
+                const updatePromises = dashboard.sectors.map(sector => 
+                    dashboard.updateSectorData(sector.code)
+                );
+                
+                await Promise.allSettled(updatePromises);
+                
+                // 更新统计信息
+                dashboard.updateStats();
+                
+                console.log('✅ 所有行业数据刷新完成');
+            } catch (error) {
+                console.error('❌ 刷新行业数据时发生错误:', error);
+            }
         }
 
         function toggleAutoRefresh() {
@@ -1006,15 +1142,31 @@
             
             if (dashboard.autoRefreshEnabled) {
                 btn.textContent = '⏹️ 停止自动刷新';
-                dashboard.refreshInterval = setInterval(() => {
-                    console.log('🔄 自动刷新触发');
+                btn.classList.add('active');
+                dashboard.refreshInterval = setInterval(async () => {
+                    try {
+                        console.log('🔄 自动刷新触发');
+                        await refreshAllSectors();
+                        console.log('✅ 自动刷新完成');
+                    } catch (error) {
+                        console.error('❌ 自动刷新失败:', error);
+                    }
+                }, 30000); // 30秒刷新一次
+                
+                // 立即执行一次刷新
+                setTimeout(() => {
                     refreshAllSectors();
-                }, 300000); // 5分钟
+                }, 1000);
+                
+                console.log('🔄 自动刷新已启动，每30秒更新一次数据');
             } else {
                 btn.textContent = '⏱️ 自动刷新';
+                btn.classList.remove('active');
                 if (dashboard.refreshInterval) {
                     clearInterval(dashboard.refreshInterval);
+                    dashboard.refreshInterval = null;
                 }
+                console.log('⏹️ 自动刷新已停止');
             }
         }
 

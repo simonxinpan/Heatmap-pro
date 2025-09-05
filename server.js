@@ -50,6 +50,13 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
             
+            // 处理行业聚合数据API请求
+            if (pathname === '/api/sector-aggregation') {
+                const sectorAggregationHandler = await import('./api/sector-aggregation.js');
+                await sectorAggregationHandler.default(req, res);
+                return;
+            }
+            
             // 处理测试环境API请求
             if (pathname === '/api/test-env') {
                 console.log('Handling test-env API request');
