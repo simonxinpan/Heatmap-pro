@@ -6,6 +6,13 @@
 
 1. **配置问题**：原 `vercel.json` 使用了 `@vercel/static` 构建器，只能部署静态文件，无法运行 Node.js API
 2. **环境变量缺失**：Vercel 项目中未配置数据库连接环境变量
+3. **Secret 引用错误**：`vercel.json` 中使用了 `@database_url` 语法引用不存在的 secret
+
+### 最新错误解决
+
+**错误信息**：`Environment Variable "DATABASE_URL" references Secret "database_url", which does not exist.`
+
+**解决方案**：已移除 `vercel.json` 中的 `@` 符号引用，改为直接在 Vercel Dashboard 中配置环境变量。
 
 ## 解决方案
 
@@ -19,22 +26,19 @@
 
 ### 2. 在 Vercel Dashboard 中配置环境变量
 
+**重要提示**：请直接在 Vercel Dashboard 中添加环境变量，不要使用 `@` 符号引用。
+
 访问您的 Vercel 项目设置页面，添加以下环境变量：
 
 #### 必需的环境变量：
 
-```bash
-# 数据库连接（必需）
-DATABASE_URL=postgresql://your_username:your_password@ep-xxx-xxx.us-east-1.aws.neon.tech/your_dbname?sslmode=require
-NEON_DATABASE_URL=postgresql://your_username:your_password@ep-xxx-xxx.us-east-1.aws.neon.tech/your_dbname?sslmode=require
-
-# API 密钥（可选，用于实时数据）
-POLYGON_API_KEY=your_polygon_api_key_here
-FINNHUB_API_KEY=your_finnhub_api_key_here
-
-# 运行环境
-NODE_ENV=production
-```
+| 变量名 | 值 | 环境 |
+|--------|----|---------|
+| `DATABASE_URL` | `postgresql://your_username:your_password@ep-xxx-xxx.us-east-1.aws.neon.tech/your_dbname?sslmode=require` | Production, Preview |
+| `NEON_DATABASE_URL` | `postgresql://your_username:your_password@ep-xxx-xxx.us-east-1.aws.neon.tech/your_dbname?sslmode=require` | Production, Preview |
+| `POLYGON_API_KEY` | `your_polygon_api_key_here` | Production, Preview (可选) |
+| `FINNHUB_API_KEY` | `your_finnhub_api_key_here` | Production, Preview (可选) |
+| `NODE_ENV` | `production` | Production |
 
 #### 配置步骤：
 
