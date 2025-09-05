@@ -27,6 +27,17 @@
 }
 ```
 
+**错误信息 4**：`The Runtime "@vercel/node@3.0.7" is using "nodejs18.x", which is discontinued. Please upgrade your Runtime to a more recent version or consult the author for more details.`
+
+**解决方案**：
+1. 将 `vercel.json` 中的 runtime 从 `@vercel/node@3.0.7` 升级为 `nodejs20.x`
+2. 同时更新 `package.json` 中的 engines 字段：
+```json
+"engines": {
+  "node": "20.x"
+}
+```
+
 ## 解决方案
 
 ### 1. 更新 Vercel 配置（已完成）
