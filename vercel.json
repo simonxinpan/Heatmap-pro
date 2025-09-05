@@ -7,22 +7,18 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/sector-aggregation",
-      "dest": "/sector-aggregation.html"
+      "source": "/sector-aggregation",
+      "destination": "/sector-aggregation.html"
     },
     {
-      "src": "/aggregation",
-      "dest": "/sector-aggregation.html"
+      "source": "/aggregation",
+      "destination": "/sector-aggregation.html"
     },
     {
-      "src": "/dashboard",
-      "dest": "/sector-aggregation.html"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/dashboard",
+      "destination": "/sector-aggregation.html"
     }
   ],
   "headers": [
