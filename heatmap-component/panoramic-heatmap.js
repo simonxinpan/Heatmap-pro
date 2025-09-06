@@ -226,7 +226,14 @@ class PanoramicHeatmap {
                 width: container.offsetWidth,
                 height: 600,
                 showLabels: true,
-                colorScheme: 'RdYlGn'
+                colorScheme: 'RdYlGn',
+                onCellClick: (data, index) => {
+                    // 点击股票跳转到生产服务器个股详情页
+                    const symbol = data.symbol || data.ticker;
+                    if (symbol) {
+                        window.open(`https://stock-details-final.vercel.app/?symbol=${symbol}`, '_blank');
+                    }
+                }
             });
             renderer.render(stockData, 'change_percent');
             
@@ -280,7 +287,14 @@ class PanoramicHeatmap {
                 colorScheme: 'RdYlGn',
                 fontSize: 8,
                 padding: 1,
-                cornerRadius: 2
+                cornerRadius: 2,
+                onCellClick: (data, index) => {
+                    // 点击股票跳转到生产服务器个股详情页
+                    const symbol = data.symbol || data.ticker;
+                    if (symbol) {
+                        window.open(`https://stock-details-final.vercel.app/?symbol=${symbol}`, '_blank');
+                    }
+                }
             });
             renderer.render(sectorStocks, 'change_percent');
             
@@ -389,7 +403,14 @@ class PanoramicHeatmap {
                 height: 500,
                 showLabels: true,
                 colorScheme: 'RdYlGn',
-                fontSize: 12
+                fontSize: 12,
+                onCellClick: (data, index) => {
+                    // 点击股票跳转到生产服务器个股详情页
+                    const symbol = data.symbol || data.ticker;
+                    if (symbol) {
+                        window.open(`https://stock-details-final.vercel.app/?symbol=${symbol}`, '_blank');
+                    }
+                }
             });
             renderer.render(sectorStocks, 'change_percent');
             

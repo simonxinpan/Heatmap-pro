@@ -687,7 +687,7 @@ async function renderStockDetailPage(symbol) {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
         
         // 所有股票都跳转到外部增强版详情页，传递股票代码参数
-        const externalDetailUrl = `https://stock-details-final-bwjamhrli-simon-pans-projects.vercel.app/?symbol=${symbol}`;
+        const externalDetailUrl = `https://stock-details-final.vercel.app/?symbol=${symbol}`;
         window.location.href = externalDetailUrl;
         return;
         
