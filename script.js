@@ -581,7 +581,7 @@ function createStockElement(stock, width, height) {
     
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
-    stockLink.href = `https://stock-details-final-lckt58yeg-simon-pans-projects.vercel.app/?symbol=${stock.ticker}`;
+    stockLink.href = `https://stock-details-final.vercel.app/?symbol=${stock.ticker}`;
     stockLink.target = '_blank';
     stockLink.style.cssText = `width:${width}px;height:${height}px;position:absolute;`;
     
