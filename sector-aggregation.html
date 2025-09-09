@@ -1136,6 +1136,27 @@
             }
 
             /**
+             * 打开行业详情页面
+             * @param {string} sectorCode - 行业代码
+             */
+            openSectorDetail(sectorCode) {
+                const sector = this.sectors.find(s => s.code === sectorCode);
+                
+                if (!sector) {
+                    console.warn(`❌ 未找到行业: ${sectorCode}`);
+                    return;
+                }
+                
+                // 构建详情页面URL
+                const detailUrl = `sector-detail.html?sector=${encodeURIComponent(sector.name)}`;
+                
+                // 在新窗口打开详情页面
+                window.open(detailUrl, '_blank');
+                
+                console.log(`🔗 打开行业详情页面: ${sector.name}`);
+            }
+
+            /**
              * 渲染所有行业卡片
              */
             renderSectors() {
@@ -1162,7 +1183,7 @@
                          data-sector="${sector.code}" 
                          data-url="${sectorUrl}"
                          style="animation-delay: ${animationDelay}s">
-                        <div class="sector-header" onclick="dashboard.positionToSector('${sector.code}')">
+                        <div class="sector-header" onclick="dashboard.openSectorDetail('${sector.code}')">
                             <h3 class="sector-name">
                                 <span class="sector-icon">${sector.icon}</span>
                                 ${sector.name}

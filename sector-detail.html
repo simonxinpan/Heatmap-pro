@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业热力图详情</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .sector-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .sector-icon {
+            font-size: 3rem;
+        }
+
+        .sector-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .navigation {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+            font-size: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-button:hover::before {
+            left: 100%;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-button.primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            animation: pulse-nav 2s infinite;
+        }
+
+        .nav-button.primary:hover {
+            background: linear-gradient(135deg, #ff7979 0%, #fd79a8 100%);
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.6);
+        }
+
+        @keyframes pulse-nav {
+            0% {
+                box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            }
+            50% {
+                box-shadow: 0 6px 25px rgba(255, 107, 107, 0.7);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            }
+        }
+
+        .heatmap-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            min-height: 600px;
+        }
+
+        .heatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .heatmap-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.loading {
+            background: #fbbf24;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.success {
+            background: #10b981;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-left: 8px;
+        }
+
+        .iframe-wrapper {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sector-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+            background: #f8fafc;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 250, 252, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #64748b;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .error-content {
+            text-align: center;
+            color: #ef4444;
+        }
+
+        .error-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .retry-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+
+        .sector-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-value.positive {
+            color: #10b981;
+        }
+
+        .stat-value.negative {
+            color: #ef4444;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .external-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .external-link:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 其他行业展示区域样式 */
+        .other-sectors-container {
+            margin-top: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .other-sectors-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .other-sectors-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .title-icon {
+            font-size: 2rem;
+        }
+
+        .other-sectors-subtitle {
+            color: #64748b;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .other-sectors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            /* 支持4行x3列布局显示所有12个其他行业 */
+        }
+
+        .mini-sector-card {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mini-sector-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-color: var(--sector-color, #3b82f6);
+        }
+
+        .mini-sector-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--sector-color, #3b82f6);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .mini-sector-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .mini-sector-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .mini-sector-icon {
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .mini-sector-info {
+            flex: 1;
+        }
+
+        .mini-sector-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .mini-sector-status {
+            font-size: 0.85rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mini-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .mini-sector-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .mini-stat-item {
+            text-align: center;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+        }
+
+        .mini-stat-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .mini-stat-value.positive {
+            color: #10b981;
+        }
+
+        .mini-stat-value.negative {
+            color: #ef4444;
+        }
+
+        .mini-stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .mini-sector-action {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .mini-action-btn {
+            background: var(--sector-color, #3b82f6);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .mini-sector-card:hover .mini-action-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .mini-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .sector-title {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .sector-icon {
+                font-size: 2.5rem;
+            }
+
+            .heatmap-container {
+                padding: 20px;
+            }
+
+            .iframe-wrapper {
+                height: 400px;
+            }
+
+            .nav-button {
+                display: block;
+                margin: 5px 0;
+            }
+
+            .external-link {
+                position: static;
+                margin-bottom: 15px;
+                align-self: flex-start;
+            }
+
+            /* 其他行业展示区域响应式 */
+            .other-sectors-container {
+                margin-top: 20px;
+                padding: 20px;
+            }
+
+            .other-sectors-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .title-icon {
+                font-size: 1.8rem;
+            }
+
+            .other-sectors-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .mini-sector-card {
+                padding: 15px;
+            }
+
+            .mini-sector-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5rem;
+            }
+
+            .mini-sector-name {
+                font-size: 1rem;
+            }
+
+            .mini-sector-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .mini-stat-item {
+                padding: 6px;
+            }
+
+            .mini-stat-value {
+                font-size: 0.8rem;
+            }
+
+            .mini-stat-label {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="sector-title">
+                <span class="sector-icon" id="sectorIcon">📊</span>
+                <span id="sectorName">行业热力图</span>
+            </h1>
+            <p class="sector-subtitle" id="sectorSubtitle">实时股票表现数据可视化</p>
+        </div>
+
+        <div class="navigation">
+            <a href="sector-aggregation.html" class="nav-button primary">← 返回聚合页面</a>
+            <a href="index.html" class="nav-button">🏠 首页</a>
+        </div>
+
+        <div class="heatmap-container">
+            <a href="#" class="external-link" id="externalLink" target="_blank">
+                🔗 在新窗口打开
+            </a>
+            
+            <div class="heatmap-header">
+                <h2 class="heatmap-title">
+                    <span class="status-indicator loading" id="statusIndicator"></span>
+                    <span id="heatmapTitle">行业热力图</span>
+                </h2>
+                <div class="status-text" id="statusText">加载中...</div>
+            </div>
+
+            <div class="iframe-wrapper">
+                <iframe 
+                    id="sectorIframe" 
+                    class="sector-iframe"
+                    title="行业热力图"
+                    loading="lazy">
+                </iframe>
+                
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-content">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">正在加载行业数据...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sector-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="sectorChange">--</div>
+                    <div class="stat-label">平均涨跌幅</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sectorVolume">--</div>
+                    <div class="stat-label">成交量(亿)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sectorActive">--</div>
+                    <div class="stat-label">活跃股票数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 其他行业展示区域 -->
+        <div class="other-sectors-container">
+            <div class="other-sectors-header">
+                <h2 class="other-sectors-title">
+                    <span class="title-icon">🔍</span>
+                    探索其他行业
+                </h2>
+                <p class="other-sectors-subtitle">点击查看其他行业的实时股票表现</p>
+            </div>
+            
+            <div class="other-sectors-grid" id="otherSectorsGrid">
+                <!-- 其他行业卡片将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SectorDetailPage {
+            constructor() {
+                // 行业配置
+                this.sectors = {
+                    '信息技术': { name: '信息技术', icon: '💻', color: '#3b82f6' },
+                    '工业': { name: '工业', icon: '🏭', color: '#8b5cf6' },
+                    '金融': { name: '金融', icon: '🏦', color: '#10b981' },
+                    '医疗保健': { name: '医疗保健', icon: '🏥', color: '#f59e0b' },
+                    '非必需消费品': { name: '非必需消费品', icon: '🛍️', color: '#ef4444' },
+                    '日常消费品': { name: '日常消费品', icon: '🛒', color: '#06b6d4' },
+                    '公用事业': { name: '公用事业', icon: '⚡', color: '#84cc16' },
+                    '房地产': { name: '房地产', icon: '🏠', color: '#f97316' },
+                    '原材料': { name: '原材料', icon: '⛏️', color: '#6b7280' },
+                    '能源': { name: '能源', icon: '⛽', color: '#dc2626' },
+                    '半导体': { name: '半导体', icon: '🔌', color: '#7c3aed' },
+                    '媒体娱乐': { name: '媒体娱乐', icon: '🎬', color: '#ec4899' },
+                    '通讯服务': { name: '通讯服务', icon: '📡', color: '#14b8a6' }
+                };
+                
+                this.baseUrl = 'https://heatmap-pro.vercel.app/';
+                this.currentSector = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.handleUrlParameters();
+                this.setupEventListeners();
+                this.renderOtherSectors();
+            }
+
+            /**
+             * 处理URL参数
+             */
+            handleUrlParameters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                let sectorCode = null;
+                
+                // 支持多种参数格式
+                if (urlParams.has('sector')) {
+                    sectorCode = urlParams.get('sector');
+                } else if (urlParams.has('tagId')) {
+                    const tagId = urlParams.get('tagId');
+                    // 处理tagId格式 (sector_金融 -> 金融)
+                    if (tagId.startsWith('sector_')) {
+                        sectorCode = tagId.replace('sector_', '');
+                    }
+                } else if (urlParams.has('code')) {
+                    sectorCode = urlParams.get('code');
+                }
+                
+                // 默认显示金融行业
+                if (!sectorCode || !this.sectors[sectorCode]) {
+                    sectorCode = '金融';
+                }
+                
+                this.loadSector(sectorCode);
+            }
+
+            /**
+             * 加载指定行业
+             */
+            loadSector(sectorCode) {
+                const sector = this.sectors[sectorCode];
+                if (!sector) {
+                    console.error('未找到行业配置:', sectorCode);
+                    return;
+                }
+                
+                this.currentSector = sector;
+                
+                // 更新页面标题和图标
+                document.title = `${sector.name} - 行业热力图详情`;
+                document.getElementById('sectorIcon').textContent = sector.icon;
+                document.getElementById('sectorName').textContent = sector.name;
+                document.getElementById('sectorSubtitle').textContent = `${sector.name}行业实时股票表现数据可视化`;
+                document.getElementById('heatmapTitle').textContent = `${sector.name}热力图`;
+                
+                // 设置主题色
+                document.documentElement.style.setProperty('--sector-color', sector.color);
+                
+                // 加载iframe
+                this.loadIframe(sectorCode);
+                
+                // 加载统计数据
+                this.loadSectorStats(sectorCode);
+                
+                // 设置外部链接
+                const externalLink = document.getElementById('externalLink');
+                externalLink.href = `${this.baseUrl}?sector=${encodeURIComponent(sectorCode)}`;
+            }
+
+            /**
+             * 加载iframe
+             */
+            loadIframe(sectorCode) {
+                const iframe = document.getElementById('sectorIframe');
+                const overlay = document.getElementById('loadingOverlay');
+                const statusIndicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                // 重置状态
+                overlay.classList.remove('hidden');
+                statusIndicator.className = 'status-indicator loading';
+                statusText.textContent = '加载中...';
+                
+                // 构建iframe URL
+                const iframeUrl = `${this.baseUrl}?sector=${encodeURIComponent(sectorCode)}&embed=true`;
+                
+                // 设置iframe源
+                iframe.src = iframeUrl;
+                
+                // 监听加载完成
+                iframe.onload = () => {
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                        statusIndicator.className = 'status-indicator success';
+                        statusText.textContent = '加载完成';
+                    }, 1000);
+                };
+                
+                // 监听加载错误
+                iframe.onerror = () => {
+                    this.handleLoadError();
+                };
+                
+                // 设置超时
+                setTimeout(() => {
+                    if (!overlay.classList.contains('hidden')) {
+                        this.handleLoadError('加载超时');
+                    }
+                }, 15000);
+            }
+
+            /**
+             * 处理加载错误
+             */
+            handleLoadError(errorMsg = '加载失败') {
+                const overlay = document.getElementById('loadingOverlay');
+                const statusIndicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                overlay.innerHTML = `
+                    <div class="error-content">
+                        <div class="error-icon">⚠️</div>
+                        <p>${errorMsg}</p>
+                        <button class="retry-btn" onclick="sectorDetail.reloadIframe()">重试</button>
+                    </div>
+                `;
+                
+                statusIndicator.className = 'status-indicator error';
+                statusText.textContent = errorMsg;
+            }
+
+            /**
+             * 重新加载iframe
+             */
+            reloadIframe() {
+                if (this.currentSector) {
+                    this.loadIframe(this.currentSector.name);
+                }
+            }
+
+            /**
+             * 加载行业统计数据
+             */
+            async loadSectorStats(sectorCode) {
+                try {
+                    // 模拟数据，实际应该从API获取
+                    const stats = this.generateSectorStats(sectorCode);
+                    
+                    document.getElementById('sectorChange').textContent = 
+                        (stats.change >= 0 ? '+' : '') + stats.change + '%';
+                    document.getElementById('sectorChange').className = 
+                        'stat-value ' + (stats.change >= 0 ? 'positive' : 'negative');
+                    
+                    document.getElementById('sectorVolume').textContent = stats.volume;
+                    document.getElementById('sectorActive').textContent = stats.active;
+                    
+                } catch (error) {
+                    console.error('加载统计数据失败:', error);
+                }
+            }
+
+            /**
+             * 生成模拟统计数据
+             */
+            generateSectorStats(sectorCode) {
+                // 基于行业特点生成不同的数据范围
+                const sectorMultipliers = {
+                    '信息技术': { changeBase: 1.5, volumeBase: 150 },
+                    '金融': { changeBase: 0.8, volumeBase: 200 },
+                    '医疗保健': { changeBase: 1.2, volumeBase: 120 },
+                    '能源': { changeBase: 2.0, volumeBase: 180 },
+                    '工业': { changeBase: 1.0, volumeBase: 100 }
+                };
+                
+                const multiplier = sectorMultipliers[sectorCode] || { changeBase: 1.0, volumeBase: 100 };
+                
+                return {
+                    change: ((Math.random() * 4 - 2) * multiplier.changeBase).toFixed(2),
+                    volume: (Math.random() * 50 + multiplier.volumeBase).toFixed(1),
+                    active: Math.floor(Math.random() * 50 + 30)
+                };
+            }
+
+            /**
+             * 渲染其他行业卡片
+             */
+            renderOtherSectors() {
+                const otherSectorsGrid = document.getElementById('otherSectorsGrid');
+                if (!otherSectorsGrid) return;
+                
+                // 获取除当前行业外的其他行业
+                const otherSectors = Object.entries(this.sectors)
+                    .filter(([name, sector]) => name !== (this.currentSector?.name || ''));
+                    // 显示所有12个其他行业（4行x3列）
+                
+                otherSectorsGrid.innerHTML = '';
+                
+                otherSectors.forEach(([name, sector]) => {
+                    const stats = this.generateSectorStats(name);
+                    
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'mini-sector-card';
+                    cardElement.style.setProperty('--sector-color', sector.color);
+                    cardElement.onclick = () => this.navigateToSector(name);
+                    
+                    cardElement.innerHTML = `
+                        <div class="mini-sector-header">
+                            <div class="mini-sector-icon">${sector.icon}</div>
+                            <div class="mini-sector-info">
+                                <div class="mini-sector-name">${sector.name}</div>
+                                <div class="mini-sector-status">
+                                    <div class="mini-status-dot"></div>
+                                    实时更新
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mini-sector-stats">
+                            <div class="mini-stat-item">
+                                <div class="mini-stat-value ${stats.change >= 0 ? 'positive' : 'negative'}">
+                                    ${stats.change >= 0 ? '+' : ''}${stats.change}%
+                                </div>
+                                <div class="mini-stat-label">涨跌幅</div>
+                            </div>
+                            <div class="mini-stat-item">
+                                <div class="mini-stat-value">${stats.volume}</div>
+                                <div class="mini-stat-label">成交量</div>
+                            </div>
+                            <div class="mini-stat-item">
+                                <div class="mini-stat-value">${stats.active}</div>
+                                <div class="mini-stat-label">活跃股</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mini-sector-action">
+                            <button class="mini-action-btn">查看详情</button>
+                        </div>
+                    `;
+                    
+                    otherSectorsGrid.appendChild(cardElement);
+                });
+                
+                console.log(`📊 已渲染 ${otherSectors.length} 个其他行业卡片`);
+            }
+
+            /**
+             * 导航到指定行业
+             */
+            navigateToSector(sectorName) {
+                const detailUrl = `sector-detail.html?sector=${encodeURIComponent(sectorName)}`;
+                window.location.href = detailUrl;
+                console.log(`🔗 导航到行业: ${sectorName}`);
+            }
+
+            /**
+             * 生成行业统计数据
+             * TODO: 上线时替换为真实API数据
+             */
+            generateSectorStats(sectorName) {
+                // 模拟生成行业统计数据 - 上线时需要替换为真实API调用
+                // 示例API调用:
+                // const response = await fetch(`/api/sector-stats?sector=${encodeURIComponent(sectorName)}`);
+                // const realData = await response.json();
+                // return realData;
+                
+                const baseChange = Math.random() * 10 - 5; // -5% 到 +5%
+                const baseVolume = Math.random() * 1000 + 100; // 100-1100
+                const baseActive = Math.floor(Math.random() * 50) + 10; // 10-60
+                
+                return {
+                    change: parseFloat(baseChange.toFixed(2)),
+                    volume: baseVolume >= 1000 ? `${(baseVolume/1000).toFixed(1)}K` : Math.floor(baseVolume).toString(),
+                    active: baseActive
+                };
+            }
+
+            /**
+             * 设置事件监听器
+             */
+            setupEventListeners() {
+                // 监听窗口大小变化
+                window.addEventListener('resize', () => {
+                    // 可以在这里添加响应式处理逻辑
+                });
+            }
+        }
+
+        // 初始化页面
+        let sectorDetail;
+        document.addEventListener('DOMContentLoaded', () => {
+            sectorDetail = new SectorDetailPage();
+        });
+    </script>
+</body>
+</html>

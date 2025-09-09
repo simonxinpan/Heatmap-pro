@@ -82,6 +82,54 @@ class StockDetailPage {
                 this.loadChartData(this.currentSymbol, this.currentTimeRange);
             });
         });
+        
+        // 行业标签点击事件
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('industry-link')) {
+                const industryName = e.target.textContent.trim();
+                this.navigateToSectorDetail(industryName);
+            }
+        });
+    }
+    
+    /**
+     * 导航到行业详情页面
+     */
+    navigateToSectorDetail(industryName) {
+        // 行业名称映射
+        const industryMapping = {
+            '消费电子': '信息技术',
+            '金融服务': '金融',
+            '软件': '信息技术',
+            '半导体': '半导体',
+            '医疗设备': '医疗保健',
+            '制药': '医疗保健',
+            '汽车': '非必需消费品',
+            '零售': '非必需消费品',
+            '食品饮料': '日常消费品',
+            '房地产': '房地产',
+            '银行': '金融',
+            '保险': '金融',
+            '石油天然气': '能源',
+            '电力': '公用事业',
+            '钢铁': '原材料',
+            '化工': '原材料',
+            '航空航天': '工业',
+            '机械': '工业',
+            '媒体': '媒体娱乐',
+            '电信': '通讯服务'
+        };
+        
+        // 获取对应的行业代码
+        const sectorCode = industryMapping[industryName] || industryName;
+        
+        // 构建行业详情页面URL
+        const sectorDetailUrl = `../sector-detail.html?sector=${encodeURIComponent(sectorCode)}`;
+        
+        // 跳转到行业详情页面
+        window.open(sectorDetailUrl, '_blank');
+        
+        console.log(`🔗 从股票详情页导航到行业: ${industryName} -> ${sectorCode}`);
     }
 
     async loadStockData(symbol) {

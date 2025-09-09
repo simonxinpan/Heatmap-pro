@@ -308,6 +308,18 @@ body {
     color: var(--text-primary);
 }
 
+.industry-link {
+    color: #3498db;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.industry-link:hover {
+    color: #2980b9;
+    text-decoration: none;
+}
+
 .detail-value.link {
     color: var(--primary-color);
     text-decoration: none;
