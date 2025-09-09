@@ -939,8 +939,13 @@
                     try {
                         const response = await fetch(`/api/sector-aggregation?sector=${encodeURIComponent(name)}`);
                         if (response.ok) {
-                            const data = await response.json();
-                            return { name, sector, data };
+                            const result = await response.json();
+                            // 检查API响应格式
+                            if (result && result.success && result.data) {
+                                return { name, sector, data: result.data };
+                            } else {
+                                throw new Error('API响应格式不正确');
+                            }
                         } else {
                             throw new Error(`API请求失败: ${response.status}`);
                         }
