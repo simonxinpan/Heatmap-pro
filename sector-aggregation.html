@@ -122,7 +122,70 @@
 
         .sector-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 行业定位高亮样式 */
+        .sector-card.highlighted {
+            border: 3px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            transform: translateY(-4px);
+        }
+        
+        .sector-card.flash-highlight {
+            animation: flashHighlight 2s ease-in-out;
+        }
+        
+        @keyframes flashHighlight {
+            0%, 100% { background: rgba(255, 255, 255, 0.95); }
+            25%, 75% { background: rgba(59, 130, 246, 0.1); }
+            50% { background: rgba(59, 130, 246, 0.2); }
+        }
+        
+        /* 行业头部点击样式 */
+        .sector-header {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sector-header:hover {
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 12px;
+        }
+        
+        /* 行业操作区域样式 */
+        .sector-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(248, 250, 252, 0.8);
+        }
+        
+        .external-link-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .external-link-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .external-link-btn:active {
+            transform: translateY(0);
         }
 
         /* 行业数据总结样式 */
@@ -1008,7 +1071,68 @@
                 this.renderSectors();
                 this.setupEventListeners();
                 this.startPerformanceMonitoring();
+                this.handleUrlParameters();
                 console.log('🚀 行业热力图聚合仪表盘初始化完成');
+            }
+
+            /**
+             * 处理URL参数，支持外部跳转定位
+             */
+            handleUrlParameters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetSector = urlParams.get('sector') || urlParams.get('tagId');
+                
+                if (targetSector) {
+                    // 处理tagId格式 (sector_金融 -> 金融)
+                    const sectorName = targetSector.startsWith('sector_') ? 
+                        targetSector.replace('sector_', '') : targetSector;
+                    
+                    // 延迟定位，确保页面完全加载
+                    setTimeout(() => {
+                        this.positionToSector(sectorName, true);
+                    }, 1000);
+                    
+                    console.log(`🎯 检测到URL参数定位: ${sectorName}`);
+                }
+            }
+
+            /**
+             * 定位到指定行业
+             * @param {string} sectorCode - 行业代码
+             * @param {boolean} isFromUrl - 是否来自URL参数
+             */
+            positionToSector(sectorCode, isFromUrl = false) {
+                const sectorElement = document.getElementById(`sector-${sectorCode}`);
+                
+                if (!sectorElement) {
+                    console.warn(`❌ 未找到行业: ${sectorCode}`);
+                    return;
+                }
+                
+                // 移除所有行业的高亮状态
+                document.querySelectorAll('.sector-card').forEach(card => {
+                    card.classList.remove('highlighted');
+                });
+                
+                // 高亮目标行业
+                sectorElement.classList.add('highlighted');
+                
+                // 平滑滚动到目标行业
+                sectorElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+                
+                // 添加闪烁效果
+                setTimeout(() => {
+                    sectorElement.classList.add('flash-highlight');
+                    setTimeout(() => {
+                        sectorElement.classList.remove('flash-highlight');
+                    }, 2000);
+                }, 500);
+                
+                console.log(`🎯 已定位到行业: ${sectorCode}${isFromUrl ? ' (来自URL)' : ''}`);
             }
 
             /**
@@ -1034,11 +1158,11 @@
                 
                 return `
                     <div class="sector-card" 
+                         id="sector-${sector.code}"
                          data-sector="${sector.code}" 
                          data-url="${sectorUrl}"
-                         style="animation-delay: ${animationDelay}s"
-                         onclick="window.open('${sectorUrl}', '_blank')">
-                        <div class="sector-header">
+                         style="animation-delay: ${animationDelay}s">
+                        <div class="sector-header" onclick="dashboard.positionToSector('${sector.code}')">
                             <h3 class="sector-name">
                                 <span class="sector-icon">${sector.icon}</span>
                                 ${sector.name}
@@ -1082,10 +1206,15 @@
                             </div>
                         </div>
                         
-                        <!-- 点击提示 -->
-                        <div class="click-hint">
-                            <span class="hint-icon">👆</span>
-                            <span class="hint-text">点击查看详细热力图</span>
+                        <!-- 操作按钮 -->
+                        <div class="sector-actions">
+                            <div class="click-hint">
+                                <span class="hint-icon">👆</span>
+                                <span class="hint-text">点击标题定位到顶部</span>
+                            </div>
+                            <button class="external-link-btn" onclick="window.open('${sectorUrl}', '_blank')" title="在新窗口打开详细热力图">
+                                🔗 查看详情
+                            </button>
                         </div>
                     </div>
                 `;
