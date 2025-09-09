@@ -709,13 +709,16 @@
                 this.baseUrl = 'https://heatmap-pro.vercel.app/';
                 this.currentSector = null;
                 
-                this.init();
+                // 异步初始化
+                this.init().catch(error => {
+                    console.error('初始化失败:', error);
+                });
             }
 
-            init() {
+            async init() {
                 this.handleUrlParameters();
                 this.setupEventListeners();
-                this.renderOtherSectors();
+                await this.renderOtherSectors();
             }
 
             /**
@@ -855,19 +858,36 @@
              */
             async loadSectorStats(sectorCode) {
                 try {
-                    // 模拟数据，实际应该从API获取
-                    const stats = this.generateSectorStats(sectorCode);
+                    // 调用真实API获取行业数据
+                    const response = await fetch(`/api/sector-aggregation?sector=${encodeURIComponent(sectorCode)}`);
                     
+                    if (!response.ok) {
+                        throw new Error(`API请求失败: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // 更新页面显示
                     document.getElementById('sectorChange').textContent = 
-                        (stats.change >= 0 ? '+' : '') + stats.change + '%';
+                        (data.change_percent >= 0 ? '+' : '') + data.change_percent + '%';
                     document.getElementById('sectorChange').className = 
-                        'stat-value ' + (stats.change >= 0 ? 'positive' : 'negative');
+                        'stat-value ' + (data.change_percent >= 0 ? 'positive' : 'negative');
                     
-                    document.getElementById('sectorVolume').textContent = stats.volume;
-                    document.getElementById('sectorActive').textContent = stats.active;
+                    document.getElementById('sectorVolume').textContent = data.volume_formatted;
+                    document.getElementById('sectorActive').textContent = data.active_stocks;
+                    
+                    console.log(`📊 ${sectorCode}行业数据加载成功:`, data);
                     
                 } catch (error) {
                     console.error('加载统计数据失败:', error);
+                    // 降级到模拟数据
+                    const fallbackStats = this.generateSectorStats(sectorCode);
+                    document.getElementById('sectorChange').textContent = 
+                        (fallbackStats.change >= 0 ? '+' : '') + fallbackStats.change + '%';
+                    document.getElementById('sectorChange').className = 
+                        'stat-value ' + (fallbackStats.change >= 0 ? 'positive' : 'negative');
+                    document.getElementById('sectorVolume').textContent = fallbackStats.volume;
+                    document.getElementById('sectorActive').textContent = fallbackStats.active;
                 }
             }
 
@@ -896,7 +916,7 @@
             /**
              * 渲染其他行业卡片
              */
-            renderOtherSectors() {
+            async renderOtherSectors() {
                 const otherSectorsGrid = document.getElementById('otherSectorsGrid');
                 if (!otherSectorsGrid) return;
                 
@@ -907,9 +927,34 @@
                 
                 otherSectorsGrid.innerHTML = '';
                 
-                otherSectors.forEach(([name, sector]) => {
-                    const stats = this.generateSectorStats(name);
-                    
+                // 并行获取所有行业数据
+                const sectorDataPromises = otherSectors.map(async ([name, sector]) => {
+                    try {
+                        const response = await fetch(`/api/sector-aggregation?sector=${encodeURIComponent(name)}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            return { name, sector, data };
+                        } else {
+                            throw new Error(`API请求失败: ${response.status}`);
+                        }
+                    } catch (error) {
+                        console.warn(`获取${name}数据失败，使用模拟数据:`, error);
+                        const fallbackStats = this.generateSectorStats(name);
+                        return {
+                            name, 
+                            sector, 
+                            data: {
+                                change_percent: fallbackStats.change,
+                                volume_formatted: fallbackStats.volume,
+                                active_stocks: fallbackStats.active
+                            }
+                        };
+                    }
+                });
+                
+                const sectorResults = await Promise.all(sectorDataPromises);
+                
+                sectorResults.forEach(({ name, sector, data }) => {
                     const cardElement = document.createElement('div');
                     cardElement.className = 'mini-sector-card';
                     cardElement.style.setProperty('--sector-color', sector.color);
@@ -929,17 +974,17 @@
                         
                         <div class="mini-sector-stats">
                             <div class="mini-stat-item">
-                                <div class="mini-stat-value ${stats.change >= 0 ? 'positive' : 'negative'}">
-                                    ${stats.change >= 0 ? '+' : ''}${stats.change}%
+                                <div class="mini-stat-value ${data.change_percent >= 0 ? 'positive' : 'negative'}">
+                                    ${data.change_percent >= 0 ? '+' : ''}${data.change_percent}%
                                 </div>
                                 <div class="mini-stat-label">涨跌幅</div>
                             </div>
                             <div class="mini-stat-item">
-                                <div class="mini-stat-value">${stats.volume}</div>
+                                <div class="mini-stat-value">${data.volume_formatted}</div>
                                 <div class="mini-stat-label">成交量</div>
                             </div>
                             <div class="mini-stat-item">
-                                <div class="mini-stat-value">${stats.active}</div>
+                                <div class="mini-stat-value">${data.active_stocks}</div>
                                 <div class="mini-stat-label">活跃股</div>
                             </div>
                         </div>
@@ -952,7 +997,7 @@
                     otherSectorsGrid.appendChild(cardElement);
                 });
                 
-                console.log(`📊 已渲染 ${otherSectors.length} 个其他行业卡片`);
+                console.log(`📊 已渲染 ${sectorResults.length} 个其他行业卡片（使用真实数据）`);
             }
 
             /**
