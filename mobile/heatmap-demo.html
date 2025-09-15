@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>移动端热力图演示 - 美股数据</title>
+    <link rel="stylesheet" href="mobile-base.css">
+    <link rel="stylesheet" href="mobile-app.css">
+    <link rel="stylesheet" href="mobile-heatmap.css">
+    <style>
+        /* 演示页面专用样式 */
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 16px;
+            text-align: center;
+        }
+        
+        .demo-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        
+        .demo-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .demo-features {
+            background: var(--surface-color);
+            padding: 16px;
+            margin: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .heatmap-demo-container {
+            margin: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- 演示页面头部 -->
+    <div class="demo-header">
+        <h1 class="demo-title">移动端热力图</h1>
+        <p class="demo-subtitle">专为移动设备优化的股市热力图体验</p>
+    </div>
+    
+    <!-- 功能特性介绍 -->
+    <div class="demo-features">
+        <h3 style="margin: 0 0 12px 0; color: var(--text-primary);">核心功能</h3>
+        <ul class="feature-list">
+            <li class="feature-item">
+                <div class="feature-icon">📊</div>
+                <span>全景热力图 - 一览市场全貌</span>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon">🏭</div>
+                <span>行业仪表盘 - 13个主要行业分析</span>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon">👆</div>
+                <span>触摸优化 - 双指缩放、单指拖拽</span>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <span>性能优化 - 流畅的移动端体验</span>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon">🎯</div>
+                <span>快速导航 - 行业间快速切换</span>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- 热力图容器 -->
+    <div class="heatmap-demo-container">
+        <div class="heatmap-container" id="heatmapContainer">
+            <!-- 热力图内容将通过JavaScript生成 -->
+        </div>
+    </div>
+    
+    <!-- 加载指示器 -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>加载中...</p>
+    </div>
+    
+    <!-- Toast 提示 -->
+    <div class="toast hidden" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="mobile-heatmap.js"></script>
+    <script>
+        // 演示页面专用脚本
+        class HeatmapDemo {
+            constructor() {
+                this.heatmapModule = null;
+                this.init();
+            }
+            
+            init() {
+                // 初始化热力图模块
+                this.heatmapModule = new MobileHeatmap();
+                
+                // 监听事件
+                window.addEventListener('showStockDetail', (e) => {
+                    this.showStockDetail(e.detail.symbol);
+                });
+                
+                window.addEventListener('showToast', (e) => {
+                    this.showToast(e.detail.message);
+                });
+                
+                // 添加演示提示
+                setTimeout(() => {
+                    this.showToast('👆 尝试双指缩放和单指拖拽');
+                }, 2000);
+            }
+            
+            showStockDetail(symbol) {
+                this.showToast(`📈 查看 ${symbol} 详情`);
+                // 这里可以添加跳转到详情页的逻辑
+            }
+            
+            showToast(message) {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                
+                if (toast && toastMessage) {
+                    toastMessage.textContent = message;
+                    toast.classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        toast.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            new HeatmapDemo();
+        });
+    </script>
+</body>
+</html>
