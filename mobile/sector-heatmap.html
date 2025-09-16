@@ -11,8 +11,57 @@
     <link rel="stylesheet" href="mobile-heatmap.css">
     <style>
         /* 行业热力图移动端专用样式 */
+        .app-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .top-navigation {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            padding: 0.5rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .nav-tab:hover:not(.active) {
+            background: #f8f9fa;
+            color: #007bff;
+        }
+        
+        .view-container {
+            padding: 1rem;
+        }
+        
+        .view-container.hidden {
+            display: none;
+        }
+        
         .sector-dashboard {
-            padding-bottom: 80px; /* 为底部导航留出空间 */
+            padding-bottom: 20px;
         }
         
         .dashboard-header {
@@ -108,6 +157,94 @@
             height: 300px;
             border: none;
             background: var(--gray-50);
+        }
+        
+        .heatmap-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .heatmap-container.vertical {
+            height: 600px;
+        }
+        
+        .vertical-heatmap {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .sectors-summary {
+            margin-top: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+        }
+        
+        .sectors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .sector-summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e9ecef;
+            user-select: none;
+        }
+        
+        .sector-summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .sector-summary-card:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sector-summary-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sector-summary-icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        .sector-summary-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        .sector-summary-change {
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 0.5rem 0;
+        }
+        
+        .sector-summary-stats {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-align: center;
         }
         
         /* 行业卡片列表 */
@@ -323,39 +460,7 @@
             color: var(--gray-600);
         }
         
-        /* 底部导航栏 */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid var(--gray-200);
-            display: flex;
-            z-index: 100;
-        }
-        
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: var(--space-2);
-            background: none;
-            border: none;
-            color: var(--gray-500);
-            font-size: var(--font-xs);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-item.active {
-            color: var(--primary-color);
-        }
-        
-        .nav-item svg {
-            margin-bottom: var(--space-1);
-        }
+
         
         /* 隐藏类 */
         .hidden {
@@ -382,94 +487,78 @@
 <body>
     <!-- 应用容器 -->
     <div class="app-container">
-        <!-- 行业热力图仪表盘 -->
-        <div class="sector-dashboard">
-            <!-- 页面头部 -->
-            <div class="dashboard-header">
-                <h1 class="dashboard-title">行业热力图</h1>
-                <p class="dashboard-subtitle">实时监控各行业市场表现</p>
-            </div>
-            
+        <!-- 顶部导航 -->
+        <div class="top-navigation">
+            <button class="nav-tab active" data-view="panoramic" onclick="switchView('panoramic')">
+                全景
+            </button>
+            <button class="nav-tab" data-view="sectors" onclick="switchView('sectors')">
+                行业
+            </button>
+        </div>
+        
+        <!-- 全景视图 -->
+        <div class="view-container" id="panoramicView">
             <!-- 统计概览 -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value" id="totalChange">+1.2%</div>
-                    <div class="stat-label">总体涨跌</div>
+                    <div class="stat-value" id="totalStocks">505</div>
+                    <div class="stat-label">总股票数</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="totalVolume">125.6B</div>
-                    <div class="stat-label">成交量</div>
+                    <div class="stat-value positive" id="gainers">312</div>
+                    <div class="stat-label">上涨股票</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="activeStocks">1,247</div>
-                    <div class="stat-label">活跃股票</div>
+                    <div class="stat-value negative" id="losers">193</div>
+                    <div class="stat-label">下跌股票</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalVolume">2.1T</div>
+                    <div class="stat-label">总成交量</div>
                 </div>
             </div>
             
             <!-- 全景热力图卡片 -->
-            <div class="panoramic-card">
-                <div class="panoramic-header">
-                    <h3 class="panoramic-title">📊 全景热力图</h3>
-                    <button class="refresh-btn" onclick="refreshPanoramicHeatmap()">刷新</button>
+            <div class="panoramic-heatmap-card">
+                <div class="card-header">
+                    <h3>📊 全景热力图</h3>
+                    <button class="refresh-btn" onclick="refreshPanoramicHeatmap()">
+                        🔄
+                    </button>
                 </div>
-                <div style="position: relative;">
+                <div class="heatmap-container vertical">
                     <iframe 
-                        id="panoramicIframe"
-                        class="panoramic-iframe"
-                        src="https://heatmap-pro.vercel.app/"
+                        id="panoramicHeatmap"
+                        src="https://heatmap-embxh3edt-simon-pans-projects.vercel.app/heatmap-component/panoramic-heatmap.html?mobile=true&vertical=true"
+                        class="panoramic-iframe vertical-heatmap"
                         loading="lazy">
                     </iframe>
-                    <div class="loading-overlay" id="panoramicLoading">
-                        <div class="loading-spinner"></div>
-                        <div class="loading-text">加载中...</div>
-                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="external-link-btn" onclick="openFullHeatmap()">
+                        查看详情 →
+                    </button>
                 </div>
             </div>
             
-            <!-- 行业热力图列表 -->
-            <div class="sectors-list" id="sectorsList">
-                <!-- 行业卡片将通过JavaScript动态生成 -->
+            <!-- 行业摘要列表 -->
+            <div class="sectors-summary">
+                <h3 class="section-title">📈 行业概览</h3>
+                <div class="sectors-grid" id="sectorsGrid">
+                    <!-- 动态生成行业摘要卡片 -->
+                </div>
             </div>
         </div>
         
-        <!-- 底部导航栏 -->
-        <nav class="bottom-nav">
-            <button class="nav-item" onclick="navigateToPage('tags')">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span>标签</span>
-            </button>
-            <button class="nav-item" onclick="navigateToPage('ranking')">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-                <span>榜单</span>
-            </button>
-            <button class="nav-item active">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <rect x="7" y="7" width="3" height="9"></rect>
-                    <rect x="14" y="7" width="3" height="5"></rect>
-                </svg>
-                <span>热力图</span>
-            </button>
-            <button class="nav-item" onclick="navigateToPage('panoramic')">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <span>全景</span>
-            </button>
-        </nav>
+        <!-- 行业视图 -->
+        <div class="view-container hidden" id="sectorsView">
+            <div class="sectors-list" id="sectorsList">
+                <!-- 动态生成行业详情卡片 -->
+            </div>
+        </div>
+        
+
     </div>
     
     <!-- Toast 提示 -->
@@ -501,14 +590,40 @@
             threshold: 80
         };
         
+        // 当前视图状态
+        let currentView = 'panoramic';
+        
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
             initializePage();
-            loadSectorData();
+            loadPanoramicData();
+            loadSectorsSummary();
             setupEventListeners();
             setupPullToRefresh();
             startAutoRefresh();
         });
+        
+        // 视图切换
+        function switchView(view) {
+            currentView = view;
+            
+            // 更新导航按钮状态
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-view="${view}"]`).classList.add('active');
+            
+            // 切换视图容器
+            document.getElementById('panoramicView').classList.toggle('hidden', view !== 'panoramic');
+            document.getElementById('sectorsView').classList.toggle('hidden', view !== 'sectors');
+            
+            // 加载对应数据
+            if (view === 'sectors') {
+                loadSectorData();
+            }
+            
+            console.log(`🔄 切换到${view === 'panoramic' ? '全景' : '行业'}视图`);
+        }
         
         // 初始化页面
         function initializePage() {
@@ -523,15 +638,72 @@
             }, 2000);
         }
         
-        // 加载行业数据
-        async function loadSectorData() {
-            const sectorsList = document.getElementById('sectorsList');
-            
+        // 加载全景数据
+        async function loadPanoramicData() {
             try {
                 // 更新统计数据
                 await updateStats();
                 
-                // 生成行业卡片
+                console.log('✅ 全景数据加载完成');
+            } catch (error) {
+                console.error('❌ 加载全景数据失败:', error);
+                showToast('加载全景数据失败，请稍后重试');
+            }
+        }
+        
+        // 加载行业摘要
+        async function loadSectorsSummary() {
+            const sectorsGrid = document.getElementById('sectorsGrid');
+            
+            try {
+                // 生成行业摘要卡片
+                sectorsGrid.innerHTML = sectors.map(sector => {
+                    const change = (Math.random() * 6 - 3).toFixed(1);
+                    const volume = (Math.random() * 50 + 10).toFixed(1);
+                    const stocks = Math.floor(Math.random() * 100 + 50);
+                    
+                    return `
+                        <div class="sector-summary-card" onclick="openSectorDetail('${sector.code}')">
+                            <div class="sector-summary-header">
+                                <span class="sector-summary-icon">${sector.icon}</span>
+                                <span class="sector-summary-name">${sector.name}</span>
+                            </div>
+                            <div class="sector-summary-change ${change >= 0 ? 'positive' : 'negative'}">
+                                ${change >= 0 ? '+' : ''}${change}%
+                            </div>
+                            <div class="sector-summary-stats">
+                                ${volume}B | ${stocks}只
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                console.log('✅ 行业摘要加载完成');
+            } catch (error) {
+                console.error('❌ 加载行业摘要失败:', error);
+                showToast('加载行业摘要失败，请稍后重试');
+            }
+        }
+        
+        // 切换到行业视图并定位到特定行业
+        function switchToSectorView(sectorCode) {
+            switchView('sectors');
+            
+            // 延迟滚动到对应行业卡片
+            setTimeout(() => {
+                const sectorCard = document.querySelector(`[data-sector="${sectorCode}"]`);
+                if (sectorCard) {
+                    sectorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+        }
+        
+        // 加载行业详情数据
+        async function loadSectorData() {
+            const sectorsList = document.getElementById('sectorsList');
+            
+            try {
+                // 生成行业详情卡片
                 sectorsList.innerHTML = sectors.map(sector => `
                     <div class="sector-card" data-sector="${sector.code}">
                         <div class="sector-header" onclick="toggleSectorDetail('${sector.code}')">
@@ -583,9 +755,10 @@
                 // 设置懒加载观察器
                 setupLazyLoading();
                 
+                console.log('✅ 行业详情数据加载完成');
             } catch (error) {
-                console.error('❌ 加载行业数据失败:', error);
-                showToast('加载数据失败，请稍后重试');
+                console.error('❌ 加载行业详情数据失败:', error);
+                showToast('加载行业详情数据失败，请稍后重试');
             }
         }
         
@@ -671,6 +844,11 @@
             showToast('正在刷新全景热力图...');
         }
         
+        // 打开全景热力图详情页面
+        function openFullHeatmap() {
+            window.open('heatmap-demo.html', '_blank');
+        }
+        
         // 切换行业详情
         function toggleSectorDetail(sectorCode) {
             console.log('🔄 切换行业详情:', sectorCode);
@@ -682,7 +860,7 @@
             const sector = sectors.find(s => s.code === sectorCode);
             if (sector) {
                 // 跳转到行业详情页面
-                window.open(`https://heatmap-pro.vercel.app/sector-aggregation.html#${sectorCode}`, '_blank');
+                window.location.href = `sector-detail.html?sector=${sectorCode}`;
             }
         }
         
@@ -848,15 +1026,16 @@
         function refreshAllData() {
             showToast('正在刷新数据...');
             
-            // 刷新统计数据
-            updateStats();
-            
-            // 刷新全景热力图
-            refreshPanoramicHeatmap();
-            
-            // 重新加载行业数据
-            setTimeout(() => {
+            // 根据当前视图刷新对应数据
+            if (currentView === 'panoramic') {
+                loadPanoramicData();
+                loadSectorsSummary();
+                refreshPanoramicHeatmap();
+            } else {
                 loadSectorData();
+            }
+            
+            setTimeout(() => {
                 showToast('刷新完成');
             }, 1000);
         }
@@ -865,7 +1044,10 @@
         function startAutoRefresh() {
             // 每5分钟自动刷新统计数据
             setInterval(() => {
-                updateStats();
+                if (currentView === 'panoramic') {
+                    updateStats();
+                    loadSectorsSummary();
+                }
             }, 5 * 60 * 1000);
         }
         
@@ -873,7 +1055,12 @@
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
                 // 页面重新可见时刷新数据
-                updateStats();
+                if (currentView === 'panoramic') {
+                    updateStats();
+                    loadSectorsSummary();
+                } else {
+                    updateStats();
+                }
             }
         });
     </script>

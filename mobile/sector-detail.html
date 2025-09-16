@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业热力图详情 - 移动端</title>
+    <link rel="stylesheet" href="mobile-base.css">
+    <style>
+        /* 行业详情页专用样式 */
+        .app-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .sector-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 1.5rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .back-button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: background-color 0.2s;
+        }
+        
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .sector-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sector-icon {
+            font-size: 2rem;
+            margin-right: 0.75rem;
+        }
+        
+        .sector-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .content-container {
+            padding: 1rem;
+        }
+        
+        .sector-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        
+        .heatmap-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .heatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .heatmap-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        
+        .heatmap-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .sector-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        .other-sectors {
+            margin-top: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 1rem;
+        }
+        
+        .sectors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .sector-link {
+            background: white;
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        
+        .sector-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .sector-link-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .sector-link-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #212529;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        
+        .loading-overlay.hidden {
+            display: none;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 行业头部 -->
+        <div class="sector-header">
+            <button class="back-button" onclick="goBack()">
+                ← 返回
+            </button>
+            <div class="sector-title">
+                <span class="sector-icon" id="sectorIcon">💼</span>
+                <span id="sectorName">行业名称</span>
+            </div>
+            <div class="sector-subtitle" id="sectorSubtitle">
+                实时监控该行业市场表现
+            </div>
+        </div>
+        
+        <!-- 内容容器 -->
+        <div class="content-container">
+            <!-- 行业统计 -->
+            <div class="sector-stats">
+                <div class="stat-card">
+                    <div class="stat-value positive" id="sectorChange">+2.1%</div>
+                    <div class="stat-label">涨跌幅</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sectorVolume">45.2B</div>
+                    <div class="stat-label">成交量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sectorStocks">127</div>
+                    <div class="stat-label">股票数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sectorMarketCap">2.8T</div>
+                    <div class="stat-label">市值</div>
+                </div>
+            </div>
+            
+            <!-- 行业热力图 -->
+            <div class="heatmap-card">
+                <div class="heatmap-header">
+                    <h3 class="heatmap-title" id="heatmapTitle">行业热力图</h3>
+                    <button class="refresh-btn" onclick="refreshHeatmap()">
+                        🔄 刷新
+                    </button>
+                </div>
+                <div class="heatmap-container">
+                    <iframe 
+                        id="sectorHeatmap"
+                        class="sector-iframe"
+                        loading="lazy">
+                    </iframe>
+                    <div class="loading-overlay" id="heatmapLoading">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">加载热力图中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 其他行业 -->
+            <div class="other-sectors">
+                <h3 class="section-title">🔄 切换行业</h3>
+                <div class="sectors-grid" id="otherSectorsGrid">
+                    <!-- 动态生成其他行业链接 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // 行业配置
+        const sectors = [
+            { code: 'technology', name: '科技', icon: '💻' },
+            { code: 'finance', name: '金融', icon: '🏦' },
+            { code: 'healthcare', name: '医疗', icon: '🏥' },
+            { code: 'energy', name: '能源', icon: '⚡' },
+            { code: 'consumer', name: '消费', icon: '🛒' },
+            { code: 'industrial', name: '工业', icon: '🏭' },
+            { code: 'materials', name: '材料', icon: '🔧' },
+            { code: 'utilities', name: '公用事业', icon: '💡' },
+            { code: 'realestate', name: '房地产', icon: '🏠' },
+            { code: 'telecom', name: '通信', icon: '📡' },
+            { code: 'transportation', name: '运输', icon: '🚛' },
+            { code: 'retail', name: '零售', icon: '🏪' },
+            { code: 'media', name: '媒体', icon: '📺' }
+        ];
+        
+        let currentSector = null;
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从URL参数获取行业代码
+            const urlParams = new URLSearchParams(window.location.search);
+            const sectorCode = urlParams.get('sector') || 'technology';
+            
+            loadSectorDetail(sectorCode);
+            generateOtherSectors(sectorCode);
+        });
+        
+        // 加载行业详情
+        function loadSectorDetail(sectorCode) {
+            currentSector = sectors.find(s => s.code === sectorCode) || sectors[0];
+            
+            // 更新页面标题和头部信息
+            document.title = `${currentSector.name}行业热力图 - 移动端`;
+            document.getElementById('sectorIcon').textContent = currentSector.icon;
+            document.getElementById('sectorName').textContent = currentSector.name;
+            document.getElementById('sectorSubtitle').textContent = `实时监控${currentSector.name}行业市场表现`;
+            document.getElementById('heatmapTitle').textContent = `${currentSector.name}行业热力图`;
+            
+            // 模拟统计数据
+            updateSectorStats();
+            
+            // 加载热力图
+            loadHeatmap();
+            
+            console.log(`📊 加载${currentSector.name}行业详情`);
+        }
+        
+        // 更新行业统计数据
+        function updateSectorStats() {
+            const change = (Math.random() * 6 - 3).toFixed(1);
+            const volume = (Math.random() * 50 + 10).toFixed(1);
+            const stocks = Math.floor(Math.random() * 100 + 50);
+            const marketCap = (Math.random() * 3 + 1).toFixed(1);
+            
+            document.getElementById('sectorChange').textContent = `${change >= 0 ? '+' : ''}${change}%`;
+            document.getElementById('sectorChange').className = `stat-value ${change >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('sectorVolume').textContent = `${volume}B`;
+            document.getElementById('sectorStocks').textContent = stocks;
+            document.getElementById('sectorMarketCap').textContent = `${marketCap}T`;
+        }
+        
+        // 加载热力图
+        function loadHeatmap() {
+            const iframe = document.getElementById('sectorHeatmap');
+            const loading = document.getElementById('heatmapLoading');
+            
+            loading.classList.remove('hidden');
+            
+            // 设置iframe源
+            iframe.src = `https://heatmap-embxh3edt-simon-pans-projects.vercel.app/sector/${currentSector.code}?mobile=true&vertical=true`;
+            
+            iframe.onload = function() {
+                loading.classList.add('hidden');
+                console.log(`✅ ${currentSector.name}热力图加载完成`);
+            };
+            
+            iframe.onerror = function() {
+                loading.classList.add('hidden');
+                showToast('热力图加载失败，请稍后重试');
+            };
+        }
+        
+        // 生成其他行业链接
+        function generateOtherSectors(currentSectorCode) {
+            const otherSectors = sectors.filter(s => s.code !== currentSectorCode);
+            const grid = document.getElementById('otherSectorsGrid');
+            
+            grid.innerHTML = otherSectors.map(sector => `
+                <a href="?sector=${sector.code}" class="sector-link">
+                    <div class="sector-link-icon">${sector.icon}</div>
+                    <div class="sector-link-name">${sector.name}</div>
+                </a>
+            `).join('');
+        }
+        
+        // 刷新热力图
+        function refreshHeatmap() {
+            showToast('正在刷新热力图...');
+            updateSectorStats();
+            loadHeatmap();
+        }
+        
+        // 返回上一页
+        function goBack() {
+            if (document.referrer && document.referrer.includes('sector-heatmap.html')) {
+                history.back();
+            } else {
+                window.location.href = 'sector-heatmap.html';
+            }
+        }
+        
+        // 显示Toast提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 页面可见性变化处理
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // 页面重新可见时刷新统计数据
+                updateSectorStats();
+            }
+        });
+    </script>
+</body>
+</html>
