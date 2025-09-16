@@ -485,7 +485,78 @@
             .sector-iframe {
                 height: 200px;
             }
-        }
+            
+            /* 移动端热力图优化 */
+            .heatmap-container.vertical {
+                height: 400px;
+            }
+            
+            .vertical-heatmap {
+                height: 100%;
+                width: 100%;
+                min-height: 400px;
+            }
+            
+            /* 移动端行业摘要卡片优化 */
+            .sectors-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                padding: 0 0.5rem;
+            }
+            
+            .sector-summary-card {
+                padding: 0.75rem;
+                min-height: 100px;
+            }
+            
+            .sector-summary-name {
+                font-size: 0.8rem;
+                line-height: 1.2;
+            }
+            
+            .sector-summary-change {
+                font-size: 0.9rem;
+                margin: 0.3rem 0;
+            }
+            
+            .sector-summary-stats {
+                font-size: 0.7rem;
+            }
+            
+            /* 确保行业摘要区域可见 */
+            .sectors-summary {
+                margin-top: 1rem;
+                margin-bottom: 2rem;
+                display: block !important;
+                visibility: visible !important;
+            }
+            
+            .section-title {
+                 font-size: 1.1rem;
+                 margin-bottom: 0.75rem;
+             }
+         }
+         
+         /* 超小屏幕设备优化 */
+         @media (max-width: 375px) {
+             .sectors-grid {
+                 grid-template-columns: 1fr;
+                 gap: 0.5rem;
+             }
+             
+             .heatmap-container.vertical {
+                 height: 350px;
+             }
+             
+             .stats-grid {
+                 grid-template-columns: 1fr;
+                 gap: 0.5rem;
+             }
+             
+             .stat-card {
+                 padding: 0.75rem;
+             }
+         }
     </style>
 </head>
 <body>
