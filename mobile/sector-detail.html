@@ -390,8 +390,26 @@
             
             loading.classList.remove('hidden');
             
-            // 设置iframe源
-            iframe.src = `https://heatmap-embxh3edt-simon-pans-projects.vercel.app/sector/${currentSector.code}?mobile=true&vertical=true`;
+            // 设置iframe源 - 根据行业代码生成URL
+            const sectorNameMap = {
+                'technology': '信息技术',
+                'finance': '金融',
+                'healthcare': '医疗保健',
+                'energy': '能源',
+                'consumer': '非必需消费品',
+                'industrial': '工业',
+                'materials': '原材料',
+                'utilities': '公用事业',
+                'realestate': '房地产',
+                'telecom': '通讯服务',
+                'transportation': '工业',
+                'retail': '非必需消费品',
+                'media': '媒体娱乐'
+            };
+            
+            const sectorName = sectorNameMap[currentSector.code] || '信息技术';
+            const encodedSectorName = encodeURIComponent(sectorName);
+            iframe.src = `https://heatmap-pro.vercel.app/?sector=${encodedSectorName}`;
             
             iframe.onload = function() {
                 loading.classList.add('hidden');

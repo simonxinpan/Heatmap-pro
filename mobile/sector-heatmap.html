@@ -530,7 +530,7 @@
                 <div class="heatmap-container vertical">
                     <iframe 
                         id="panoramicHeatmap"
-                        src="https://heatmap-embxh3edt-simon-pans-projects.vercel.app/heatmap-component/panoramic-heatmap.html?mobile=true&vertical=true"
+                        src="https://heatmap-pro.vercel.app/"
                         class="panoramic-iframe vertical-heatmap"
                         loading="lazy">
                     </iframe>
@@ -567,7 +567,7 @@
     </div>
     
     <script>
-        // 行业配置
+        // 行业配置（13个行业）
         const sectors = [
             { code: 'technology', name: '信息技术', icon: '💻' },
             { code: 'healthcare', name: '医疗保健', icon: '🏥' },
@@ -579,7 +579,9 @@
             { code: 'energy', name: '能源', icon: '⚡' },
             { code: 'utilities', name: '公用事业', icon: '🔌' },
             { code: 'real-estate', name: '房地产', icon: '🏠' },
-            { code: 'materials', name: '原材料', icon: '⚒️' }
+            { code: 'materials', name: '原材料', icon: '⚒️' },
+            { code: 'media', name: '媒体娱乐', icon: '📺' },
+            { code: 'semiconductors', name: '半导体', icon: '🔬' }
         ];
         
         // 下拉刷新相关变量
@@ -619,7 +621,7 @@
             
             // 加载对应数据
             if (view === 'sectors') {
-                loadSectorData();
+                loadDefaultSectorView();
             }
             
             console.log(`🔄 切换到${view === 'panoramic' ? '全景' : '行业'}视图`);
@@ -696,6 +698,152 @@
                     sectorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }, 300);
+        }
+        
+        // 加载默认行业视图（信息技术）
+        function loadDefaultSectorView() {
+            // 创建信息技术行业的仪表盘视图
+            const sectorsView = document.getElementById('sectorsView');
+            sectorsView.innerHTML = `
+                <div class="sector-dashboard">
+                    <!-- 行业头部 -->
+                    <div class="dashboard-header">
+                        <div class="dashboard-title">
+                            💻 信息技术
+                        </div>
+                        <div class="dashboard-subtitle">
+                            实时监控信息技术行业市场表现
+                        </div>
+                    </div>
+                    
+                    <!-- 行业统计 -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value positive">+2.1%</div>
+                            <div class="stat-label">涨跌幅</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">45.2B</div>
+                            <div class="stat-label">成交量</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">127</div>
+                            <div class="stat-label">股票数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">2.8T</div>
+                            <div class="stat-label">市值</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 行业热力图 -->
+                    <div class="panoramic-card">
+                        <div class="panoramic-header">
+                            <h3 class="panoramic-title">信息技术行业热力图</h3>
+                            <button class="refresh-btn" onclick="refreshDefaultSectorHeatmap()">
+                                🔄
+                            </button>
+                        </div>
+                        <div class="heatmap-container vertical">
+                            <iframe 
+                                id="defaultSectorHeatmap"
+                                src="https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF"
+                                class="panoramic-iframe vertical-heatmap"
+                                loading="lazy">
+                            </iframe>
+                            <div class="loading-overlay" id="defaultSectorLoading">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">加载热力图中...</div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="external-link-btn" onclick="openSectorDetail('technology')">
+                                查看详情 →
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 其他行业快速入口 -->
+                    <div class="sectors-summary">
+                        <h3 class="section-title">🔄 切换行业</h3>
+                        <div class="sectors-grid" id="quickSectorsGrid">
+                            <!-- 动态生成其他行业链接 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 生成其他行业快速入口
+            generateQuickSectorLinks();
+            
+            // 设置iframe加载事件
+            const iframe = document.getElementById('defaultSectorHeatmap');
+            const loading = document.getElementById('defaultSectorLoading');
+            
+            iframe.onload = function() {
+                loading.classList.add('hidden');
+                console.log('✅ 信息技术行业热力图加载完成');
+            };
+            
+            iframe.onerror = function() {
+                loading.classList.add('hidden');
+                console.error('❌ 信息技术行业热力图加载失败');
+            };
+        }
+        
+        // 生成其他行业快速入口
+        function generateQuickSectorLinks() {
+            const quickSectors = [
+                { code: 'healthcare', name: '医疗保健', icon: '🏥' },
+                { code: 'financials', name: '金融服务', icon: '🏦' },
+                { code: 'energy', name: '能源', icon: '⚡' },
+                { code: 'consumer-discretionary', name: '非必需消费品', icon: '🛍️' },
+                { code: 'industrials', name: '工业', icon: '🏭' },
+                { code: 'materials', name: '原材料', icon: '⚒️' },
+                { code: 'utilities', name: '公用事业', icon: '🔌' },
+                { code: 'real-estate', name: '房地产', icon: '🏠' },
+                { code: 'communication', name: '通讯服务', icon: '📱' },
+                { code: 'consumer-staples', name: '日常消费品', icon: '🛒' }
+            ];
+            
+            const grid = document.getElementById('quickSectorsGrid');
+            if (grid) {
+                grid.innerHTML = quickSectors.map(sector => {
+                    const change = (Math.random() * 6 - 3).toFixed(1);
+                    return `
+                        <div class="sector-summary-card" onclick="switchToSector('${sector.code}')">
+                            <div class="sector-summary-header">
+                                <span class="sector-summary-icon">${sector.icon}</span>
+                                <span class="sector-summary-name">${sector.name}</span>
+                            </div>
+                            <div class="sector-summary-change ${change >= 0 ? 'positive' : 'negative'}">
+                                ${change >= 0 ? '+' : ''}${change}%
+                            </div>
+                            <div class="sector-summary-stats">
+                                点击查看
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // 切换到指定行业
+        function switchToSector(sectorCode) {
+            window.location.href = `sector-detail.html?sector=${sectorCode}`;
+        }
+        
+        // 刷新默认行业热力图
+        function refreshDefaultSectorHeatmap() {
+            const iframe = document.getElementById('defaultSectorHeatmap');
+            const loading = document.getElementById('defaultSectorLoading');
+            
+            if (loading) loading.classList.remove('hidden');
+            if (iframe) {
+                iframe.src = iframe.src; // 重新加载
+            }
+            
+            showToast('正在刷新信息技术行业热力图...');
         }
         
         // 加载行业详情数据
