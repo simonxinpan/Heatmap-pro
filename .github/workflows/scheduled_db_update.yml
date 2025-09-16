@@ -1,0 +1,41 @@
+name: Scheduled Database Update
+
+# 触发条件：每天UTC时间14:30（北京时间22:30）运行
+# 也可以手动触发
+on:
+  schedule:
+    - cron: '30 14 * * *'  # 每天UTC 14:30
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  update-database:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run database update
+      env:
+        NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      run: node _scripts/update-database.js
+      
+    - name: Notify completion
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "✅ Database update completed successfully"
+        else
+          echo "❌ Database update failed"
+        fi

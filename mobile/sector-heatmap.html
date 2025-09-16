@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>行业热力图 - 移动版</title>
+    <link rel="stylesheet" href="mobile-base.css">
+    <link rel="stylesheet" href="mobile-app.css">
+    <link rel="stylesheet" href="mobile-heatmap.css">
+    <style>
+        /* 行业热力图移动端专用样式 */
+        .app-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .top-navigation {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            padding: 0.5rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .nav-tab:hover:not(.active) {
+            background: #f8f9fa;
+            color: #007bff;
+        }
+        
+        .view-container {
+            padding: 1rem;
+        }
+        
+        .view-container.hidden {
+            display: none;
+        }
+        
+        .sector-dashboard {
+            padding-bottom: 20px;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: var(--space-6) var(--space-4);
+            text-align: center;
+            margin-bottom: var(--space-6);
+        }
+        
+        .dashboard-title {
+            font-size: var(--font-2xl);
+            font-weight: 700;
+            margin-bottom: var(--space-2);
+        }
+        
+        .dashboard-subtitle {
+            font-size: var(--font-sm);
+            opacity: 0.9;
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-3);
+            margin-bottom: var(--space-6);
+            padding: 0 var(--space-4);
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .stat-value {
+            font-size: var(--font-lg);
+            font-weight: 700;
+            margin-bottom: var(--space-1);
+        }
+        
+        .stat-value.positive { color: var(--bull-color); }
+        .stat-value.negative { color: var(--bear-color); }
+        
+        .stat-label {
+            font-size: var(--font-xs);
+            color: var(--gray-600);
+        }
+        
+        /* 全景热力图卡片 */
+        .panoramic-card {
+            background: white;
+            border-radius: var(--radius-xl);
+            margin: 0 var(--space-4) var(--space-6);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+        
+        .panoramic-header {
+            padding: var(--space-4);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panoramic-title {
+            font-size: var(--font-lg);
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .refresh-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--space-2) var(--space-3);
+            font-size: var(--font-xs);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .panoramic-iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            background: var(--gray-50);
+        }
+        
+        .heatmap-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .heatmap-container.vertical {
+            height: 600px;
+        }
+        
+        .vertical-heatmap {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .sectors-summary {
+            margin-top: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+        }
+        
+        .sectors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .sector-summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e9ecef;
+            user-select: none;
+        }
+        
+        .sector-summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .sector-summary-card:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sector-summary-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sector-summary-icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        .sector-summary-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        .sector-summary-change {
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 0.5rem 0;
+        }
+        
+        .sector-summary-stats {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-align: center;
+        }
+        
+        /* 行业卡片列表 */
+        .sectors-list {
+            padding: 0 var(--space-4);
+        }
+        
+        .sector-card {
+            background: white;
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-4);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .sector-card:active {
+            transform: scale(0.98);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .sector-header {
+            padding: var(--space-4);
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sector-info {
+            flex: 1;
+        }
+        
+        .sector-name {
+            font-size: var(--font-lg);
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: var(--space-1);
+        }
+        
+        .sector-stats {
+            display: flex;
+            gap: var(--space-4);
+        }
+        
+        .sector-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .sector-stat-value {
+            font-size: var(--font-sm);
+            font-weight: 600;
+        }
+        
+        .sector-stat-label {
+            font-size: var(--font-xs);
+            color: var(--gray-500);
+        }
+        
+        .sector-iframe {
+            width: 100%;
+            height: 250px;
+            border: none;
+            background: var(--gray-50);
+        }
+        
+        .sector-iframe.vertical {
+            height: 500px;
+        }
+        
+        .sector-actions {
+            padding: var(--space-3) var(--space-4);
+            background: var(--gray-50);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .external-link-btn {
+            background: var(--info-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--space-2) var(--space-4);
+            font-size: var(--font-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .external-link-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* 加载状态 */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .iframe-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .iframe-placeholder:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            border-color: #007bff;
+        }
+        
+        .placeholder-content {
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .placeholder-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .placeholder-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 249, 250, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 15;
+        }
+        
+        .error-overlay.hidden {
+            display: none;
+        }
+        
+        .error-content {
+            text-align: center;
+            color: #dc3545;
+        }
+        
+        .error-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .error-text {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .retry-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .retry-btn:hover {
+            background: #0056b3;
+        }
+        
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--gray-200);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: var(--space-2);
+            font-size: var(--font-sm);
+            color: var(--gray-600);
+        }
+        
+
+        
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .sector-stats {
+                gap: var(--space-2);
+            }
+            
+            .panoramic-iframe,
+            .sector-iframe {
+                height: 200px;
+            }
+            
+            /* 移动端热力图优化 */
+            .heatmap-container.vertical {
+                height: 400px;
+            }
+            
+            .vertical-heatmap {
+                height: 100%;
+                width: 100%;
+                min-height: 400px;
+            }
+            
+            /* 移动端行业摘要卡片优化 */
+            .sectors-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                padding: 0 0.5rem;
+            }
+            
+            .sector-summary-card {
+                padding: 0.75rem;
+                min-height: 100px;
+            }
+            
+            .sector-summary-name {
+                font-size: 0.8rem;
+                line-height: 1.2;
+            }
+            
+            .sector-summary-change {
+                font-size: 0.9rem;
+                margin: 0.3rem 0;
+            }
+            
+            .sector-summary-stats {
+                font-size: 0.7rem;
+            }
+            
+            /* 确保行业摘要区域可见 */
+            .sectors-summary {
+                margin-top: 1rem;
+                margin-bottom: 2rem;
+                display: block !important;
+                visibility: visible !important;
+            }
+            
+            .section-title {
+                 font-size: 1.1rem;
+                 margin-bottom: 0.75rem;
+             }
+         }
+         
+         /* 超小屏幕设备优化 */
+         @media (max-width: 375px) {
+             .sectors-grid {
+                 grid-template-columns: 1fr;
+                 gap: 0.5rem;
+             }
+             
+             .heatmap-container.vertical {
+                 height: 350px;
+             }
+             
+             .stats-grid {
+                 grid-template-columns: 1fr;
+                 gap: 0.5rem;
+             }
+             
+             .stat-card {
+                 padding: 0.75rem;
+             }
+         }
+    </style>
+</head>
+<body>
+    <!-- 应用容器 -->
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <div class="top-navigation">
+            <button class="nav-tab active" data-view="panoramic" onclick="switchView('panoramic')">
+                全景
+            </button>
+            <button class="nav-tab" data-view="sectors" onclick="switchView('sectors')">
+                行业
+            </button>
+        </div>
+        
+        <!-- 全景视图 -->
+        <div class="view-container" id="panoramicView">
+            <!-- 统计概览 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalStocks">505</div>
+                    <div class="stat-label">总股票数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value positive" id="gainers">312</div>
+                    <div class="stat-label">上涨股票</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value negative" id="losers">193</div>
+                    <div class="stat-label">下跌股票</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalVolume">2.1T</div>
+                    <div class="stat-label">总成交量</div>
+                </div>
+            </div>
+            
+            <!-- 全景热力图卡片 -->
+            <div class="panoramic-heatmap-card">
+                <div class="card-header">
+                    <h3>📊 全景热力图</h3>
+                    <button class="refresh-btn" onclick="refreshPanoramicHeatmap()">
+                        🔄
+                    </button>
+                </div>
+                <div class="heatmap-container vertical">
+                    <iframe 
+                        id="panoramicHeatmap"
+                        src="https://heatmap-pro.vercel.app/"
+                        class="panoramic-iframe vertical-heatmap"
+                        loading="lazy">
+                    </iframe>
+                </div>
+                <div class="card-actions">
+                    <button class="external-link-btn" onclick="openFullHeatmap()">
+                        查看详情 →
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 行业摘要列表 -->
+            <div class="sectors-summary">
+                <h3 class="section-title">📈 行业概览</h3>
+                <div class="sectors-grid" id="sectorsGrid">
+                    <!-- 动态生成行业摘要卡片 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 行业视图 -->
+        <div class="view-container hidden" id="sectorsView">
+            <div class="sectors-list" id="sectorsList">
+                <!-- 动态生成行业详情卡片 -->
+            </div>
+        </div>
+        
+
+    </div>
+    
+    <!-- Toast 提示 -->
+    <div class="toast hidden" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+    
+    <script>
+        // 行业配置（13个行业）
+        const sectors = [
+            { code: 'technology', name: '信息技术', icon: '💻' },
+            { code: 'healthcare', name: '医疗保健', icon: '🏥' },
+            { code: 'financials', name: '金融服务', icon: '🏦' },
+            { code: 'consumer-discretionary', name: '非必需消费品', icon: '🛍️' },
+            { code: 'communication', name: '通讯服务', icon: '📱' },
+            { code: 'industrials', name: '工业', icon: '🏭' },
+            { code: 'consumer-staples', name: '日常消费品', icon: '🛒' },
+            { code: 'energy', name: '能源', icon: '⚡' },
+            { code: 'utilities', name: '公用事业', icon: '🔌' },
+            { code: 'real-estate', name: '房地产', icon: '🏠' },
+            { code: 'materials', name: '原材料', icon: '⚒️' },
+            { code: 'media', name: '媒体娱乐', icon: '📺' },
+            { code: 'semiconductors', name: '半导体', icon: '🔬' }
+        ];
+        
+        // 下拉刷新相关变量
+        let pullToRefresh = {
+            startY: 0,
+            currentY: 0,
+            pulling: false,
+            threshold: 80
+        };
+        
+        // 当前视图状态
+        let currentView = 'panoramic';
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            loadPanoramicData();
+            loadSectorsSummary();
+            setupEventListeners();
+            setupPullToRefresh();
+            startAutoRefresh();
+        });
+        
+        // 视图切换
+        function switchView(view) {
+            currentView = view;
+            
+            // 更新导航按钮状态
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-view="${view}"]`).classList.add('active');
+            
+            // 切换视图容器
+            document.getElementById('panoramicView').classList.toggle('hidden', view !== 'panoramic');
+            document.getElementById('sectorsView').classList.toggle('hidden', view !== 'sectors');
+            
+            // 加载对应数据
+            if (view === 'sectors') {
+                loadDefaultSectorView();
+            }
+            
+            console.log(`🔄 切换到${view === 'panoramic' ? '全景' : '行业'}视图`);
+        }
+        
+        // 初始化页面
+        function initializePage() {
+            console.log('🚀 行业热力图移动端页面初始化');
+            
+            // 隐藏全景热力图加载指示器
+            setTimeout(() => {
+                const loading = document.getElementById('panoramicLoading');
+                if (loading) {
+                    loading.classList.add('hidden');
+                }
+            }, 2000);
+        }
+        
+        // 加载全景数据
+        async function loadPanoramicData() {
+            try {
+                // 更新统计数据
+                await updateStats();
+                
+                console.log('✅ 全景数据加载完成');
+            } catch (error) {
+                console.error('❌ 加载全景数据失败:', error);
+                showToast('加载全景数据失败，请稍后重试');
+            }
+        }
+        
+        // 加载行业摘要
+        async function loadSectorsSummary() {
+            const sectorsGrid = document.getElementById('sectorsGrid');
+            
+            try {
+                // 生成行业摘要卡片
+                sectorsGrid.innerHTML = sectors.map(sector => {
+                    const change = (Math.random() * 6 - 3).toFixed(1);
+                    const volume = (Math.random() * 50 + 10).toFixed(1);
+                    const stocks = Math.floor(Math.random() * 100 + 50);
+                    
+                    return `
+                        <div class="sector-summary-card" onclick="openSectorDetail('${sector.code}')">
+                            <div class="sector-summary-header">
+                                <span class="sector-summary-icon">${sector.icon}</span>
+                                <span class="sector-summary-name">${sector.name}</span>
+                            </div>
+                            <div class="sector-summary-change ${change >= 0 ? 'positive' : 'negative'}">
+                                ${change >= 0 ? '+' : ''}${change}%
+                            </div>
+                            <div class="sector-summary-stats">
+                                ${volume}B | ${stocks}只
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                console.log('✅ 行业摘要加载完成');
+            } catch (error) {
+                console.error('❌ 加载行业摘要失败:', error);
+                showToast('加载行业摘要失败，请稍后重试');
+            }
+        }
+        
+        // 切换到行业视图并定位到特定行业
+        function switchToSectorView(sectorCode) {
+            switchView('sectors');
+            
+            // 延迟滚动到对应行业卡片
+            setTimeout(() => {
+                const sectorCard = document.querySelector(`[data-sector="${sectorCode}"]`);
+                if (sectorCard) {
+                    sectorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+        }
+        
+        // 加载默认行业视图（信息技术）
+        function loadDefaultSectorView() {
+            // 创建信息技术行业的仪表盘视图
+            const sectorsView = document.getElementById('sectorsView');
+            sectorsView.innerHTML = `
+                <div class="sector-dashboard">
+                    <!-- 行业头部 -->
+                    <div class="dashboard-header">
+                        <div class="dashboard-title">
+                            💻 信息技术
+                        </div>
+                        <div class="dashboard-subtitle">
+                            实时监控信息技术行业市场表现
+                        </div>
+                    </div>
+                    
+                    <!-- 行业统计 -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value positive">+2.1%</div>
+                            <div class="stat-label">涨跌幅</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">45.2B</div>
+                            <div class="stat-label">成交量</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">127</div>
+                            <div class="stat-label">股票数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">2.8T</div>
+                            <div class="stat-label">市值</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 行业热力图 -->
+                    <div class="panoramic-card">
+                        <div class="panoramic-header">
+                            <h3 class="panoramic-title">信息技术行业热力图</h3>
+                            <button class="refresh-btn" onclick="refreshDefaultSectorHeatmap()">
+                                🔄
+                            </button>
+                        </div>
+                        <div class="heatmap-container vertical">
+                            <iframe 
+                                id="defaultSectorHeatmap"
+                                src="https://heatmap-pro.vercel.app/?sector=%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF"
+                                class="panoramic-iframe vertical-heatmap"
+                                loading="lazy">
+                            </iframe>
+                            <div class="loading-overlay" id="defaultSectorLoading">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">加载热力图中...</div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="external-link-btn" onclick="openSectorDetail('technology')">
+                                查看详情 →
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 其他行业快速入口 -->
+                    <div class="sectors-summary">
+                        <h3 class="section-title">🔄 切换行业</h3>
+                        <div class="sectors-grid" id="quickSectorsGrid">
+                            <!-- 动态生成其他行业链接 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 生成其他行业快速入口
+            generateQuickSectorLinks();
+            
+            // 设置iframe加载事件
+            const iframe = document.getElementById('defaultSectorHeatmap');
+            const loading = document.getElementById('defaultSectorLoading');
+            
+            iframe.onload = function() {
+                loading.classList.add('hidden');
+                console.log('✅ 信息技术行业热力图加载完成');
+            };
+            
+            iframe.onerror = function() {
+                loading.classList.add('hidden');
+                console.error('❌ 信息技术行业热力图加载失败');
+            };
+        }
+        
+        // 生成其他行业快速入口
+        function generateQuickSectorLinks() {
+            const quickSectors = [
+                { code: 'healthcare', name: '医疗保健', icon: '🏥' },
+                { code: 'financials', name: '金融服务', icon: '🏦' },
+                { code: 'energy', name: '能源', icon: '⚡' },
+                { code: 'consumer-discretionary', name: '非必需消费品', icon: '🛍️' },
+                { code: 'industrials', name: '工业', icon: '🏭' },
+                { code: 'materials', name: '原材料', icon: '⚒️' },
+                { code: 'utilities', name: '公用事业', icon: '🔌' },
+                { code: 'real-estate', name: '房地产', icon: '🏠' },
+                { code: 'communication', name: '通讯服务', icon: '📱' },
+                { code: 'consumer-staples', name: '日常消费品', icon: '🛒' },
+                { code: 'media', name: '媒体娱乐', icon: '📺' },
+                { code: 'semiconductors', name: '半导体', icon: '🔬' }
+            ];
+            
+            const grid = document.getElementById('quickSectorsGrid');
+            if (grid) {
+                grid.innerHTML = quickSectors.map(sector => {
+                    const change = (Math.random() * 6 - 3).toFixed(1);
+                    return `
+                        <div class="sector-summary-card" onclick="switchToSector('${sector.code}')">
+                            <div class="sector-summary-header">
+                                <span class="sector-summary-icon">${sector.icon}</span>
+                                <span class="sector-summary-name">${sector.name}</span>
+                            </div>
+                            <div class="sector-summary-change ${change >= 0 ? 'positive' : 'negative'}">
+                                ${change >= 0 ? '+' : ''}${change}%
+                            </div>
+                            <div class="sector-summary-stats">
+                                点击查看
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // 切换到指定行业
+        function switchToSector(sectorCode) {
+            window.location.href = `sector-detail.html?sector=${sectorCode}`;
+        }
+        
+        // 刷新默认行业热力图
+        function refreshDefaultSectorHeatmap() {
+            const iframe = document.getElementById('defaultSectorHeatmap');
+            const loading = document.getElementById('defaultSectorLoading');
+            
+            if (loading) loading.classList.remove('hidden');
+            if (iframe) {
+                iframe.src = iframe.src; // 重新加载
+            }
+            
+            showToast('正在刷新信息技术行业热力图...');
+        }
+        
+        // 加载行业详情数据
+        async function loadSectorData() {
+            const sectorsList = document.getElementById('sectorsList');
+            
+            try {
+                // 生成行业详情卡片
+                sectorsList.innerHTML = sectors.map(sector => `
+                    <div class="sector-card" data-sector="${sector.code}">
+                        <div class="sector-header" onclick="toggleSectorDetail('${sector.code}')">
+                            <div class="sector-info">
+                                <div class="sector-name">${sector.icon} ${sector.name}</div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="sector-stat-value positive" id="${sector.code}-change">+2.1%</div>
+                                        <div class="sector-stat-label">涨跌幅</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="sector-stat-value" id="${sector.code}-volume">45.2B</div>
+                                        <div class="sector-stat-label">成交量</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="sector-stat-value" id="${sector.code}-stocks">127</div>
+                                        <div class="sector-stat-label">股票数</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="position: relative;" class="iframe-container" data-sector="${sector.code}">
+                            <div class="iframe-placeholder" onclick="loadSectorIframe('${sector.code}')">
+                                <div class="placeholder-content">
+                                    <div class="placeholder-icon">📊</div>
+                                    <div class="placeholder-text">点击加载${sector.name}热力图</div>
+                                </div>
+                            </div>
+                            <div class="loading-overlay hidden" id="${sector.code}-loading">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">加载${sector.name}热力图...</div>
+                            </div>
+                            <div class="error-overlay hidden" id="${sector.code}-error">
+                                <div class="error-content">
+                                    <div class="error-icon">❌</div>
+                                    <div class="error-text">加载失败</div>
+                                    <button class="retry-btn" onclick="reloadSectorIframe('${sector.code}')">重试</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sector-actions">
+                            <button class="external-link-btn" onclick="openSectorDetail('${sector.code}')">
+                                查看详情 →
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // 设置懒加载观察器
+                setupLazyLoading();
+                
+                console.log('✅ 行业详情数据加载完成');
+            } catch (error) {
+                console.error('❌ 加载行业详情数据失败:', error);
+                showToast('加载行业详情数据失败，请稍后重试');
+            }
+        }
+        
+        // 更新统计数据
+        async function updateStats() {
+            try {
+                // 模拟API调用
+                const stats = {
+                    totalChange: (Math.random() * 4 - 2).toFixed(1),
+                    totalVolume: (Math.random() * 100 + 50).toFixed(1),
+                    activeStocks: Math.floor(Math.random() * 500 + 1000)
+                };
+                
+                // 更新UI
+                const changeElement = document.getElementById('totalChange');
+                const volumeElement = document.getElementById('totalVolume');
+                const stocksElement = document.getElementById('activeStocks');
+                
+                if (changeElement) {
+                    changeElement.textContent = (stats.totalChange >= 0 ? '+' : '') + stats.totalChange + '%';
+                    changeElement.className = 'stat-value ' + (stats.totalChange >= 0 ? 'positive' : 'negative');
+                }
+                
+                if (volumeElement) {
+                    volumeElement.textContent = stats.totalVolume + 'B';
+                }
+                
+                if (stocksElement) {
+                    stocksElement.textContent = stats.activeStocks.toLocaleString();
+                }
+                
+            } catch (error) {
+                console.error('❌ 更新统计数据失败:', error);
+            }
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 监听iframe加载完成
+            document.querySelectorAll('iframe').forEach(iframe => {
+                iframe.addEventListener('load', function() {
+                    console.log('✅ iframe加载完成:', this.src);
+                });
+                
+                iframe.addEventListener('error', function() {
+                    console.error('❌ iframe加载失败:', this.src);
+                });
+            });
+            
+            // 添加触摸反馈
+            document.querySelectorAll('.sector-card, .refresh-btn, .external-link-btn, .nav-item').forEach(element => {
+                element.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                    this.style.opacity = '0.8';
+                });
+                
+                element.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                    this.style.opacity = '';
+                });
+                
+                element.addEventListener('touchcancel', function() {
+                    this.style.transform = '';
+                    this.style.opacity = '';
+                });
+            });
+        }
+        
+        // 刷新全景热力图
+        function refreshPanoramicHeatmap() {
+            const iframe = document.getElementById('panoramicIframe');
+            const loading = document.getElementById('panoramicLoading');
+            
+            if (iframe && loading) {
+                loading.classList.remove('hidden');
+                iframe.src = iframe.src;
+                
+                setTimeout(() => {
+                    loading.classList.add('hidden');
+                }, 2000);
+            }
+            
+            showToast('正在刷新全景热力图...');
+        }
+        
+        // 打开全景热力图详情页面
+        function openFullHeatmap() {
+            window.open('heatmap-demo.html', '_blank');
+        }
+        
+        // 切换行业详情
+        function toggleSectorDetail(sectorCode) {
+            console.log('🔄 切换行业详情:', sectorCode);
+            // 这里可以添加展开/收起行业详情的逻辑
+        }
+        
+        // 打开行业详情页
+        function openSectorDetail(sectorCode) {
+            const sector = sectors.find(s => s.code === sectorCode);
+            if (sector) {
+                // 跳转到行业详情页面
+                window.location.href = `sector-detail.html?sector=${sectorCode}`;
+            }
+        }
+        
+        // 页面导航
+        function navigateToPage(page) {
+            switch(page) {
+                case 'tags':
+                    window.location.href = 'index.html';
+                    break;
+                case 'ranking':
+                    window.location.href = 'index.html';
+                    break;
+                case 'panoramic':
+                    window.location.href = 'heatmap-demo.html';
+                    break;
+                default:
+                    console.log('导航到:', page);
+            }
+        }
+        
+        // 显示Toast提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            if (toast && toastMessage) {
+                toastMessage.textContent = message;
+                toast.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        // 懒加载iframe
+        function loadSectorIframe(sectorCode) {
+            const container = document.querySelector(`[data-sector="${sectorCode}"] .iframe-container`);
+            const placeholder = container.querySelector('.iframe-placeholder');
+            const loading = document.getElementById(`${sectorCode}-loading`);
+            const errorOverlay = document.getElementById(`${sectorCode}-error`);
+            
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+            
+            if (loading) {
+                loading.classList.remove('hidden');
+            }
+            
+            if (errorOverlay) {
+                errorOverlay.classList.add('hidden');
+            }
+            
+            // 创建iframe
+            const iframe = document.createElement('iframe');
+            iframe.className = 'sector-iframe';
+            iframe.src = `https://heatmap-pro.vercel.app/sector/${sectorCode}`;
+            iframe.loading = 'lazy';
+            
+            iframe.onload = function() {
+                if (loading) {
+                    loading.classList.add('hidden');
+                }
+                console.log(`✅ ${sectorCode} 热力图加载完成`);
+            };
+            
+            iframe.onerror = function() {
+                if (loading) {
+                    loading.classList.add('hidden');
+                }
+                if (errorOverlay) {
+                    errorOverlay.classList.remove('hidden');
+                }
+                console.error(`❌ ${sectorCode} 热力图加载失败`);
+            };
+            
+            container.appendChild(iframe);
+        }
+        
+        // 重新加载iframe
+        function reloadSectorIframe(sectorCode) {
+            const container = document.querySelector(`[data-sector="${sectorCode}"] .iframe-container`);
+            const existingIframe = container.querySelector('iframe');
+            
+            if (existingIframe) {
+                existingIframe.remove();
+            }
+            
+            loadSectorIframe(sectorCode);
+        }
+        
+        // 设置懒加载观察器
+        function setupLazyLoading() {
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const sectorCode = entry.target.dataset.sector;
+                            const placeholder = entry.target.querySelector('.iframe-placeholder');
+                            
+                            if (placeholder && sectorCode) {
+                                // 预加载iframe（但不立即显示）
+                                console.log(`🔄 预加载 ${sectorCode} 热力图`);
+                            }
+                        }
+                    });
+                }, {
+                    rootMargin: '100px'
+                });
+                
+                // 观察所有行业卡片
+                document.querySelectorAll('.sector-card').forEach(card => {
+                    observer.observe(card);
+                });
+            }
+        }
+        
+        // 设置下拉刷新
+        function setupPullToRefresh() {
+            const container = document.querySelector('.app-container');
+            
+            container.addEventListener('touchstart', function(e) {
+                if (window.scrollY === 0) {
+                    pullToRefresh.startY = e.touches[0].clientY;
+                    pullToRefresh.pulling = true;
+                }
+            });
+            
+            container.addEventListener('touchmove', function(e) {
+                if (!pullToRefresh.pulling) return;
+                
+                pullToRefresh.currentY = e.touches[0].clientY;
+                const pullDistance = pullToRefresh.currentY - pullToRefresh.startY;
+                
+                if (pullDistance > 0 && window.scrollY === 0) {
+                    e.preventDefault();
+                    
+                    if (pullDistance > pullToRefresh.threshold) {
+                        // 显示刷新提示
+                        showToast('松开刷新');
+                    }
+                }
+            });
+            
+            container.addEventListener('touchend', function(e) {
+                if (!pullToRefresh.pulling) return;
+                
+                const pullDistance = pullToRefresh.currentY - pullToRefresh.startY;
+                
+                if (pullDistance > pullToRefresh.threshold) {
+                    // 触发刷新
+                    refreshAllData();
+                }
+                
+                pullToRefresh.pulling = false;
+                pullToRefresh.startY = 0;
+                pullToRefresh.currentY = 0;
+            });
+        }
+        
+        // 刷新所有数据
+        function refreshAllData() {
+            showToast('正在刷新数据...');
+            
+            // 根据当前视图刷新对应数据
+            if (currentView === 'panoramic') {
+                loadPanoramicData();
+                loadSectorsSummary();
+                refreshPanoramicHeatmap();
+            } else {
+                loadSectorData();
+            }
+            
+            setTimeout(() => {
+                showToast('刷新完成');
+            }, 1000);
+        }
+        
+        // 启动自动刷新
+        function startAutoRefresh() {
+            // 每5分钟自动刷新统计数据
+            setInterval(() => {
+                if (currentView === 'panoramic') {
+                    updateStats();
+                    loadSectorsSummary();
+                }
+            }, 5 * 60 * 1000);
+        }
+        
+        // 页面可见性变化处理
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // 页面重新可见时刷新数据
+                if (currentView === 'panoramic') {
+                    updateStats();
+                    loadSectorsSummary();
+                } else {
+                    updateStats();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

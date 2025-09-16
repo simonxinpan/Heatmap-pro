@@ -10,7 +10,31 @@ export default async function handler(request, response) {
     }
     
     try {
-        // 检查环境变量
+        const { action } = request.query;
+        
+        // 调试信息
+        console.log('Received action:', action);
+        console.log('Full query:', request.query);
+        
+        // 处理不同的action
+        if (action === 'init-sp500') {
+            console.log('Processing init-sp500');
+            return await initSP500Data(response);
+        }
+        
+        if (action === 'init-tags') {
+            console.log('Processing init-tags');
+            return await initTags(response);
+        }
+        
+        if (action === 'check-stocks') {
+            console.log('Processing check-stocks');
+            return await checkStocks(response);
+        }
+        
+        console.log('No action matched, using default behavior');
+        
+        // 默认：检查环境变量
         const envCheck = {
             DATABASE_URL: process.env.DATABASE_URL ? '已配置' : '未配置',
             NEON_DATABASE_URL: process.env.NEON_DATABASE_URL ? '已配置' : '未配置',
@@ -58,7 +82,8 @@ export default async function handler(request, response) {
             }
         }
 
-        response.status(200).json({
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
             success: true,
             timestamp: new Date().toISOString(),
             environment: envCheck,
@@ -66,14 +91,192 @@ export default async function handler(request, response) {
                 status: dbStatus,
                 tableInfo: tableInfo
             }
-        });
+        }));
         
     } catch (error) {
-        response.status(500).json({
+        response.writeHead(500, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
             success: false,
             error: error.message,
             timestamp: new Date().toISOString()
+        }));
+    }
+}
+
+// 初始化SP500数据
+async function initSP500Data(response) {
+    console.log('Starting initSP500Data function');
+    try {
+        const pool = new Pool({
+            connectionString: process.env.NEON_DATABASE_URL,
+            ssl: { rejectUnauthorized: false },
         });
+        
+        const client = await pool.connect();
+        
+        // 清空现有数据
+        await client.query('TRUNCATE TABLE stock_tags RESTART IDENTITY CASCADE');
+        await client.query('TRUNCATE TABLE stocks RESTART IDENTITY CASCADE');
+        
+        // 插入SP500股票数据
+        const stocksData = [
+            ['AAPL', '苹果公司', '信息技术'],
+            ['MSFT', '微软', '信息技术'],
+            ['GOOGL', '谷歌A', '信息技术'],
+            ['AMZN', '亚马逊', '非必需消费品'],
+            ['NVDA', '英伟达', '半导体'],
+            ['META', 'Meta Platforms', '信息技术'],
+            ['TSLA', '特斯拉', '非必需消费品'],
+            ['BRK.B', '伯克希尔哈撒韦B', '金融'],
+            ['JPM', '摩根大通', '金融'],
+            ['JNJ', '强生', '医疗保健']
+        ];
+        
+        let insertedCount = 0;
+        for (const [ticker, name_zh, sector_zh] of stocksData) {
+            const result = await client.query(
+                'INSERT INTO stocks (ticker, name_zh, sector_zh) VALUES ($1, $2, $3) RETURNING ticker',
+                [ticker, name_zh, sector_zh]
+            );
+            if (result.rowCount > 0) {
+                insertedCount++;
+            }
+        }
+        
+        // 验证插入结果
+        const countResult = await client.query('SELECT COUNT(*) as count FROM stocks');
+        const actualCount = countResult.rows[0].count;
+        
+        client.release();
+        await pool.end();
+        
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
+            success: true,
+            message: 'SP500数据初始化成功',
+            data: { 
+                stocksCount: stocksData.length,
+                insertedCount: insertedCount,
+                actualCount: actualCount
+            }
+        }));
+        
+    } catch (error) {
+        console.error('Error in initSP500Data:', error);
+        response.writeHead(500, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
+            success: false,
+            error: 'SP500数据初始化失败',
+            details: error.message,
+            stack: error.stack
+        }));
+    }
+}
+
+// 初始化标签数据
+async function initTags(response) {
+    try {
+        const pool = new Pool({
+            connectionString: process.env.NEON_DATABASE_URL,
+            ssl: { rejectUnauthorized: false },
+        });
+        
+        const client = await pool.connect();
+        
+        // 插入标签数据
+        const tagsData = [
+            ['大盘股', '#FF6B6B', '静态'],
+            ['科技股', '#4ECDC4', '静态'],
+            ['金融股', '#45B7D1', '静态'],
+            ['医疗股', '#96CEB4', '静态'],
+            ['消费股', '#FFEAA7', '静态'],
+            ['工业股', '#DDA0DD', '静态'],
+            ['能源股', '#98D8C8', '静态'],
+            ['公用事业', '#F7DC6F', '静态'],
+            ['房地产', '#AED6F1', '静态'],
+            ['原材料', '#F8C471', '静态']
+        ];
+        
+        for (const [name, color, type] of tagsData) {
+            await client.query(
+                'INSERT INTO tags (name, color, type) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING',
+                [name, color, type]
+            );
+        }
+        
+        client.release();
+        await pool.end();
+        
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
+            success: true,
+            message: '标签系统初始化成功',
+            data: { tagsCount: tagsData.length }
+        }));
+        
+    } catch (error) {
+        response.writeHead(500, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
+            success: false,
+            error: '初始化标签表失败',
+            details: error.message
+        }));
+    }
+}
+
+// 检查股票数据
+async function checkStocks(response) {
+    try {
+        const pool = new Pool({
+            connectionString: process.env.NEON_DATABASE_URL,
+            ssl: { rejectUnauthorized: false },
+        });
+        
+        const client = await pool.connect();
+        
+        // 检查 stocks 表结构
+        const tableResult = await client.query(`
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns 
+            WHERE table_name = 'stocks'
+            ORDER BY ordinal_position;
+        `);
+        
+        // 检查数据量
+        const countResult = await client.query('SELECT COUNT(*) as count FROM stocks');
+        
+        client.release();
+        await pool.end();
+        
+        const envCheck = {
+            DATABASE_URL: process.env.DATABASE_URL ? '已配置' : '未配置',
+            NEON_DATABASE_URL: process.env.NEON_DATABASE_URL ? '已配置' : '未配置',
+            POLYGON_API_KEY: process.env.POLYGON_API_KEY ? '已配置' : '未配置',
+            FINNHUB_API_KEY: process.env.FINNHUB_API_KEY ? '已配置' : '未配置',
+            NODE_ENV: process.env.NODE_ENV || '未设置'
+        };
+        
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
+            success: true,
+            timestamp: new Date().toISOString(),
+            environment: envCheck,
+            database: {
+                status: '连接成功',
+                tableInfo: {
+                    columns: tableResult.rows,
+                    rowCount: countResult.rows[0].count
+                }
+            }
+        }));
+        
+    } catch (error) {
+        response.writeHead(500, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        }));
     }
 }
 

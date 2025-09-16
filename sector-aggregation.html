@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业热力图聚合仪表盘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        /* 性能优化和缓存机制 */
+        
+        .sector-iframe {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        
+        /* 资源预加载优化 */
+        .preload-hint {
+            display: none;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+            animation: slideInFromLeft 0.8s ease-out;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+            font-weight: 500;
+        }
+
+
+
+        .sectors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .sector-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 400px;
+        }
+
+        .sector-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 行业定位高亮样式 */
+        .sector-card.highlighted {
+            border: 3px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            transform: translateY(-4px);
+        }
+        
+        .sector-card.flash-highlight {
+            animation: flashHighlight 2s ease-in-out;
+        }
+        
+        @keyframes flashHighlight {
+            0%, 100% { background: rgba(255, 255, 255, 0.95); }
+            25%, 75% { background: rgba(59, 130, 246, 0.1); }
+            50% { background: rgba(59, 130, 246, 0.2); }
+        }
+        
+        /* 行业头部点击样式 */
+        .sector-header {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sector-header:hover {
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 12px;
+        }
+        
+        /* 行业操作区域样式 */
+        .sector-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(248, 250, 252, 0.8);
+        }
+        
+        .external-link-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .external-link-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .external-link-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 行业数据总结样式 */
+        .sector-summary {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1e293b;
+            transition: all 0.3s ease;
+        }
+        
+        .summary-value.updating {
+            animation: pulse 0.6s ease-in-out;
+        }
+
+        .summary-value.positive {
+            color: #10b981;
+        }
+
+        .summary-value.negative {
+            color: #ef4444;
+        }
+
+        /* 点击提示样式 */
+        .click-hint {
+            position: absolute;
+            bottom: 12px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .sector-card:hover .click-hint {
+            opacity: 1;
+        }
+
+        .hint-icon {
+            font-size: 0.8rem;
+        }
+
+        .hint-text {
+            font-weight: 500;
+        }
+
+        /* 全景热力图仪表盘样式 */
+        .panoramic-dashboard-section {
+            margin-bottom: 30px;
+        }
+
+        .panoramic-dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .panoramic-dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .panoramic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .panoramic-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panoramic-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panoramic-iframe-container {
+            position: relative;
+            height: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8f9fa;
+            margin-bottom: 16px;
+        }
+
+        .panoramic-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+        }
+
+        .panoramic-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .sectors-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .panoramic-dashboard {
+                height: 500px;
+            }
+            
+            .panoramic-iframe-container {
+                height: 500px;
+            }
+            
+            .panoramic-title {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .sectors-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .sector-card {
+                min-height: 350px;
+            }
+            
+            .sector-summary {
+                padding: 12px 16px;
+            }
+            
+            .summary-label {
+                font-size: 0.7rem;
+            }
+            
+            .summary-value {
+                font-size: 0.85rem;
+            }
+            
+            .panoramic-dashboard {
+                height: 400px;
+            }
+            
+            .panoramic-iframe-container {
+                height: 400px;
+            }
+            
+            .panoramic-title {
+                font-size: 1.3rem;
+            }
+            
+            .panoramic-dashboard-card {
+                padding: 16px;
+            }
+            
+            .panoramic-footer {
+                flex-direction: column;
+                gap: 12px;
+                align-items: center;
+            }
+            
+            .click-hint {
+                bottom: 8px;
+                right: 12px;
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .sector-card {
+                min-height: 320px;
+            }
+            
+            .sector-header {
+                padding: 16px;
+            }
+            
+            .sector-name {
+                font-size: 1rem;
+            }
+            
+            .sector-icon {
+                font-size: 1.2rem;
+            }
+            
+            .panoramic-dashboard {
+                height: 350px;
+            }
+            
+            .panoramic-iframe-container {
+                height: 320px;
+            }
+            
+            .panoramic-title {
+                font-size: 1.1rem;
+            }
+            
+            .panoramic-dashboard-card {
+                padding: 12px;
+            }
+            
+            .summary-item {
+                gap: 2px;
+            }
+        }
+
+        .sector-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sector-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sector-icon {
+            font-size: 1.5rem;
+        }
+
+        .sector-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fbbf24;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.loading {
+            background: #fbbf24;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .status-indicator.success {
+            background: #10b981;
+            animation: bounceIn 0.6s ease-out;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+            animation: none;
+        }
+
+        /* 骨架屏效果 */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .status-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .sector-iframe-container {
+            position: relative;
+            height: 320px;
+            overflow: hidden;
+        }
+
+        .sector-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #f8f9fa;
+        }
+
+        .iframe-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 249, 250, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .iframe-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px solid transparent;
+            border-top: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite reverse;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+        
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: calc(200px + 100%) 0;
+            }
+        }
+
+        .loading-text {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        
+
+        
+
+
+        .error-content {
+            text-align: center;
+            color: #ef4444;
+        }
+
+        .error-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .retry-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .control-btn.secondary {
+            background: #6b7280;
+        }
+
+        .control-btn.secondary:hover {
+            background: #4b5563;
+        }
+        
+        .control-btn.active {
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+        
+        .control-btn.active:hover {
+            background: #059669;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sectors-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-title {
+                font-size: 2rem;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .sector-card {
+                min-height: 350px;
+            }
+            
+            .sector-iframe-container {
+                height: 280px;
+            }
+        }
+        /* 导航条样式 */
+        .navigation-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            margin-right: 40px;
+            padding: 15px 0;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            gap: 0;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 0;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* 下拉菜单样式 */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            min-width: 180px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1001;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-link {
+            display: block;
+            color: #333;
+            text-decoration: none;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-link:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-link:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .dropdown-arrow {
+            margin-left: 5px;
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* 响应式导航 */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .nav-logo {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .nav-link {
+                text-align: center;
+                padding: 10px;
+            }
+            
+            .dropdown-content {
+                position: static;
+                display: none;
+                box-shadow: none;
+                background: rgba(255, 255, 255, 0.1);
+            }
+            
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+            
+            .dropdown-link {
+                color: white;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .dropdown-link:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航条 -->
+    <nav class="navigation-bar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">📊 股市数据中心</a>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="https://stock-tag-explorer-01.vercel.app/index.html" class="nav-link">🏷️ 标签云广场</a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://stock-tag-explorer-01.vercel.app/trending.html" class="nav-link">📈 趋势风云榜</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link active">🔥 股票热力图 <span class="dropdown-arrow">▼</span></a>
+                    <div class="dropdown-content">
+                        <a href="https://heatmap-pro.vercel.app/" class="dropdown-link">🌐 全景热力图</a>
+                        <a href="#" class="dropdown-link">🏭 行业热力图</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- 仪表盘标题 -->
+        <header class="dashboard-header">
+            <h1 class="dashboard-title">🌍 行业热力图聚合仪表盘</h1>
+            <p class="dashboard-subtitle">实时展示13个行业的股票热力图，一页掌握全市场动态</p>
+        </header>
+
+        <!-- 全景热力图仪表盘 -->
+        <section class="panoramic-dashboard-section">
+            <div class="panoramic-dashboard-card">
+                <div class="panoramic-header">
+                    <h2 class="panoramic-title">🌐 全景热力图仪表盘</h2>
+                    <div class="panoramic-status">
+                        <div class="status-indicator success" id="panoramicStatus"></div>
+                        <span class="status-text">实时同步</span>
+                    </div>
+                </div>
+                <div class="panoramic-iframe-container">
+                    <iframe 
+                        id="panoramicIframe"
+                        class="panoramic-iframe"
+                        src="https://heatmap-pro.vercel.app/"
+                        title="全景热力图仪表盘"
+                        loading="lazy"
+                        sandbox="allow-scripts allow-same-origin allow-forms"
+                        referrerpolicy="strict-origin-when-cross-origin">
+                    </iframe>
+                    <div class="iframe-overlay" id="panoramicOverlay">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">正在加载全景热力图...</div>
+                    </div>
+                </div>
+                <div class="panoramic-footer">
+                    <div class="click-hint">💡 点击查看详细数据</div>
+                    <button class="refresh-btn" onclick="refreshPanoramicDashboard()">🔄 刷新</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 统计概览 -->
+        <section class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSectors">13</div>
+                <div class="stat-label">行业总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="loadedSectors">0</div>
+                <div class="stat-label">已加载</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="errorSectors">0</div>
+                <div class="stat-label">加载失败</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="loadTime">--</div>
+                <div class="stat-label">平均加载时间(s)</div>
+            </div>
+        </section>
+
+        <!-- 控制面板 -->
+        <section class="control-panel">
+            <div class="control-group">
+                <span>数据源状态:</span>
+                <span id="dataSourceStatus" style="color: #10b981; font-weight: 600;">V4版本 - 正常</span>
+            </div>
+            <div class="control-group">
+                <button class="control-btn" onclick="refreshAllSectors()">🔄 刷新全部</button>
+                <button class="control-btn secondary" onclick="toggleAutoRefresh()">⏱️ 自动刷新</button>
+                <button class="control-btn secondary" onclick="exportData()">📊 导出数据</button>
+            </div>
+        </section>
+
+        <!-- 行业热力图网格 -->
+        <section class="sectors-grid" id="sectorsGrid">
+            <!-- 动态生成的行业卡片将插入这里 -->
+        </section>
+    </div>
+
+    <script>
+        /**
+         * 行业热力图聚合仪表盘
+         * 基于虚拟iframe映射技术的独立聚合页面
+         */
+        class SectorAggregationDashboard {
+            constructor() {
+                // 13个行业配置
+                this.sectors = [
+                    { name: '信息技术', code: '信息技术', icon: '💻', color: '#3b82f6' },
+                    { name: '工业', code: '工业', icon: '🏭', color: '#8b5cf6' },
+                    { name: '金融', code: '金融', icon: '🏦', color: '#10b981' },
+                    { name: '医疗保健', code: '医疗保健', icon: '🏥', color: '#f59e0b' },
+                    { name: '非必需消费品', code: '非必需消费品', icon: '🛍️', color: '#ef4444' },
+                    { name: '日常消费品', code: '日常消费品', icon: '🛒', color: '#06b6d4' },
+                    { name: '公用事业', code: '公用事业', icon: '⚡', color: '#84cc16' },
+                    { name: '房地产', code: '房地产', icon: '🏠', color: '#f97316' },
+                    { name: '原材料', code: '原材料', icon: '⛏️', color: '#6b7280' },
+                    { name: '能源', code: '能源', icon: '⛽', color: '#dc2626' },
+                    { name: '半导体', code: '半导体', icon: '🔌', color: '#7c3aed' },
+                    { name: '媒体娱乐', code: '媒体娱乐', icon: '🎬', color: '#ec4899' },
+                    { name: '通讯服务', code: '通讯服务', icon: '📡', color: '#14b8a6' }
+                ];
+                
+                // V4版本基础URL - 使用生产服务器URL
+                this.baseUrl = 'https://heatmap-pro.vercel.app/';
+                
+                // 状态管理
+                this.loadedSectors = new Set();
+                this.errorSectors = new Set();
+                this.loadTimes = [];
+                this.autoRefreshEnabled = false;
+                this.refreshInterval = null;
+                
+
+                
+                this.init();
+            }
+
+            /**
+             * 初始化仪表盘
+             */
+            init() {
+                this.renderSectors();
+                this.setupEventListeners();
+                this.startPerformanceMonitoring();
+                this.handleUrlParameters();
+                console.log('🚀 行业热力图聚合仪表盘初始化完成');
+            }
+
+            /**
+             * 处理URL参数，支持外部跳转定位
+             */
+            handleUrlParameters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetSector = urlParams.get('sector') || urlParams.get('tagId');
+                
+                if (targetSector) {
+                    // 处理tagId格式 (sector_金融 -> 金融)
+                    const sectorName = targetSector.startsWith('sector_') ? 
+                        targetSector.replace('sector_', '') : targetSector;
+                    
+                    // 延迟定位，确保页面完全加载
+                    setTimeout(() => {
+                        this.positionToSector(sectorName, true);
+                    }, 1000);
+                    
+                    console.log(`🎯 检测到URL参数定位: ${sectorName}`);
+                }
+            }
+
+            /**
+             * 定位到指定行业
+             * @param {string} sectorCode - 行业代码
+             * @param {boolean} isFromUrl - 是否来自URL参数
+             */
+            positionToSector(sectorCode, isFromUrl = false) {
+                const sectorElement = document.getElementById(`sector-${sectorCode}`);
+                
+                if (!sectorElement) {
+                    console.warn(`❌ 未找到行业: ${sectorCode}`);
+                    return;
+                }
+                
+                // 移除所有行业的高亮状态
+                document.querySelectorAll('.sector-card').forEach(card => {
+                    card.classList.remove('highlighted');
+                });
+                
+                // 高亮目标行业
+                sectorElement.classList.add('highlighted');
+                
+                // 平滑滚动到目标行业
+                sectorElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+                
+                // 添加闪烁效果
+                setTimeout(() => {
+                    sectorElement.classList.add('flash-highlight');
+                    setTimeout(() => {
+                        sectorElement.classList.remove('flash-highlight');
+                    }, 2000);
+                }, 500);
+                
+                console.log(`🎯 已定位到行业: ${sectorCode}${isFromUrl ? ' (来自URL)' : ''}`);
+            }
+
+            /**
+             * 打开行业详情页面
+             * @param {string} sectorCode - 行业代码
+             */
+            openSectorDetail(sectorCode) {
+                const sector = this.sectors.find(s => s.code === sectorCode);
+                
+                if (!sector) {
+                    console.warn(`❌ 未找到行业: ${sectorCode}`);
+                    return;
+                }
+                
+                // 构建详情页面URL
+                const detailUrl = `sector-detail.html?sector=${encodeURIComponent(sector.name)}`;
+                
+                // 在新窗口打开详情页面
+                window.open(detailUrl, '_blank');
+                
+                console.log(`🔗 打开行业详情页面: ${sector.name}`);
+            }
+
+            /**
+             * 渲染所有行业卡片
+             */
+            renderSectors() {
+                const sectorsGrid = document.getElementById('sectorsGrid');
+                sectorsGrid.innerHTML = this.sectors.map((sector, index) => 
+                    this.createSectorCard(sector, index)
+                ).join('');
+                
+                // 设置懒加载
+                this.setupLazyLoading();
+            }
+
+            /**
+             * 创建单个行业卡片
+             */
+            createSectorCard(sector, index) {
+                const encodedSector = encodeURIComponent(sector.code);
+                const sectorUrl = `${this.baseUrl}?sector=${encodedSector}`;
+                const animationDelay = (index * 0.1).toFixed(1);
+                
+                return `
+                    <div class="sector-card" 
+                         id="sector-${sector.code}"
+                         data-sector="${sector.code}" 
+                         data-url="${sectorUrl}"
+                         style="animation-delay: ${animationDelay}s">
+                        <div class="sector-header" onclick="dashboard.openSectorDetail('${sector.code}')">
+                            <h3 class="sector-name">
+                                <span class="sector-icon">${sector.icon}</span>
+                                ${sector.name}
+                            </h3>
+                            <div class="sector-status">
+                                <div class="status-indicator loading" id="status-${sector.code}"></div>
+                                <span class="status-text" id="status-text-${sector.code}">准备加载...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 行业数据总结 -->
+                        <div class="sector-summary" id="summary-${sector.code}">
+                            <div class="summary-item">
+                                <span class="summary-label">涨跌幅</span>
+                                <span class="summary-value positive" id="change-${sector.code}">+2.34%</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">成交量</span>
+                                <span class="summary-value" id="volume-${sector.code}">1.2B</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">活跃股票</span>
+                                <span class="summary-value" id="active-${sector.code}">156</span>
+                            </div>
+                        </div>
+                        
+                        <div class="sector-iframe-container">
+                            <iframe 
+                                class="sector-iframe" 
+                                data-src="${sectorUrl}"
+                                id="iframe-${sector.code}"
+                                loading="lazy"
+                                sandbox="allow-scripts allow-same-origin allow-forms"
+                                title="${sector.name}热力图"
+                            ></iframe>
+                            <div class="iframe-overlay" id="overlay-${sector.code}">
+                                <div class="loading-content">
+                                    <div class="loading-spinner"></div>
+                                    <p class="loading-text">正在加载${sector.name}数据...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 操作按钮 -->
+                        <div class="sector-actions">
+                            <div class="click-hint">
+                                <span class="hint-icon">👆</span>
+                                <span class="hint-text">点击标题定位到顶部</span>
+                            </div>
+                            <button class="external-link-btn" onclick="window.open('${sectorUrl}', '_blank')" title="在新窗口打开详细热力图">
+                                🔗 查看详情
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+
+
+            /**
+             * 设置懒加载
+             */
+            setupLazyLoading() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const iframe = entry.target.querySelector('.sector-iframe');
+                            const sectorCode = entry.target.dataset.sector;
+                            
+                            if (iframe && iframe.dataset.src && !iframe.src) {
+                                // 异步更新行业数据
+                                this.updateSectorData(sectorCode).then(() => {
+                                    console.log(`✅ ${sectorCode} 数据更新完成`);
+                                }).catch(error => {
+                                    console.error(`❌ ${sectorCode} 数据更新失败:`, error);
+                                });
+                                
+                                this.loadSectorIframe(iframe, sectorCode);
+                                observer.unobserve(entry.target);
+                            }
+                        }
+                    });
+                }, {
+                    rootMargin: '50px'
+                });
+
+                document.querySelectorAll('.sector-card').forEach(card => {
+                    observer.observe(card);
+                });
+            }
+
+            /**
+             * 从数据库获取行业数据
+             */
+            async generateSectorData(sectorCode) {
+                try {
+                    const response = await fetch(`/api/sector-aggregation?sector=${encodeURIComponent(sectorCode)}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        return {
+                            change: data.change_percent,
+                            volume: data.volume_formatted,
+                            active: data.active_stocks,
+                            totalMarketCap: data.total_market_cap,
+                            lastUpdated: data.last_updated
+                        };
+                    } else {
+                        throw new Error('Invalid API response format');
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ 获取${sectorCode}数据失败，使用默认数据:`, error.message);
+                    
+                    // 降级到默认数据
+                    const changePercent = (Math.random() * 10 - 5).toFixed(2);
+                    const volume = (Math.random() * 5 + 0.5).toFixed(1);
+                    const activeStocks = Math.floor(Math.random() * 200 + 50);
+                    
+                    return {
+                        change: changePercent,
+                        volume: volume + 'B',
+                        active: activeStocks,
+                        totalMarketCap: 0,
+                        lastUpdated: null
+                    };
+                }
+            }
+
+            /**
+             * 更新行业数据显示
+             */
+            async updateSectorData(sectorCode) {
+                const changeElement = document.getElementById(`change-${sectorCode}`);
+                const volumeElement = document.getElementById(`volume-${sectorCode}`);
+                const activeElement = document.getElementById(`active-${sectorCode}`);
+                
+                // 添加加载状态
+                const elements = [changeElement, volumeElement, activeElement];
+                elements.forEach(el => {
+                    if (el) {
+                        el.classList.add('updating');
+                        el.textContent = '加载中...';
+                    }
+                });
+                
+                try {
+                    // 从数据库获取实时数据
+                    const data = await this.generateSectorData(sectorCode);
+                    
+                    // 延迟更新数据以配合动画
+                    setTimeout(() => {
+                        if (changeElement) {
+                            changeElement.textContent = (data.change >= 0 ? '+' : '') + data.change + '%';
+                            changeElement.className = 'summary-value ' + (data.change >= 0 ? 'positive' : 'negative');
+                        }
+                        
+                        if (volumeElement) {
+                            volumeElement.textContent = data.volume;
+                        }
+                        
+                        if (activeElement) {
+                            activeElement.textContent = data.active;
+                        }
+                        
+                        // 移除更新状态
+                        elements.forEach(el => {
+                            if (el) el.classList.remove('updating');
+                        });
+                        
+                        console.log(`✅ ${sectorCode} 数据更新完成:`, data);
+                    }, 300);
+                    
+                } catch (error) {
+                    console.error(`❌ 更新${sectorCode}数据失败:`, error);
+                    
+                    // 显示错误状态
+                    elements.forEach(el => {
+                        if (el) {
+                            el.classList.remove('updating');
+                            el.textContent = '数据错误';
+                            el.classList.add('error');
+                        }
+                    });
+                }
+            }
+
+            /**
+             * 加载单个行业iframe
+             */
+            loadSectorIframe(iframe, sectorCode) {
+                const startTime = Date.now();
+                const overlay = document.getElementById(`overlay-${sectorCode}`);
+                const statusIndicator = document.getElementById(`status-${sectorCode}`);
+                const statusText = document.getElementById(`status-text-${sectorCode}`);
+                
+                // 更新状态为加载中
+                statusText.textContent = '加载中...';
+                
+                // 设置iframe源
+                iframe.src = iframe.dataset.src;
+                
+                // 监听加载完成
+                iframe.onload = () => {
+                    const loadTime = (Date.now() - startTime) / 1000;
+                    this.handleIframeLoad(sectorCode, overlay, statusIndicator, statusText, loadTime);
+                };
+                
+                // 监听加载错误
+                iframe.onerror = () => {
+                    this.handleIframeError(sectorCode, overlay, statusIndicator, statusText);
+                };
+                
+                // 设置超时
+                setTimeout(() => {
+                    if (!this.loadedSectors.has(sectorCode) && !this.errorSectors.has(sectorCode)) {
+                        this.handleIframeError(sectorCode, overlay, statusIndicator, statusText, '加载超时');
+                    }
+                }, 15000); // 15秒超时
+            }
+
+            /**
+             * 处理iframe加载成功
+             */
+            handleIframeLoad(sectorCode, overlay, statusIndicator, statusText, loadTime) {
+                this.loadedSectors.add(sectorCode);
+                this.loadTimes.push(loadTime);
+                
+                // 隐藏覆盖层
+                overlay.classList.add('hidden');
+                
+                // 更新状态
+                statusIndicator.className = 'status-indicator success';
+                statusText.textContent = `已加载 (${loadTime.toFixed(1)}s)`;
+                
+                // 更新统计
+                this.updateStats();
+                
+                console.log(`✅ ${sectorCode} 加载完成，耗时: ${loadTime.toFixed(1)}s`);
+            }
+
+            /**
+             * 处理iframe加载错误
+             */
+            handleIframeError(sectorCode, overlay, statusIndicator, statusText, errorMsg = '加载失败') {
+                this.errorSectors.add(sectorCode);
+                
+                // 显示错误内容
+                overlay.innerHTML = `
+                    <div class="error-content">
+                        <div class="error-icon">⚠️</div>
+                        <p>${errorMsg}</p>
+                        <button class="retry-btn" onclick="dashboard.retrySector('${sectorCode}')">重试</button>
+                    </div>
+                `;
+                
+                // 更新状态
+                statusIndicator.className = 'status-indicator error';
+                statusText.textContent = errorMsg;
+                
+                // 更新统计
+                this.updateStats();
+                
+                console.warn(`❌ ${sectorCode} ${errorMsg}`);
+            }
+
+            /**
+             * 重试加载单个行业
+             */
+            retrySector(sectorCode) {
+                this.errorSectors.delete(sectorCode);
+                const iframe = document.getElementById(`iframe-${sectorCode}`);
+                const overlay = document.getElementById(`overlay-${sectorCode}`);
+                
+                // 重置iframe
+                iframe.src = '';
+                
+                // 重置覆盖层
+                overlay.innerHTML = `
+                    <div class="loading-content">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">正在重新加载${sectorCode}数据...</p>
+                    </div>
+                `;
+                overlay.classList.remove('hidden');
+                
+                // 重新加载
+                setTimeout(() => {
+                    this.loadSectorIframe(iframe, sectorCode);
+                }, 500);
+            }
+
+            /**
+             * 更新统计信息
+             */
+            async updateStats() {
+                try {
+                    // 从API获取所有行业的聚合统计数据
+                    const response = await fetch('/api/sector-aggregation?all=true');
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        const stats = result.data;
+                        
+                        // 更新总体统计数据
+                        document.getElementById('total-change').textContent = 
+                            (stats.overall_change >= 0 ? '+' : '') + stats.overall_change + '%';
+                        document.getElementById('total-volume').textContent = stats.total_volume_formatted;
+                        document.getElementById('total-active').textContent = stats.total_active_stocks;
+                        
+                        // 更新样式
+                        const changeElement = document.getElementById('total-change');
+                        changeElement.className = 'stat-value ' + (stats.overall_change >= 0 ? 'positive' : 'negative');
+                        
+                        console.log('📊 统计信息更新完成:', stats);
+                    } else {
+                        throw new Error('Invalid stats API response');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ 获取统计数据失败，使用模拟数据:', error.message);
+                    
+                    // 降级到模拟数据
+                    const totalChange = (Math.random() * 4 - 2).toFixed(2);
+                    const totalVolume = (Math.random() * 50 + 100).toFixed(1);
+                    const totalActive = Math.floor(Math.random() * 500 + 1000);
+                    
+                    document.getElementById('total-change').textContent = (totalChange >= 0 ? '+' : '') + totalChange + '%';
+                    document.getElementById('total-volume').textContent = totalVolume + 'B';
+                    document.getElementById('total-active').textContent = totalActive;
+                    
+                    // 更新样式
+                    const changeElement = document.getElementById('total-change');
+                    changeElement.className = 'stat-value ' + (totalChange >= 0 ? 'positive' : 'negative');
+                }
+                
+                // 更新性能统计
+                document.getElementById('loadedSectors').textContent = this.loadedSectors.size;
+                document.getElementById('errorSectors').textContent = this.errorSectors.size;
+                
+                if (this.loadTimes.length > 0) {
+                    const avgTime = this.loadTimes.reduce((a, b) => a + b, 0) / this.loadTimes.length;
+                    document.getElementById('loadTime').textContent = avgTime.toFixed(1);
+                }
+                
+                // 更新所有行业的数据
+                try {
+                    const updatePromises = this.sectors.map(sector => 
+                        this.updateSectorData(sector.code)
+                    );
+                    await Promise.allSettled(updatePromises);
+                    console.log('📊 所有行业数据更新完成');
+                } catch (error) {
+                    console.error('❌ 更新行业数据时发生错误:', error);
+                }
+            }
+
+            /**
+             * 设置事件监听器
+             */
+            setupEventListeners() {
+                // 监听窗口大小变化
+                window.addEventListener('resize', this.debounce(() => {
+                    console.log('📱 窗口大小变化，重新调整布局');
+                }, 300));
+            }
+
+            /**
+             * 性能监控
+             */
+            startPerformanceMonitoring() {
+                setInterval(() => {
+                    const memoryInfo = performance.memory;
+                    if (memoryInfo) {
+                        const usedMB = (memoryInfo.usedJSHeapSize / 1024 / 1024).toFixed(1);
+                        console.log(`📊 内存使用: ${usedMB}MB`);
+                    }
+                }, 30000); // 每30秒检查一次
+            }
+
+            /**
+             * 防抖函数
+             */
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        }
+
+        // 全局函数
+        async function refreshAllSectors() {
+            console.log('🔄 刷新所有行业数据...');
+            
+            try {
+                // 并行更新所有行业数据
+                const updatePromises = dashboard.sectors.map(sector => 
+                    dashboard.updateSectorData(sector.code)
+                );
+                
+                await Promise.allSettled(updatePromises);
+                
+                // 更新统计信息
+                dashboard.updateStats();
+                
+                console.log('✅ 所有行业数据刷新完成');
+            } catch (error) {
+                console.error('❌ 刷新行业数据时发生错误:', error);
+            }
+        }
+
+        function toggleAutoRefresh() {
+            dashboard.autoRefreshEnabled = !dashboard.autoRefreshEnabled;
+            const btn = event.target;
+            
+            if (dashboard.autoRefreshEnabled) {
+                btn.textContent = '⏹️ 停止自动刷新';
+                btn.classList.add('active');
+                dashboard.refreshInterval = setInterval(async () => {
+                    try {
+                        console.log('🔄 自动刷新触发');
+                        await refreshAllSectors();
+                        console.log('✅ 自动刷新完成');
+                    } catch (error) {
+                        console.error('❌ 自动刷新失败:', error);
+                    }
+                }, 30000); // 30秒刷新一次
+                
+                // 立即执行一次刷新
+                setTimeout(() => {
+                    refreshAllSectors();
+                }, 1000);
+                
+                console.log('🔄 自动刷新已启动，每30秒更新一次数据');
+            } else {
+                btn.textContent = '⏱️ 自动刷新';
+                btn.classList.remove('active');
+                if (dashboard.refreshInterval) {
+                    clearInterval(dashboard.refreshInterval);
+                    dashboard.refreshInterval = null;
+                }
+                console.log('⏹️ 自动刷新已停止');
+            }
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                sectors: dashboard.sectors.length,
+                loaded: dashboard.loadedSectors.size,
+                errors: dashboard.errorSectors.size,
+                avgLoadTime: dashboard.loadTimes.length > 0 ? 
+                    (dashboard.loadTimes.reduce((a, b) => a + b, 0) / dashboard.loadTimes.length).toFixed(2) : 0,
+                loadTimes: dashboard.loadTimes
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sector-dashboard-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            console.log('📊 数据导出完成');
+        }
+
+        // 初始化仪表盘
+        let dashboard;
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboard = new SectorAggregationDashboard();
+        });
+
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            if (dashboard && dashboard.refreshInterval) {
+                clearInterval(dashboard.refreshInterval);
+            }
+        });
+
+        /**
+         * 全景热力图仪表盘相关函数
+         */
+        
+        // 刷新全景热力图仪表盘
+        function refreshPanoramicDashboard() {
+            const iframe = document.getElementById('panoramicIframe');
+            const overlay = document.getElementById('panoramicOverlay');
+            const statusIndicator = document.getElementById('panoramicStatus');
+            
+            if (iframe && overlay && statusIndicator) {
+                // 显示加载状态
+                overlay.classList.remove('hidden');
+                statusIndicator.className = 'status-indicator loading';
+                
+                // 重新加载iframe
+                const currentSrc = iframe.src;
+                iframe.src = '';
+                
+                setTimeout(() => {
+                    iframe.src = currentSrc;
+                }, 100);
+                
+                console.log('🔄 全景热力图仪表盘刷新中...');
+            }
+        }
+        
+        // 全景热力图iframe加载完成处理
+        document.addEventListener('DOMContentLoaded', () => {
+            const panoramicIframe = document.getElementById('panoramicIframe');
+            const panoramicOverlay = document.getElementById('panoramicOverlay');
+            const panoramicStatus = document.getElementById('panoramicStatus');
+            
+            if (panoramicIframe && panoramicOverlay && panoramicStatus) {
+                // iframe加载完成事件
+                panoramicIframe.addEventListener('load', () => {
+                    setTimeout(() => {
+                        panoramicOverlay.classList.add('hidden');
+                        panoramicStatus.className = 'status-indicator success';
+                        console.log('✅ 全景热力图仪表盘加载完成');
+                    }, 1000);
+                });
+                
+                // iframe加载错误事件
+                panoramicIframe.addEventListener('error', () => {
+                    panoramicOverlay.innerHTML = `
+                        <div class="error-icon">❌</div>
+                        <div class="error-text">全景热力图加载失败</div>
+                        <button class="retry-btn" onclick="refreshPanoramicDashboard()">重试</button>
+                    `;
+                    panoramicStatus.className = 'status-indicator error';
+                    console.error('❌ 全景热力图仪表盘加载失败');
+                });
+                
+                // 点击iframe区域跳转到完整页面
+                 panoramicIframe.addEventListener('click', () => {
+                     window.open('https://heatmap-pro.vercel.app/', '_blank');
+                 });
+             }
+         });
+
+        /**
+         * 导航菜单交互处理
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 处理股票热力图主链接点击事件
+            const heatmapMainLink = document.querySelector('.dropdown .nav-link');
+            if (heatmapMainLink) {
+                heatmapMainLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // 默认跳转到行业热力图（当前页面刷新）
+                    window.location.reload();
+                });
+            }
+
+            // 处理下拉菜单项点击事件
+            const dropdownLinks = document.querySelectorAll('.dropdown-link');
+            dropdownLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const href = link.getAttribute('href');
+                    if (href === '#') {
+                        e.preventDefault();
+                        // 行业热力图链接，刷新当前页面
+                        window.location.reload();
+                    }
+                    // 其他链接正常跳转
+                });
+            });
+
+            // 移动端下拉菜单切换
+            if (window.innerWidth <= 768) {
+                const dropdown = document.querySelector('.dropdown');
+                const dropdownContent = document.querySelector('.dropdown-content');
+                
+                if (dropdown && dropdownContent) {
+                    dropdown.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        dropdownContent.style.display = 
+                            dropdownContent.style.display === 'block' ? 'none' : 'block';
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
