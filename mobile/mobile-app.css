@@ -361,6 +361,10 @@
 
 /* 底部导航栏 */
 .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: white;
     border-top: 1px solid #F0F0F0;
     padding: 8px 0;
@@ -368,12 +372,22 @@
     display: flex;
     justify-content: space-around;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 100;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.bottom-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .nav-item {
+    flex: 1;
+    min-width: 70px;
     background: none;
     border: none;
-    padding: 8px 12px;
+    padding: 8px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -382,9 +396,9 @@
     color: #8C8C8C;
     transition: all 0.2s ease;
     border-radius: 8px;
-    min-width: 60px;
     min-height: 60px;
     justify-content: center;
+    white-space: nowrap;
 }
 
 .nav-item.active {
@@ -392,12 +406,25 @@
 }
 
 .nav-item span {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 500;
+    line-height: 1.2;
 }
 
 .nav-item:active {
     transform: scale(0.95);
+}
+
+/* 响应式导航 */
+@media (max-width: 480px) {
+    .nav-item {
+        min-width: 60px;
+        padding: 6px 2px;
+    }
+    
+    .nav-item span {
+        font-size: 9px;
+    }
 }
 
 /* 加载指示器 */
