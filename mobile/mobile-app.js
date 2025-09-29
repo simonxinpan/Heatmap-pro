@@ -468,10 +468,8 @@ class MobileStockApp {
     }
 
     openStockDetail(symbol) {
-        // 跳转到个股详情页
-        document.getElementById('stockTitle').textContent = symbol;
-        this.navigateToPage('stockDetailPage');
-        this.loadStockDetail(symbol);
+        // 跳转到移动版个股详情页
+        window.open(`https://stock-details-final.vercel.app/mobile.html?symbol=${symbol}`, '_blank');
     }
 
     async loadStockDetail(symbol) {
