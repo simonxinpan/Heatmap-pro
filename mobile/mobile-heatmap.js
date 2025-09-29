@@ -276,16 +276,12 @@ class MobileHeatmap {
         let startDistance = 0;
         let startZoom = 1;
         
-        // 触摸开始
         viewport.addEventListener('touchstart', (e) => {
             isTouch = true;
-            
             if (e.touches.length === 1) {
-                // 单指触摸
                 this.touchStartX = e.touches[0].clientX;
                 this.touchStartY = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
-                // 双指缩放
                 this.isZooming = true;
                 startDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
                 startZoom = this.zoomLevel;
@@ -293,34 +289,27 @@ class MobileHeatmap {
             }
         }, { passive: false });
         
-        // 触摸移动
         viewport.addEventListener('touchmove', (e) => {
             if (!isTouch) return;
-            
             if (e.touches.length === 2 && this.isZooming) {
-                // 双指缩放
                 const currentDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
                 const scale = currentDistance / startDistance;
                 this.zoomLevel = Math.max(0.5, Math.min(3, startZoom * scale));
                 this.applyTransform();
                 e.preventDefault();
             } else if (e.touches.length === 1 && !this.isZooming) {
-                // 单指拖拽
                 const deltaX = e.touches[0].clientX - this.touchStartX;
                 const deltaY = e.touches[0].clientY - this.touchStartY;
-                
                 if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
                     this.panX += deltaX * 0.5;
                     this.panY += deltaY * 0.5;
                     this.applyTransform();
-                    
                     this.touchStartX = e.touches[0].clientX;
                     this.touchStartY = e.touches[0].clientY;
                 }
             }
         }, { passive: false });
         
-        // 触摸结束
         viewport.addEventListener('touchend', (e) => {
             if (e.touches.length === 0) {
                 isTouch = false;
@@ -344,7 +333,6 @@ class MobileHeatmap {
     applyTransform() {
         const canvas = document.getElementById('heatmapCanvas');
         if (!canvas) return;
-        
         canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
     }
 
@@ -461,13 +449,30 @@ class MobileHeatmap {
     }
 
     /**
-     * 显示股票详情
+     * ==================================================================
+     * === ✨ 关键修改点 ✨ ===
+     * === 以下函数已被重写，以直接跳转到移动版个股详情页 ===
+     * ==================================================================
      */
     showStockDetail(symbol) {
-        // 触发全局事件，由主应用处理
-        window.dispatchEvent(new CustomEvent('showStockDetail', {
-            detail: { symbol }
-        }));
+        console.log(`准备跳转到股票详情页: ${symbol}`);
+
+        if (symbol) {
+            // 1. 定义我们期望的、正确的移动版个股详情页基础URL
+            const mobileDetailsUrl = 'https://stock-details-final.vercel.app/mobile.html';
+
+            // 2. 将基础URL和股票代码拼接成最终的跳转链接
+            const finalUrl = `${mobileDetailsUrl}?symbol=${symbol}`;
+
+            console.log(`正在跳转到: ${finalUrl}`);
+
+            // 3. 执行页面跳转
+            // 直接在当前窗口打开，这在移动端是最佳体验
+            window.location.href = finalUrl;
+            
+        } else {
+            console.warn('尝试跳转失败，未提供股票代码(symbol)');
+        }
     }
 
     /**
@@ -546,7 +551,6 @@ class MobileHeatmap {
             this.renderSectorDashboard();
         }
         
-        // 显示刷新提示
         window.dispatchEvent(new CustomEvent('showToast', {
             detail: { message: '热力图已刷新' }
         }));
@@ -605,7 +609,6 @@ class MobileHeatmap {
      * 销毁实例
      */
     destroy() {
-        // 清理事件监听器
         const viewport = document.getElementById('heatmapViewport');
         if (viewport) {
             viewport.removeEventListener('touchstart', this.handleTouchStart);
