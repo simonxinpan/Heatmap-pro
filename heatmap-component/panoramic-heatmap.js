@@ -228,10 +228,10 @@ class PanoramicHeatmap {
                 showLabels: true,
                 colorScheme: 'RdYlGn',
                 onCellClick: (data, index) => {
-                    // 点击股票跳转到生产服务器个股详情页
+                    // 点击股票跳转到生产服务器个股详情页（移动版）
                     const symbol = data.symbol || data.ticker;
                     if (symbol) {
-                        window.open(`https://stock-details-final.vercel.app/?symbol=${symbol}`, '_blank');
+                        window.open(`https://stock-details-final.vercel.app/mobile.html?symbol=${symbol}`, '_blank');
                     }
                 }
             });
@@ -289,10 +289,10 @@ class PanoramicHeatmap {
                 padding: 1,
                 cornerRadius: 2,
                 onCellClick: (data, index) => {
-                    // 点击股票跳转到生产服务器个股详情页
+                    // 点击股票跳转到生产服务器个股详情页（移动版）
                     const symbol = data.symbol || data.ticker;
                     if (symbol) {
-                        window.open(`https://stock-details-final.vercel.app/?symbol=${symbol}`, '_blank');
+                        window.open(`https://stock-details-final.vercel.app/mobile.html?symbol=${symbol}`, '_blank');
                     }
                 }
             });
@@ -405,10 +405,10 @@ class PanoramicHeatmap {
                 colorScheme: 'RdYlGn',
                 fontSize: 12,
                 onCellClick: (data, index) => {
-                    // 点击股票跳转到生产服务器个股详情页
+                    // 点击股票跳转到生产服务器个股详情页（移动版）
                     const symbol = data.symbol || data.ticker;
                     if (symbol) {
-                        window.open(`https://stock-details-final.vercel.app/?symbol=${symbol}`, '_blank');
+                        window.open(`https://stock-details-final.vercel.app/mobile.html?symbol=${symbol}`, '_blank');
                     }
                 }
             });

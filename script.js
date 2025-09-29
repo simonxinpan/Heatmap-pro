@@ -584,7 +584,7 @@ function createStockElement(stock, width, height) {
     
     const stockLink = document.createElement('a');
     stockLink.className = 'treemap-stock';
-    stockLink.href = `https://stock-details-final.vercel.app/?symbol=${stock.ticker}`;
+    stockLink.href = `https://stock-details-final.vercel.app/mobile.html?symbol=${stock.ticker}`;
     stockLink.target = '_blank';
     stockLink.style.cssText = `width:${width}px;height:${height}px;position:absolute;`;
     
@@ -689,8 +689,8 @@ async function renderStockDetailPage(symbol) {
     try {
         appContainer.innerHTML = `<div class="loading-indicator"><div class="spinner"></div><p>正在加载 ${symbol} 的详细数据...</p></div>`;
         
-        // 所有股票都跳转到外部增强版详情页，传递股票代码参数
-        const externalDetailUrl = `https://stock-details-final.vercel.app/?symbol=${symbol}`;
+        // 所有股票都跳转到外部增强版详情页（移动版），传递股票代码参数
+        const externalDetailUrl = `https://stock-details-final.vercel.app/mobile.html?symbol=${symbol}`;
         window.location.href = externalDetailUrl;
         return;
         
