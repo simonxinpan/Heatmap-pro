@@ -62,7 +62,7 @@
                 sectorElement.appendChild(chartContainer);
                 container.appendChild(sectorElement);
 
-                // 使用模拟数据，未来可以替换为API调用
+                // 使用模拟数据
                 const mockData = generateMockData(sector.name, 20);
                 initTreemap(chartId, mockData, sector.name);
             });
@@ -148,8 +148,8 @@
             
             /**
              * ==================================================================
-             * === ✨ 唯一的、决定性的修改点 ✨ ===
-             * === 下面的 click 事件处理函数已被重写，以实现智能跳转 ===
+             * === ✨ 唯一的、决定性的修改点 (最终版) ✨ ===
+             * === 下面的 click 事件处理函数使用 window.top 强制在最顶层窗口跳转 ===
              * ==================================================================
              */
             myChart.on('click', function(params) {
@@ -159,7 +159,7 @@
             
                     // --- 这是最关键的智能判断 ---
             
-                    // 1. 读取当前热力图页面的URL参数 (即 iframe 的 src)
+                    // 1. 读取当前热力图页面的URL参数 (即此 iframe 的 src)
                     const urlParams = new URLSearchParams(window.location.search);
                     
                     // 2. 检查URL中是否存在 "layout=vertical" 这个我们为移动端设置的参数
@@ -180,14 +180,14 @@
                     // 4. 构造最终的跳转链接
                     const finalUrl = `${baseUrl}?symbol=${symbol}`;
             
-                    // 5. 执行跳转
-                    // 尝试在父窗口 (iframe的外部页面) 中打开，提供无缝体验
-                    if (window.parent && window.parent.location) {
-                        console.log(`[智能跳转] 在父窗口中打开: ${finalUrl}`);
-                        window.parent.location.href = finalUrl;
+                    // 5. 使用 window.top 直接命令浏览器最顶层窗口进行跳转
+                    //    这是穿透 iframe 的最可靠方法
+                    if (window.top) {
+                        console.log(`[Top Level Navigation] 正在命令顶层窗口跳转到: ${finalUrl}`);
+                        window.top.location.href = finalUrl;
                     } else {
-                        // 如果没有父窗口（例如直接访问热力图），则在当前窗口跳转
-                        console.log(`[智能跳转] 在当前窗口打开: ${finalUrl}`);
+                        // 如果由于某种极端情况无法访问 top，则作为备用方案在当前窗口跳转
+                        console.log(`[Fallback Navigation] 无法访问顶层窗口，在当前窗口跳转: ${finalUrl}`);
                         window.location.href = finalUrl;
                     }
                 } else {
