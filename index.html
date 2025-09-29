@@ -3,16 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票热力图-Pro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <title>股票市场热力图</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
-<body>
-    <div id="app-container"></div>
-    <div id="tooltip" class="tooltip"></div>
-    <script src="script.js"></script>
+<body class="bg-gray-900 text-white">
+    <div id="treemap-container" style="width: 100vw; height: 100vh;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chartDom = document.getElementById('treemap-container');
+            if (!chartDom) {
+                console.error('Heatmap container "treemap-container" not found!');
+                return;
+            }
+
+            const myChart = echarts.init(chartDom);
+            let option;
+
+            myChart.showLoading();
+
+            fetch('data/heatmap-data.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    myChart.hideLoading();
+                    
+                    option = {
+                        tooltip: {
+                            formatter: function (info) {
+                                const value = info.value;
+                                const treePathInfo = info.treePathInfo;
+                                const treePath = [];
+
+                                for (let i = 1; i < treePathInfo.length; i++) {
+                                    treePath.push(treePathInfo[i].name);
+                                }
+
+                                return `
+                                    <div style="font-family: sans-serif; font-size: 14px; background: #fff; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 8px 12px; border: 1px solid #eee;">
+                                        <strong style="font-size: 16px;">${info.data.symbol || info.name}</strong><br>
+                                        行业: ${treePath.join(' / ')}<br>
+                                        涨跌幅: <span style="color: ${value >= 0 ? '#10B981' : '#EF4444'}; font-weight: 600;">${value >= 0 ? '+' : ''}${value.toFixed(2)}%</span>
+                                    </div>
+                                `;
+                            },
+                            backgroundColor: 'transparent',
+                            borderWidth: 0,
+                            padding: 0
+                        },
+                        series: [{
+                            name: '行业板块',
+                            type: 'treemap',
+                            visibleMin: 300,
+                            label: {
+                                show: true,
+                                formatter: '{b}'
+                            },
+                            upperLabel: {
+                                show: true,
+                                height: 30
+                            },
+                            itemStyle: {
+                                borderColor: '#fff'
+                            },
+                            levels: getLevelOption(),
+                            data: data,
+                            nodeParser: function (node) {
+                                if (node.isLeaf) {
+                                    node.symbol = node.name;
+                                }
+                                return node;
+                            }
+                        }]
+                    };
+
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading or parsing heatmap data:', error);
+                    myChart.hideLoading();
+                    chartDom.innerHTML = '<div style="text-align:center; color: #aaa; padding-top: 50px;">热力图数据加载失败</div>';
+                });
+
+            /**
+             * ==================================================================
+             * === ✨ 唯一的、决定性的修改点 (最终版) ✨ ===
+             * === 下面的 click 事件处理函数使用 window.top 强制在最顶层窗口跳转 ===
+             * ==================================================================
+             */
+            myChart.on('click', function(params) {
+                // 确保点击的是有效的股票方块 (叶子节点)
+                if (params.data && params.data.isLeaf && params.data.symbol) {
+                    const symbol = params.data.symbol;
+            
+                    // --- 这是最关键的智能判断 ---
+            
+                    // 1. 读取当前热力图页面的URL参数 (即此 iframe 的 src)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    // 2. 检查URL中是否存在 "layout=vertical" 这个我们为移动端设置的参数
+                    const isMobileContext = urlParams.get('layout') === 'vertical';
+            
+                    // 3. 根据判断结果，选择不同的基础URL
+                    let baseUrl;
+                    if (isMobileContext) {
+                        // 如果是移动端环境，就使用移动版详情页的URL
+                        console.log("[智能跳转] 检测到移动端环境 (layout=vertical)，将跳转到移动版详情页。");
+                        baseUrl = 'https://stock-details-final.vercel.app/mobile.html';
+                    } else {
+                        // 否则，使用默认的桌面版详情页URL，保持桌面版体验不变
+                        console.log("[智能跳转] 未检测到移动端环境，将跳转到桌面版详情页。");
+                        baseUrl = 'https://stock-details-final.vercel.app/';
+                    }
+            
+                    // 4. 构造最终的跳转链接
+                    const finalUrl = `${baseUrl}?symbol=${symbol}`;
+            
+                    // 5. 使用 window.top 直接命令浏览器最顶层窗口进行跳转
+                    //    这是穿透 iframe 的最可靠方法
+                    if (window.top) {
+                        console.log(`[Top Level Navigation] 正在命令顶层窗口跳转到: ${finalUrl}`);
+                        window.top.location.href = finalUrl;
+                    } else {
+                        // 如果由于某种极端情况无法访问 top，则作为备用方案在当前窗口跳转
+                        console.log(`[Fallback Navigation] 无法访问顶层窗口，在当前窗口跳转: ${finalUrl}`);
+                        window.location.href = finalUrl;
+                    }
+                } else {
+                     console.log("点击的不是有效的股票方块，不执行跳转。");
+                }
+            });
+
+            function getLevelOption() {
+                return [
+                    { itemStyle: { borderColor: '#777', borderWidth: 0, gapWidth: 1 }, upperLabel: { show: false } },
+                    { itemStyle: { borderColor: '#555', borderWidth: 5, gapWidth: 1 }, emphasis: { itemStyle: { borderColor: '#ddd' } } },
+                    { colorSaturation: [0.35, 0.5], itemStyle: { borderWidth: 5, gapWidth: 1, borderColorSaturation: 0.6 } }
+                ];
+            }
+
+            window.addEventListener('resize', function () {
+                if (myChart) {
+                    myChart.resize();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
